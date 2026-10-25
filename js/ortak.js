@@ -27,6 +27,8 @@
     };
   };
   window.ustCubuk = async function (aktif, oturum) {
+    if (!Veri.isPro) Veri.isPro = function (p) { return !!p && p !== 'ucretsiz'; };
+    if (!Veri.planAd) Veri.planAd = function (p) { return ({ ucretsiz: 'Ücretsiz plan', pro_aylik: 'Pro Aylık', pro_yillik: 'Pro Yıllık', premium: 'Pro Aylık' })[p] || 'Ücretsiz plan'; };
     var h = '';
     if (!Veri.canli) h += '<div class="deneme">Deneme modu: kayıtlar yalnız bu tarayıcıda durur. Canlı yayın için Supabase bilgilerini js/config.js dosyasına yazın.</div>';
     h += '<header class="ust"><a class="logo" href="./" title="Ses Efekti Spot Stüdyo"><i></i><b>sesefekti.com</b><span>/spot-stüdyo</span></a><nav>';

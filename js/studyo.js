@@ -1274,17 +1274,13 @@
   }
   (function () {
     var sr = document.createElement('div'); sr.id = 'mobSerit';
-    sr.innerHTML = '<button class="mKayit" data-m="kayit">● Kayıt</button><button class="mOto" data-m="oto">Otomatiğe gönder →</button><button data-m="efekt">Ses efektini değiştir</button><button data-m="dip">Dip sesi temizle</button>';
+    sr.innerHTML = '<button class="mKayit" data-m="kayit">● Kayıt</button><button data-m="oynat">▶ Oynat</button><button data-m="dur">■ Durdur</button><span class="mAyir"></span><button data-m="efekt">Ses efektini değiştir</button><button data-m="dip">Dip sesi temizle</button><button class="mOto" data-m="oto">Otomatiğe gönder →</button>';
     $('#menu').insertAdjacentElement('afterend', sr);
     sr.addEventListener('click', function (e) {
       var b = e.target.closest('[data-m]'); if (!b) return; var m = b.dataset.m;
       if (m === 'kayit') kayitBasla(); else if (m === 'oynat') oynatToggle(); else if (m === 'dur') durdur();
       else if (m === 'efekt') efektDegistir(); else if (m === 'dip') dipTemizle(); else if (m === 'oto') otoyaGonder();
     });
-    var ar = $('#arac'), rm = document.createElement('button'); rm.className = 'ik railMenu'; rm.title = 'Menüler'; rm.setAttribute('aria-label', 'Menüler'); rm.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 7h16M4 12h16M4 17h16" stroke="#1d2430" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>'; ar.insertBefore(rm, ar.firstChild);
-    function rayHizala() { var r = sr.getBoundingClientRect(); document.documentElement.style.setProperty('--railTop', Math.max(0, Math.round(sr.offsetHeight ? r.bottom : 0)) + 'px'); }
-    rm.onclick = function () { document.body.classList.toggle('menuAcik'); setTimeout(rayHizala, 30); };
-    window.addEventListener('resize', rayHizala); setInterval(rayHizala, 600); rayHizala();
     setInterval(function () { var k = sr.querySelector('.mKayit'); if (k) { var kk = !!kayit; k.textContent = kk ? '■ Kaydı bitir' : '● Kayıt'; k.classList.toggle('kayitta', kk); } }, 400);
   })();
   (function () { var mn = $('#menu'), b = document.createElement('button'); b.id = 'otoyaGonder'; b.className = 'otoSekme'; b.title = 'Bu sesi Otomatik sekmesine kaynak olarak gönder (kaydetmeye gerek yok)'; b.textContent = 'Otomatiğe gönder'; b.onclick = otoyaGonder; mn.appendChild(b);

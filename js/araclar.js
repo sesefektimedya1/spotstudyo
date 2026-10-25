@@ -62,6 +62,29 @@
     return { L: oL, R: oR || oL };
   }
   function birles(taban, a, b, orta) { var y = new Float32Array(taban.length - (b - a) + orta.length); y.set(taban.subarray(0, a)); y.set(orta, a); y.set(taban.subarray(b), a + orta.length); return y; }
-  kok.Araclar = { ters: ters, perde: perde, karistir: karistir, birles: birles, yenidenOrnekle: yenidenOrnekle, sureUzat: sureUzat, dB: dB };
+
+  // Modülasyonlu gecikme: chorus, flanger, vibrato için ortak
+  function modGecikme(x, sr, tabanMs, derinMs, hz, geriBes, mix, sesSayisi) {
+    var n = x.length, z = new Float32Array(n), y = new Float32Array(n), i, v, tw = 2 * Math.PI * hz / sr, nv = sesSayisi || 1;
+    function oku(arr, pos) { if (pos < 0) return 0; var a = Math.floor(pos), t = pos - a; return arr[a] * (1 - t) + (arr[a + 1] === undefined || a + 1 >= i ? 0 : arr[a + 1]) * t; }
+    for (i = 0; i < n; i++) {
+      var w = 0;
+      for (v = 0; v < nv; v++) { var d = (tabanMs + derinMs * Math.sin(tw * i + v * 2 * Math.PI / nv)) * sr / 1000; w += oku(z, i - Math.max(1, d)); }
+      w /= nv; z[i] = x[i] + geriBes * w; y[i] = (1 - mix) * x[i] + mix * w;
+    }
+    return y;
+  }
+  function tremolo(x, sr, hz, derinlik) { var y = new Float32Array(x.length), tw = 2 * Math.PI * hz / sr; for (var i = 0; i < x.length; i++) y[i] = x[i] * (1 - derinlik * (0.5 + 0.5 * Math.sin(tw * i))); return y; }
+  function bozulma(x, surus, mix) { var y = new Float32Array(x.length), k = Math.tanh(surus); for (var i = 0; i < x.length; i++) y[i] = (1 - mix) * x[i] + mix * Math.tanh(surus * x[i]) / k; return y; }
+  function monoya(L, R) { var o = new Float32Array(L.length); for (var i = 0; i < o.length; i++) o[i] = 0.5 * (L[i] + R[i]); return o; }
+  function faz(x) { var y = new Float32Array(x.length); for (var i = 0; i < x.length; i++) y[i] = -x[i]; return y; }
+  // baştaki ve sondaki sessizliği bulur: [a,b] örnek aralığı
+  function sessizlikSinir(x, sr, altDb, payMs) {
+    var fr = Math.round(sr * 0.01), nf = Math.floor(x.length / fr), env = [], mx = -200, i, j;
+    for (i = 0; i < nf; i++) { var s = 0; for (j = 0; j < fr; j++) { var q = x[i * fr + j]; s += q * q; } var e = 10 * Math.log10(s / fr + 1e-18); env.push(e); if (e > mx) mx = e; }
+    var esik = mx - (altDb || 40), a = 0, b = nf - 1; while (a < nf && env[a] < esik) a++; while (b > a && env[b] < esik) b--;
+    var pay = Math.round((payMs || 100) * sr / 1000); return [Math.max(0, a * fr - pay), Math.min(x.length, (b + 1) * fr + pay)];
+  }
+  kok.Araclar = { modGecikme: modGecikme, tremolo: tremolo, bozulma: bozulma, monoya: monoya, faz: faz, sessizlikSinir: sessizlikSinir,  ters: ters, perde: perde, karistir: karistir, birles: birles, yenidenOrnekle: yenidenOrnekle, sureUzat: sureUzat, dB: dB };
   if (typeof module !== 'undefined') module.exports = kok.Araclar;
 })(typeof window !== 'undefined' ? window : globalThis);

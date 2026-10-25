@@ -70,7 +70,7 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .otoSatir>label{width:80px;margin:0;color:#1d2430;font-size:14px}
 .otoSatir select{width:auto;min-width:240px}
 .otoSatir .tarz{color:#d83a2c}
-.sonucKutu{position:relative;height:170px;background:#fff;border:1px solid #c3c9d1;border-radius:8px;overflow:hidden}
+.sonucKutu{position:relative;height:300px;background:#fff;border:1px solid #c3c9d1;border-radius:8px;overflow:hidden}
 .sonucKutu canvas{width:100%;height:100%;display:block}
 .bos{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#5d6673;pointer-events:none;font-size:14px}
 .liste{display:grid;gap:.5rem}
@@ -99,3 +99,62 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .kayitDugme.kayitta i{border-radius:2px}
 
 #toast{z-index:2000!important}
+
+/* Sound Forge görünümü */
+.alan{background:#adadad!important}
+.bosalan b{color:#333}.bosalan{color:#444}
+.pen{grid-template-rows:28px 54px minmax(60px,1fr) 16px 34px;background:#ececec;border:1px solid #5d6f8c;border-radius:3px;box-shadow:2px 3px 10px rgba(0,0,0,.35)}
+.pen.aktif{border-color:#2d5fae;box-shadow:2px 3px 14px rgba(0,0,0,.45)}
+.pen .bas{background:linear-gradient(#e6effb,#b9cfeb);border-bottom:1px solid #8aa0c0;color:#1b2735}
+.pen.aktif .bas{background:linear-gradient(#a9c8f2,#6e9ee0);color:#0b1a30}
+.pen.aktif .bas small{color:#26344a}
+.pen .bas small{color:#4a5a70}
+.pen .bas .x{color:#222}
+.pen .ov{background:#000;border-bottom:1px solid #444}
+.pen .kay{background:#e2e2e2;border-top:1px solid #bbb}
+.pen .kay .th{background:#9a9a9a}
+.pen .zb{background:#ececec;border-top:1px solid #bbb;color:#444}
+.kayitMini i{display:inline-block;width:11px;height:11px;border-radius:50%;background:#d83a2c;vertical-align:-1px}
+.kayitMini{padding:.1rem .45rem!important}
+
+.pen{grid-template-rows:24px 40px minmax(40px,1fr) 14px 30px!important;min-width:380px!important;min-height:150px!important}
+.pen .bas{font-size:13px}
+
+/* Otomatik sayfa */
+#p-oto{background:#f3f4f6}
+.otoSayfa{display:grid;grid-template-columns:minmax(380px,1fr) minmax(420px,1.15fr);gap:1.6rem;max-width:1380px;margin:0 auto;padding:1.6rem 1.4rem 3rem;align-items:start}
+.otoBaslik h2{font-size:2rem;margin-bottom:.3rem}
+.otoBaslik p{color:#5d6673;max-width:60ch}
+.otoSol{display:grid;gap:1rem}
+.adim{background:#fff;border:1px solid #d3d8de;border-radius:12px;padding:1.1rem 1.2rem;display:grid;gap:.8rem}
+.adim h3{font-size:1.25rem;display:flex;align-items:center;gap:.6rem}
+.adim h3 span{display:inline-flex;width:26px;height:26px;border-radius:50%;background:#d83a2c;color:#fff;align-items:center;justify-content:center;font-size:14px;font-family:Barlow,sans-serif}
+.adim h3 em{font-style:normal;font-size:13px;color:#5d6673;font-family:Barlow,sans-serif;font-weight:400}
+.birakAlan{border:2px dashed #b8c0ca;border-radius:12px;background:#fafbfc;padding:1.3rem 1rem;display:flex;flex-direction:column;align-items:center;gap:.4rem;text-align:center}
+.birakAlan.uzerinde{border-color:#d83a2c;background:#fff1ef}
+.birakAlan b{font-size:1.05rem;font-weight:600}
+.birakAlan small{color:#5d6673}
+.btnler{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;margin-top:.4rem}
+.adim select{width:100%}
+.kartlar{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.kartlar button{background:#fff;border:2px solid #d3d8de;border-radius:10px;padding:.8rem;text-align:left;cursor:pointer;display:grid;gap:.2rem;color:#1d2430}
+.kartlar button b{font-size:1.05rem}
+.kartlar button small{color:#5d6673;font-size:12.5px;line-height:1.3}
+.kartlar button:hover{border-color:#9fb4d6}
+.kartlar button.secili{border-color:#d83a2c;background:#fff6f4}
+.bize textarea{width:100%;background:#fff;border:1px solid #c3c9d1;border-radius:8px;padding:.7rem;resize:vertical;color:#1d2430}
+.otoSag{position:sticky;top:1rem;background:#fff;border:1px solid #d3d8de;border-radius:12px;padding:1.2rem;display:grid;gap:.9rem}
+.sonucUst{display:flex;justify-content:space-between;align-items:baseline}
+.sonucUst h3{font-size:1.4rem}
+.sonucEylem{display:flex;gap:.6rem;flex-wrap:wrap}
+.btn.buyuk{padding:.8rem 1.4rem;font-size:16px}
+@media(max-width:1000px){.otoSayfa{grid-template-columns:1fr}.otoSag{position:static}}
+
+.arac{gap:.3rem;padding:.3rem .6rem}
+.arac .btn{padding:.3rem .65rem;font-size:13.5px}
+.arac .btn.kucuk{padding:.25rem .5rem;font-size:13px}
+.arac .zaman{font-size:1.45rem;min-width:6.5ch}
+.kayitDugme{width:36px;height:36px}
+#metre{width:60px}
+.arac .ayir{margin:0 .1rem}
+.sekmeler button{padding:.4rem 1.2rem}

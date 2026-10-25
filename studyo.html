@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap&subset=latin-ext">
-<link rel="stylesheet" href="css/stil.css?v=5"><link rel="stylesheet" href="css/studyo.css?v=5"><title>Stüdyo — SpotStüdyo</title></head>
+<link rel="stylesheet" href="css/stil.css?v=8"><link rel="stylesheet" href="css/studyo.css?v=8"><title>Stüdyo — SpotStüdyo</title></head>
 <body class="st">
 <div class="sekmeler" id="sekmeler">
  <button data-t="oto">Otomatik</button><button data-t="manuel" class="acik">Manuel stüdyo</button><button data-t="ses">Ses bankası</button><button data-t="muzik">Müzik bankası</button>
@@ -36,15 +36,34 @@
 <div class="orta" id="orta">
  <section id="p-manuel" class="panel acik"><div id="alan" class="alan"><div id="bosAlan" class="bosalan"><b>Çalışma alanı boş</b><span>Her ses kendi penceresinde açılır. <u>Yeni pencere</u> açın, kırmızı <u>kayıt</u> düğmesiyle mikrofondan alın ya da <u>Dosya yükle…</u> deyin. Dosyayı buraya sürükleyip de bırakabilirsiniz.</span></div></div></section>
  <section id="p-oto" class="panel">
-  <div class="otoKutu">
-   <h2>Otomatik hazırla</h2>
-   <p class="sol">Sesinizi seçin, müziği seçin, bir tuşa basın. Temizlik, ton, müzik karışımı ve ses seviyesi kendiliğinden ayarlanır.</p>
-   <div class="otoSatir"><label>1. Ses</label><select id="otoSes"></select><button class="btn kucuk" id="otoSesAc">Dosya yükle…</button><button class="btn kucuk" id="otoKayit">● Kayıt</button></div>
-   <div class="otoSatir"><label>2. Müzik</label><select id="otoMuzik"></select><button class="btn kucuk" id="otoMuzikAc">Müzik yükle…</button></div>
-   <div class="otoSatir"><label>3. Çıkış</label><select id="hedef"><option value="radyo">Radyo (−11,6 LUFS)</option><option value="tv">Televizyon (−23 LUFS)</option><option value="santral">Santral (8 kHz WAV)</option></select></div>
-   <div class="otoSatir"><button class="btn ana" id="otoBtn">Otomatik hazırla</button><button class="btn" id="yenidenBtn">Yeniden dene</button><span class="tarz" id="tarzAd"></span></div>
-   <div class="sonucKutu"><canvas id="cSonuc"></canvas><div class="bos" id="bosSonuc">Sonuç burada görünür</div></div>
-   <div class="otoSatir"><button class="btn" id="sonucCal">▶ Sonucu dinle</button><button class="btn" id="sonucManuel">Manuel stüdyoda aç</button><button class="btn ana" id="sonucDisa">Dışa aktar…</button><span class="sol" id="sonucBilgi"></span></div>
+  <div class="otoSayfa">
+   <div class="otoSol">
+    <div class="otoBaslik"><h2>Otomatik spot hazırla</h2><p>Sesinizi ve müziğinizi yükleyin, çıkış türünü seçin. Gerisini biz yapalım: gürültüyü temizler, sesi dengeler, müziği sesin altına oturtur, doğru ses seviyesinde dosyayı hazırlar.</p></div>
+    <div class="adim"><h3><span>1</span> Sesiniz</h3>
+     <div class="birakAlan" id="dzSes"><b>Ses dosyanızı buraya sürükleyip bırakın</b><small>MP3, WAV, M4A ve video dosyaları</small>
+      <div class="btnler"><button class="btn ana" id="otoSesAc">Dosya yükle…</button><button class="btn" id="otoKayit">● Mikrofonla kayıt al</button></div></div>
+     <select id="otoSes" aria-label="Kullanılacak ses"></select></div>
+    <div class="adim"><h3><span>2</span> Müzik <em>(isteğe bağlı)</em></h3>
+     <div class="birakAlan" id="dzMuzik"><b>Müzik dosyanızı buraya sürükleyip bırakın</b><small>Ya da aşağıdan müzik bankasından seçin</small>
+      <div class="btnler"><button class="btn ana" id="otoMuzikAc">Dosya yükle…</button></div></div>
+     <select id="otoMuzik" aria-label="Kullanılacak müzik"></select></div>
+    <div class="adim"><h3><span>3</span> Çıkış türü</h3>
+     <div class="kartlar" id="hedefKart">
+      <button data-h="radyo" class="secili"><b>Radyo</b><small>Yayına hazır, −11,6 LUFS, MP3</small></button>
+      <button data-h="tv"><b>Televizyon</b><small>Yayın standardı, −23 LUFS</small></button>
+      <button data-h="santral"><b>Santral</b><small>Telefon anonsu, 8 kHz WAV</small></button></div>
+     <select id="hedef" hidden><option value="radyo">Radyo</option><option value="tv">Televizyon</option><option value="santral">Santral</option></select></div>
+    <div class="adim bize"><h3><span>4</span> Sesiniz yok mu? <em>Biz seslendirelim</em></h3>
+     <textarea id="bizeMetin" rows="4" placeholder="Spot metninizi buraya yazın. Profesyonel seslendirmenlerimiz okusun, biz hazırlayıp size gönderelim."></textarea>
+     <div class="btnler"><button class="btn" id="bizeGonder" disabled title="Çok yakında">Metni gönder · çok yakında</button></div></div>
+   </div>
+   <div class="otoSag">
+    <div class="sonucUst"><h3>Sonuç</h3><span class="tarz" id="tarzAd"></span></div>
+    <div class="sonucKutu"><canvas id="cSonuc"></canvas><div class="bos" id="bosSonuc">Sonuç burada görünür</div></div>
+    <div class="sonucEylem"><button class="btn ana buyuk" id="otoBtn">Otomatik hazırla</button><button class="btn buyuk" id="yenidenBtn">Başka bir tarz dene</button></div>
+    <div class="sonucEylem"><button class="btn" id="sonucCal">▶ Sonucu dinle</button><button class="btn" id="sonucManuel">Manuel stüdyoda düzenle</button><button class="btn ana" id="sonucDisa">Dışa aktar…</button></div>
+    <div class="sol" id="sonucBilgi"></div>
+   </div>
   </div>
  </section>
  <section id="p-ses" class="panel"><div class="bankaKutu"><h2>Ses bankası</h2><p class="sol">Seslendirmenlerin örnek sesleri. Dinleyebilirsiniz. Bir sesle spot yaptırmak için “Bize gönder” siparişi verilir; bu sesler doğrudan stüdyoya alınmaz.</p><div id="sesListe" class="liste"></div></div></section>
@@ -52,5 +71,5 @@
 </div>
 <div class="durum" hidden><span>Pencere: <b id="dPen">—</b></span><span>Seçim: <b id="dSecim">yok</b></span><span>Ses: <b id="dSes">—</b></span></div>
 <input type="file" id="dosyaSes" accept="audio/*,video/*" hidden><input type="file" id="dosyaMuzik" accept="audio/*" hidden>
-<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/ortak.js"></script><script src="js/motor.js?v=5"></script><script src="js/araclar.js?v=5"></script><script src="js/studyo.js?v=5"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/ortak.js"></script><script src="js/motor.js?v=8"></script><script src="js/araclar.js?v=8"></script><script src="js/studyo.js?v=8"></script>
 </body></html>

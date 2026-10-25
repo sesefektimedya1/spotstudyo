@@ -212,3 +212,12 @@ body.st .ust nav a,body.st .sag{font-size:13px}
 .alanlar b{font-family:'Barlow Condensed',monospace;font-size:13px;color:#3dff85;font-weight:500;letter-spacing:.04em}
 .alan{overflow-y:auto}
 .bankaKutu,.otoKutu,.otoSayfa{padding-left:72px;padding-right:72px}
+
+.bankaKutu,.otoKutu,.otoSayfa{padding-left:110px;padding-right:110px}
+/* dar ekranlarda araç çubuğu taşmasın */
+.aracSol{overflow:hidden}
+.sira{flex-wrap:wrap;justify-content:flex-start;row-gap:2px}
+.grup{flex:none}
+.aracSag{width:300px}
+.alanlar{display:none}
+@media(min-width:1420px){.aracSag{width:370px}.alanlar{display:flex}.sira{flex-wrap:nowrap;justify-content:space-between}}

@@ -52,3 +52,4 @@ body.st{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 .acilir button small{color:var(--sol);font-size:12px;font-weight:400}
 .acilir{min-width:340px}
 .serit .et.secili{background:rgba(200,162,76,.22)}
+.serit.birak{outline:2px dashed var(--pirinc);outline-offset:-3px;background:rgba(200,162,76,.08)}

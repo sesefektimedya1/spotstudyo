@@ -490,8 +490,16 @@
   $('#sesAc').onclick = function () { $('#dosyaSes').click(); }; $('#muzikAc').onclick = function () { $('#dosyaMuzik').click(); };
   $('#dosyaSes').onchange = function (e) { if (e.target.files[0]) sesYukle(e.target.files[0]); e.target.value = ''; };
   $('#dosyaMuzik').onchange = function (e) { if (e.target.files[0]) { muzikYukle(e.target.files[0]).then(function () { $('#muzikSec').value = 'ozel'; }); } e.target.value = ''; };
-  document.addEventListener('dragover', function (e) { e.preventDefault(); });
-  document.addEventListener('drop', function (e) { e.preventDefault(); var f = e.dataTransfer.files[0]; if (f) sesYukle(f); });
+  // Sürükle-bırak: SES şeridine bırakılan konuşma, MÜZİK şeridine bırakılan müzik olur; başka yere bırakılan ses olur
+  function hedefSerit(e) { var el = e.target.closest ? e.target.closest('.serit') : null; return el ? (el.classList.contains('muzik') ? 'muzik' : 'ses') : 'ses'; }
+  function bandIsaret(ad) { $$('.serit').forEach(function (e) { e.classList.toggle('birak', !!ad && e.classList.contains(ad)); }); }
+  document.addEventListener('dragover', function (e) { e.preventDefault(); bandIsaret(hedefSerit(e)); });
+  document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) bandIsaret(null); });
+  document.addEventListener('drop', function (e) {
+    e.preventDefault(); var ad = hedefSerit(e); bandIsaret(null);
+    var f = e.dataTransfer && e.dataTransfer.files[0]; if (!f) return;
+    if (ad === 'muzik') { muzikYukle(f).then(function () { $('#muzikSec').value = 'ozel'; }); } else sesYukle(f);
+  });
   document.addEventListener('keydown', function (e) {
     var t = e.target.tagName; if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
     if (document.querySelector('.perde')) return;

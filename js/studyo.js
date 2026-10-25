@@ -900,9 +900,16 @@
     S.tab = t; $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
     ['#menu', '#arac', '.durum'].forEach(function (q) { $(q).style.display = t === 'manuel' ? '' : 'none'; });
     if (t === 'manuel' && window.matchMedia && window.matchMedia('(max-width:820px)').matches && !S.mobUyari) { S.mobUyari = 1; toast('Manuel stüdyo bilgisayarda daha rahat kullanılır. Telefonda Otomatik sekmesini öneririz.'); }
+    $$('#altSekme [data-t]').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); });
     if (t === 'manuel') guncelle(); if (t === 'oto') { otoListeleri(); sonucCiz(); } if (t === 'yz') yzDurum();
   }
   $$('#sekmeler button').forEach(function (b) { b.onclick = function () { sekme(b.dataset.t); }; });
+  (function () {
+    var b = document.createElement('nav'); b.id = 'altSekme'; b.setAttribute('aria-label', 'Ana menü');
+    b.innerHTML = '<button data-t="oto"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 8v8M17 7v10M3 11v2M21 11v2"/></svg>Otomatik</button><button data-t="yz"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg>Yapay zeka</button><button data-t="bize"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>Bize gönder</button><a href="panel"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4-6 8-6s7 2 8 6"/></svg>Panelim</a>';
+    document.body.appendChild(b);
+    $$('#altSekme [data-t]').forEach(function (x) { x.onclick = function () { sekme(x.dataset.t); }; });
+  })();
 
   /* ---------- Menüler ---------- */
   /* ---------- Yeni efektler, işlemler, favoriler ---------- */

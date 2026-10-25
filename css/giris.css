@@ -1,0 +1,53 @@
+/* Ana sayfa: beyaz, sade, kurumsal */
+body.acikSayfa{--bg:#fff;--y1:#fff;--y2:#f5f6f8;--y3:#f0f1f4;--cizgi:#e4e6eb;--yazi:#0e1116;--sol:#5d6572;--pirinc:#0e1116;--pirinc2:#0e1116;--kirmizi:#e0452f;
+ background:#fff;color:#0e1116;font:15px/1.6 'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:-.003em;color-scheme:light}
+body.acikSayfa a{color:#0e1116;text-decoration:underline;text-decoration-color:#b9bec7;text-underline-offset:3px}
+body.acikSayfa a:hover{text-decoration-color:#0e1116}
+body.acikSayfa h1,body.acikSayfa h2,body.acikSayfa h3{font-family:'Inter',system-ui,sans-serif;font-weight:600;letter-spacing:-.025em;line-height:1.12}
+/* üst çubuk */
+body.acikSayfa .ust{background:#fff;border-bottom:1px solid #eceef2;padding:.85rem 1.6rem}
+body.acikSayfa .logo{font-family:'Inter',system-ui,sans-serif;font-size:1.08rem;letter-spacing:-.02em;text-decoration:none;color:#0e1116}
+body.acikSayfa .logo b{font-weight:650}.body .logo span{opacity:.5}
+body.acikSayfa .logo span{font-weight:450;opacity:.5}
+body.acikSayfa .ust nav a{color:#5d6572;text-decoration:none;font-size:14px}
+body.acikSayfa .ust nav a:hover,body.acikSayfa .ust nav a.acik{color:#0e1116}
+body.acikSayfa .sag{color:#5d6572}
+body.acikSayfa .dilSec{border-color:#dfe2e8;border-radius:8px}
+body.acikSayfa .dilSec button{color:#5d6572;font-weight:500}
+body.acikSayfa .dilSec button.acik{background:#0e1116;color:#fff}
+body.acikSayfa .btn{background:#fff;border:1px solid #dfe2e8;color:#0e1116;border-radius:9px;padding:.45rem .9rem;font-weight:500;text-decoration:none}
+body.acikSayfa .btn:hover{background:#f5f6f8;border-color:#c9ced6}
+body.acikSayfa .btn.ana{background:#0e1116;border-color:#0e1116;color:#fff}
+body.acikSayfa .btn.ana:hover{background:#2a2f38}
+/* ilk ekran */
+body.acikSayfa .kahraman{max-width:1160px;grid-template-columns:1.1fr .9fr;gap:5rem;padding:5.5rem 1.6rem 3rem;align-items:center}
+body.acikSayfa .kahraman h1{font-size:clamp(2.3rem,4.4vw,3.5rem);font-weight:600;letter-spacing:-.035em;line-height:1.08;margin-bottom:1.1rem;max-width:14em}
+body.acikSayfa .kahraman p.alt{color:#5d6572;font-size:1.06rem;line-height:1.65;max-width:31em}
+body.acikSayfa .konsol{background:#f7f8fa!important;border:1px solid #eceef2!important;border-radius:14px!important;padding:1.1rem 1.2rem!important}
+body.acikSayfa .konsol svg rect{fill:#0e1116}
+body.acikSayfa .konsol svg line:first-of-type{stroke:#dfe2e8}
+/* giriş kartı */
+body.acikSayfa .giris-kutu{max-width:400px;width:100%;justify-self:end;background:#fff;border:1px solid #e4e6eb;border-radius:18px;padding:2.2rem 2rem 1.8rem;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12)}
+body.acikSayfa .gbaslik{font-size:1.55rem;font-weight:600;letter-spacing:-.03em;margin-bottom:.3rem}
+body.acikSayfa .galt{color:#5d6572;font-size:14.5px;margin-bottom:1.6rem}
+body.acikSayfa .giris-kutu label{font-size:13px;font-weight:500;color:#2a2f38;margin-bottom:.35rem}
+body.acikSayfa .giris-kutu input{background:#fff;border:1px solid #d9dce2;border-radius:10px;padding:.72rem .85rem;font-size:15px;color:#0e1116;transition:border-color .15s,box-shadow .15s}
+body.acikSayfa .giris-kutu input::placeholder{color:#a3a9b4}
+body.acikSayfa .giris-kutu input:focus{border-color:#0e1116;box-shadow:0 0 0 3px rgba(14,17,22,.08);outline:none}
+body.acikSayfa .goz{color:#5d6572;font-weight:500}.body .goz:hover{background:#f0f1f4}
+body.acikSayfa .goz:hover{background:#f0f1f4;color:#0e1116}
+body.acikSayfa .gonder{background:#0e1116;border:1px solid #0e1116;color:#fff;border-radius:10px;padding:.78rem;font-size:15px;font-weight:500;margin-top:.3rem}
+body.acikSayfa .gonder:hover{background:#2a2f38}
+body.acikSayfa .gdeg{color:#5d6572;font-size:14px;margin-top:1.2rem}
+body.acikSayfa .gdeg a{color:#0e1116;font-weight:500}
+body.acikSayfa .gnot{color:#8a919c;font-size:12.5px;margin-top:.9rem;line-height:1.5}
+body.acikSayfa .hata{color:#c8321d}
+/* üç kapı */
+body.acikSayfa .kapilar{max-width:1160px;padding:2rem 1.6rem 5rem}
+body.acikSayfa .kapilar .izgara{gap:2.5rem}
+body.acikSayfa .kart.kapi{background:transparent;border:0;border-top:1px solid #e4e6eb;border-radius:0;padding:1.3rem 0 0;box-shadow:none}
+body.acikSayfa .kapi h3{font-size:1.1rem;font-weight:600;letter-spacing:-.02em;margin-bottom:.45rem}
+body.acikSayfa .kapi p{color:#5d6572;font-size:14.5px;line-height:1.65}
+body.acikSayfa .yakinda{opacity:.55}
+body.acikSayfa #toast{background:#0e1116;color:#fff;border-color:#0e1116}
+@media(max-width:860px){body.acikSayfa .kahraman{grid-template-columns:1fr;gap:2.5rem;padding-top:2.5rem}body.acikSayfa .giris-kutu{justify-self:stretch;max-width:none}}

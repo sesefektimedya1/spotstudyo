@@ -3,36 +3,40 @@
   var d = await Veri.hakDurumu(), lim = d.limit > 0 ? d.limit : 'sınırsız';
   var AY = await Veri.ayarlar();
   $('#ozet').innerHTML =
-    '<div class="kart"><div class="sol">Üyelik</div><div class="sayi" style="font-size:2rem">' + Veri.planAd(o.plan) + '</div>' + (o.plan_bitis ? '<div class="sol">Bitiş: ' + esc(o.plan_bitis) + '</div>' : '') + '</div>' +
+    '<div class="kart"><div class="sol">Üyelik</div><div class="sayi" style="font-size:2rem">' + (Veri.isPro(o.plan) ? Veri.planAd(o.plan) : Veri.planAd('ucretsiz') + ' plan') + '</div>' + (o.plan_bitis ? '<div class="sol">Bitiş: ' + esc(o.plan_bitis) + '</div>' : '') + '</div>' +
     '<div class="kart"><div class="sol">Bu ay indirme</div><div class="sayi">' + d.kullanilan + ' / ' + lim + '</div></div>' +
     '<div class="kart"><div class="sol">Hesap</div><div style="margin-top:.4rem">' + esc(o.email) + '</div></div>' +
     '<div class="kart"><a class="btn ana" href="studyo">Yeni spot yap</a></div>';
 
   /* Paketler ve başvuru */
   var tl = function (n) { return Number(n).toLocaleString('tr-TR') + ' TL'; };
+  function maddeler(md, varsayilan) { var L = (md || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); return L.length ? L : varsayilan; }
   var PK = [
-    { k: 'ucretsiz', ad: 'Ücretsiz', fy: '0 TL', md: ['Ayda ' + AY.ucretsiz_indirme_limiti + ' MP3 indirme', 'Otomatik ve manuel stüdyo', 'Bize gönder (seslendirme siparişi)'] },
-    { k: 'pro_aylik', ad: 'Pro Aylık', fy: tl(AY.pro_aylik_fiyat) + ' / ay', md: ['Ayda ' + AY.pro_aylik_limit + ' MP3 indirme', 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)', 'Bize gönder (seslendirme siparişi)'] },
-    { k: 'pro_yillik', ad: 'Pro Yıllık', fy: tl(AY.pro_yillik_fiyat) + ' / yıl', md: ['Ayda ' + AY.pro_yillik_limit + ' MP3 indirme', 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)', 'Bize gönder (seslendirme siparişi)'] }
+    { k: 'ucretsiz', ad: AY.paket_ucretsiz_ad, fy: '0 TL', md: maddeler(AY.paket_ucretsiz_md, ['Ayda ' + AY.ucretsiz_indirme_limiti + ' MP3 indirme', 'Otomatik ve manuel stüdyo', 'Bize gönder (seslendirme siparişi)']) },
+    { k: 'pro_aylik', ad: AY.paket_aylik_ad, fy: tl(AY.pro_aylik_fiyat) + ' / ay', md: maddeler(AY.paket_aylik_md, [(+AY.pro_aylik_limit ? 'Ayda ' + AY.pro_aylik_limit + ' MP3 indirme' : 'Sınırsız MP3 indirme'), 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)', 'Bize gönder (seslendirme siparişi)']) },
+    { k: 'pro_yillik', ad: AY.paket_yillik_ad, fy: tl(AY.pro_yillik_fiyat) + ' / yıl', md: maddeler(AY.paket_yillik_md, [(+AY.pro_yillik_limit ? 'Ayda ' + AY.pro_yillik_limit + ' MP3 indirme' : 'Sınırsız MP3 indirme'), 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)', 'Bize gönder (seslendirme siparişi)']) }
   ];
   var DB = { beklemede: 'Onay bekliyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
+  function odemeKutusu(b) {
+    var kod = Veri.basvuruKod(b), banka = AY.banka_adi, iban = AY.iban, sahip = AY.hesap_sahibi;
+    var wa = 'https://wa.me/' + (AY.whatsapp || '905331509890') + '?text=' + encodeURIComponent('Merhaba, ' + Veri.planAd(b.paket) + ' için ödeme yaptım. Başvuru kodum: ' + kod + ' (' + o.email + ')');
+    var bilgi = (banka || iban) ? '<table class="odT"><tr><td class="sol">Tutar</td><td><b>' + tl(b.fiyat_tl) + '</b></td></tr><tr><td class="sol">Banka</td><td>' + esc(banka || '—') + '</td></tr><tr><td class="sol">Hesap sahibi</td><td>' + esc(sahip || '—') + '</td></tr><tr><td class="sol">IBAN</td><td><b id="ibanMetin">' + esc(iban || '—') + '</b> <button class="btn kucuk" id="ibanKopya">Kopyala</button></td></tr><tr><td class="sol">Havale açıklaması</td><td><b>' + kod + '</b> <span class="sol">(bu kodu açıklamaya yazın)</span></td></tr></table>' : '<div class="sol" style="margin:.5rem 0">Ödeme bilgileri için WhatsApp’tan bize yazın. Başvuru kodunuz: <b>' + kod + '</b></div>';
+    return '<div class="pkNot"><b>Başvurunuz alındı: ' + esc(Veri.planAd(b.paket)) + '</b>' + bilgi + (AY.odeme_notu ? '<div class="sol" style="margin:.4rem 0">' + esc(AY.odeme_notu) + '</div>' : '') + '<div class="sol" style="margin:.4rem 0">Ödemeyi yaptıktan sonra aşağıdaki düğmeyle bize haber verin. Ödemeyi gördüğümüzde paketiniz açılır.</div><a class="btn ana kucuk" target="_blank" rel="noopener" href="' + wa + '">Ödemeyi yaptım, WhatsApp’tan haber ver</a></div>';
+  }
   async function paketCiz() {
-    var B = await Veri.basvurularim().catch(function () { return []; }), bekleyen = B.some(function (x) { return x.durum === 'beklemede'; });
+    var B = await Veri.basvurularim().catch(function () { return []; }), bekleyen = B.filter(function (x) { return x.durum === 'beklemede'; })[0];
     var mevcut = Veri.isPro(o.plan) ? o.plan : 'ucretsiz';
     $('#paketler').innerHTML = PK.map(function (x) {
       var btn = x.k === 'ucretsiz' ? '' : (x.k === mevcut ? '<button class="btn" disabled>Mevcut paketiniz</button>' : '<button class="btn ana" data-pk="' + x.k + '"' + (bekleyen ? ' disabled' : '') + '>' + (Veri.isPro(o.plan) ? 'Bu pakete geç' : 'Pro için başvur') + '</button>');
-      return '<div class="pk' + (x.k === mevcut ? ' mevcut' : '') + '"><h3>' + x.ad + '</h3><div class="fy">' + x.fy + '</div><ul>' + x.md.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>' + (x.k === 'ucretsiz' && mevcut === 'ucretsiz' ? '<button class="btn" disabled>Mevcut paketiniz</button>' : btn) + '</div>';
+      return '<div class="pk' + (x.k === mevcut ? ' mevcut' : '') + '"><h3>' + esc(x.ad) + '</h3><div class="fy">' + x.fy + '</div><ul>' + x.md.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>' + (x.k === 'ucretsiz' && mevcut === 'ucretsiz' ? '<button class="btn" disabled>Mevcut paketiniz</button>' : btn) + '</div>';
     }).join('');
-    $('#basvurular').innerHTML = B.length ? '<table><tr><th>Başvuru tarihi</th><th>Paket</th><th>Tutar</th><th>Durum</th></tr>' + B.map(function (x) { return '<tr><td>' + new Date(x.created_at).toLocaleString('tr-TR') + '</td><td>' + esc(Veri.planAd(x.paket)) + '</td><td>' + tl(x.fiyat_tl) + '</td><td><span class="etiket' + (x.durum === 'onaylandi' ? ' p' : '') + '">' + DB[x.durum] + '</span></td></tr>'; }).join('') + '</table>' : '';
+    $('#pkMesaj').innerHTML = bekleyen ? odemeKutusu(bekleyen) : '';
+    var kb = $('#ibanKopya'); if (kb) kb.onclick = function () { try { navigator.clipboard.writeText($('#ibanMetin').textContent.replace(/\s/g, '')); toast('IBAN kopyalandı'); } catch (e) { toast('Kopyalanamadı'); } };
+    $('#basvurular').innerHTML = B.length ? '<table><tr><th>Başvuru tarihi</th><th>Kod</th><th>Paket</th><th>Tutar</th><th>Durum</th></tr>' + B.map(function (x) { return '<tr><td>' + new Date(x.created_at).toLocaleString('tr-TR') + '</td><td>' + Veri.basvuruKod(x) + '</td><td>' + esc(Veri.planAd(x.paket)) + '</td><td>' + tl(x.fiyat_tl) + '</td><td><span class="etiket' + (x.durum === 'onaylandi' ? ' p' : '') + '">' + DB[x.durum] + '</span></td></tr>'; }).join('') + '</table>' : '';
     $$('[data-pk]').forEach(function (b) {
       b.onclick = async function () {
         b.disabled = true;
-        try {
-          await Veri.basvuruYap(b.dataset.pk);
-          var wa = 'https://wa.me/' + (AY.whatsapp || '905331509890') + '?text=' + encodeURIComponent('Merhaba, ' + Veri.planAd(b.dataset.pk) + ' paketine başvurdum. Ödeme bilgisini alabilir miyim? (' + o.email + ')');
-          $('#pkMesaj').innerHTML = '<div class="pkNot"><b>Başvurunuz alındı.</b> Ödeme bilgisi için bize WhatsApp’tan yazın; ödemeyi gördüğümüzde paketiniz açılır. <a class="btn kucuk ana" target="_blank" rel="noopener" href="' + wa + '">WhatsApp’tan yaz</a></div>';
-          paketCiz();
-        } catch (e) { toast(e.message); b.disabled = false; }
+        try { await Veri.basvuruYap(b.dataset.pk); paketCiz(); } catch (e) { toast(e.message); b.disabled = false; }
       };
     });
   }

@@ -27,6 +27,7 @@
     };
   };
   window.ustCubuk = async function (aktif, oturum) {
+    try { await Veri.ayarlar(); } catch (e) {}
     if (!Veri.isPro) Veri.isPro = function (p) { return !!p && p !== 'ucretsiz'; };
     if (!Veri.planAd) Veri.planAd = function (p) { return ({ ucretsiz: 'Ücretsiz plan', pro_aylik: 'Pro Aylık', pro_yillik: 'Pro Yıllık', premium: 'Pro Aylık' })[p] || 'Ücretsiz plan'; };
     var h = '';
@@ -40,7 +41,7 @@
     h += '<div class="dilSec" role="group" aria-label="Dil / Language"><button data-dil="tr" class="' + (window.DIL !== 'en' ? 'acik' : '') + '">TR</button><button data-dil="en" class="' + (window.DIL === 'en' ? 'acik' : '') + '">EN</button></div>';
     if (oturum) {
       var d = await Veri.hakDurumu(), lim = d.limit > 0 ? d.limit : '∞';
-      h += '<span class="plan' + (Veri.isPro(oturum.plan) ? ' pr' : '') + '">' + Veri.planAd(oturum.plan) + '</span>';
+      h += '<span class="plan' + (Veri.isPro(oturum.plan) ? ' pr' : '') + '">' + (Veri.isPro(oturum.plan) ? Veri.planAd(oturum.plan) : Veri.planAd('ucretsiz') + ' plan') + '</span>';
       h += '<span class="kota" title="Bu ayki MP3 indirme hakkınız">Bu ay ' + d.kullanilan + ' / ' + lim + ' indirme</span>';
       h += '<button class="gbBtn" id="gbBtn" title="Bize görüşlerinizi yazın">Geri bildirim</button>';
       if (aktif === 'studyo') h += '<button class="ustDisa" id="ustDisa" title="MP3, WAV ya da santral dosyası olarak dışa aktar (Ctrl+E)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v3h16v-3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dışa aktar</button>';

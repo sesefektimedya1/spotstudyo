@@ -29,6 +29,29 @@
 
   /* Telefona kurulum: yalnızca dar ekranda ve uygulama olarak açılmamışsa görünür */
   (function () {
+    /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
+    (function () {
+      var SURUM = 52, gosterildi = false;
+      function serit() {
+        if (gosterildi || document.getElementById('yeniSurum')) return; gosterildi = true;
+        var d = document.createElement('div'); d.id = 'yeniSurum';
+        d.style.cssText = 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:99999;background:#e03a2c;color:#fff;font:600 15px/1.2 system-ui,sans-serif;padding:11px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer;max-width:92vw;text-align:center';
+        d.textContent = 'Yeni sürüm hazır. Yenilemek için dokunun';
+        d.onclick = async function () {
+          d.textContent = 'Yenileniyor…';
+          try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) {}
+          try { if (navigator.serviceWorker) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.update(); })); } } catch (e) {}
+          var u = new URL(location.href); u.searchParams.set('y', Date.now()); location.replace(u.toString());
+        };
+        document.body.appendChild(d);
+      }
+      function kontrol() {
+        if (location.protocol === 'file:') return;
+        fetch('surum.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && +j.v > SURUM) serit(); }).catch(function () {});
+      }
+      kontrol(); setInterval(kontrol, 120000);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) kontrol(); });
+    })();
     try { if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
     var kurulu = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
     var dar = window.matchMedia && window.matchMedia('(max-width:820px)').matches;

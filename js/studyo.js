@@ -852,7 +852,7 @@
       } catch (x) {}
       var wa = 'Merhaba, yeni spot siparişi.\nAd: ' + ad + '\nTelefon: ' + tel + '\nSeslendirmen: ' + (sip.ses_adi || '-') + '\nMüzik: ' + (sip.muzik_adi || '-') + '\nÇıkış: ' + sip.tur + '\nMetin: ' + metin;
       kut.style.display = 'block';
-      kut.innerHTML = '<b>Siparişiniz alındı.</b> Hazır dosyayı <a href="panel.html">Panelim</a> sayfasında “Siparişlerim” bölümünden indirebilirsiniz.' + (eposta ? '' : '<div class="sol">E-posta bildirimi şu an gönderilemedi, siparişiniz sistemde kayıtlı.</div>') + '<div style="margin-top:.6rem"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/905331509890?text=' + encodeURIComponent(wa) + '">WhatsApp’tan da haber ver</a></div>';
+      kut.innerHTML = '<b>Siparişiniz alındı.</b> Hazır dosyayı <a href="panel">Panelim</a> sayfasında “Siparişlerim” bölümünden indirebilirsiniz.' + (eposta ? '' : '<div class="sol">E-posta bildirimi şu an gönderilemedi, siparişiniz sistemde kayıtlı.</div>') + '<div style="margin-top:.6rem"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/905331509890?text=' + encodeURIComponent(wa) + '">WhatsApp’tan da haber ver</a></div>';
       toast('Sipariş gönderildi');
     } catch (er) { hata(er); }
     btn.disabled = false; btn.textContent = 'Siparişi gönder';
@@ -957,7 +957,7 @@
       '-',
       ['Dışa aktar…', 'Ctrl+E', I.disa, 'MP3, WAV ya da santral dosyası olarak hazırlar (MP3 ve santral indirme hakkından düşer)'],
       '-',
-      ['Panelime dön', '', function () { location.href = 'panel.html'; }, '']]],
+      ['Panelime dön', '', function () { location.href = 'panel'; }, '']]],
     ['Düzen', [
       ['Geri al', 'Ctrl+Z', I.geri, 'Pencerede son işlemi geri al'],
       ['Yinele', 'Ctrl+Y', I.yinele, 'Geri alınanı tekrar yap'],
@@ -1278,7 +1278,7 @@
   var YZ = { mesajlar: [], mesgul: false };
   async function yzDurum() {
     var o = null; try { o = await Veri.oturum(); } catch (e) {}
-    var acik = !!o && (o.role === 'admin' || o.plan === 'premium');
+    var acik = !!o && (o.role === 'admin' || Veri.isPro(o.plan));
     $('#yzKilit').style.display = acik ? 'none' : 'flex'; $('#yzSohbet').style.display = acik ? 'flex' : 'none';
   }
   function yzCiz() {

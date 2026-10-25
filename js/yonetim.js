@@ -2,11 +2,28 @@
   var o = await korumali('yonetim', true); if (!o) return;
   var ic = $('#icerik'), SAYFA = 25, durum = { sayfa: 0, ara: '', plan: '' };
   $$('#sekme button').forEach(function (b) { b.onclick = function () { $$('#sekme button').forEach(function (x) { x.classList.remove('acik'); }); b.classList.add('acik'); ac(b.dataset.s); }; });
-  function ac(s) { ({ ozet: ozet, siparis: siparis, geri: geri, uyeler: uyeler, sesler: kutuphane.bind(null, 'sesler'), muzikler: kutuphane.bind(null, 'muzikler'), ayar: ayar })[s](); }
+  function ac(s) { ({ ozet: ozet, basvuru: basvuru, siparis: siparis, geri: geri, uyeler: uyeler, sesler: kutuphane.bind(null, 'sesler'), muzikler: kutuphane.bind(null, 'muzikler'), ayar: ayar })[s](); }
 
+  function tl(n) { return Number(n || 0).toLocaleString('tr-TR') + ' TL'; }
+  async function rozet() { try { var z = await Veri.ozet(); var r = $('#bkRozet'); if (r) r.innerHTML = z.bekleyen > 0 ? '<span class="etiket p">' + z.bekleyen + '</span>' : ''; return z; } catch (e) { return null; } }
   async function ozet() {
-    var z = await Veri.ozet();
-    ic.innerHTML = '<div class="izgara g4">' + [['Toplam üye', z.uye], ['Premium üye', z.premium], ['Bu ay indirme', z.bu_ay], ['Seslendirme kaydı', z.ses], ['Müzik', z.muzik]].map(function (a) { return '<div class="kart"><div class="sol">' + a[0] + '</div><div class="sayi">' + a[1] + '</div></div>'; }).join('') + '</div>';
+    var z = await Veri.ozet(); rozet();
+    ic.innerHTML = '<div class="izgara g4">' + [['Toplam üye', z.uye], ['Pro üye', z.premium], ['Onay bekleyen başvuru', z.bekleyen || 0], ['Bu ay indirme', z.bu_ay], ['Seslendirme kaydı', z.ses], ['Müzik', z.muzik]].map(function (a) { return '<div class="kart"><div class="sol">' + a[0] + '</div><div class="sayi">' + a[1] + '</div></div>'; }).join('') + '</div>';
+  }
+
+  async function basvuru() {
+    var L = await Veri.basvuruTum(), bek = L.filter(function (x) { return x.durum === 'beklemede'; }), gec = L.filter(function (x) { return x.durum !== 'beklemede'; });
+    var DB = { onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
+    ic.innerHTML = '<div class="kart"><h3 style="font-size:1.3rem;margin-bottom:.7rem">Onay bekleyenler (' + bek.length + ')</h3>' + (bek.length ? bek.map(function (x) {
+      return '<div class="bvSatir" data-id="' + x.id + '" style="padding:.8rem 0;border-bottom:1px solid var(--cizgi);display:flex;gap:1rem;flex-wrap:wrap;align-items:center"><div style="min-width:220px"><b>' + esc(x.ad || '') + '</b><div class="sol" style="font-size:13px">' + esc(x.eposta || '') + ' · ' + esc(x.telefon || 'telefon yok') + '</div></div><span class="etiket p">' + esc(Veri.planAd(x.paket)) + '</span><b>' + tl(x.fiyat_tl) + '</b><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span><span style="margin-left:auto;display:flex;gap:.5rem"><button class="btn ana kucuk ok">Ödeme geldi, onayla</button><button class="btn kucuk red">Reddet</button></span></div>';
+    }).join('') : '<span class="sol">Bekleyen başvuru yok.</span>') + '</div>' +
+    '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.7rem">Paket geçmişi</h3>' + (gec.length ? '<div style="overflow-x:auto"><table><tr><th>Başvuru</th><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Paket</th><th>Tutar</th><th>Sonuç</th><th>İşlem tarihi</th></tr>' + gec.map(function (x) {
+      return '<tr><td>' + new Date(x.created_at).toLocaleDateString('tr-TR') + '</td><td>' + esc(x.ad || '') + '</td><td>' + esc(x.eposta || '') + '</td><td>' + esc(x.telefon || '') + '</td><td>' + esc(Veri.planAd(x.paket)) + '</td><td>' + tl(x.fiyat_tl) + '</td><td><span class="etiket' + (x.durum === 'onaylandi' ? ' p' : '') + '">' + DB[x.durum] + '</span></td><td>' + (x.islem_tarihi ? new Date(x.islem_tarihi).toLocaleDateString('tr-TR') : '') + '</td></tr>';
+    }).join('') + '</table></div>' : '<span class="sol">Henüz işlem yok.</span>') + '</div>';
+    $$('.bvSatir', ic).forEach(function (tr) {
+      async function karar(onay) { if (!confirm(onay ? 'Ödeme geldi, paket açılsın mı?' : 'Başvuru reddedilsin mi?')) return; try { await Veri.basvuruKarar(tr.dataset.id, onay); toast(onay ? 'Paket açıldı' : 'Reddedildi'); basvuru(); rozet(); } catch (e) { toast(e.message); } }
+      tr.querySelector('.ok').onclick = function () { karar(true); }; tr.querySelector('.red').onclick = function () { karar(false); };
+    });
   }
 
   async function siparis() {
@@ -30,7 +47,7 @@
   }
 
   async function uyeler() {
-    ic.innerHTML = '<div class="kart"><div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap"><input type="search" id="ara" placeholder="Ad veya e-posta ara" style="max-width:300px" value="' + esc(durum.ara) + '"><select id="pf" style="max-width:180px"><option value="">Tüm üyelikler</option><option value="ucretsiz">Ücretsiz</option><option value="premium">Premium</option></select></div><div id="tab">Yükleniyor…</div></div>';
+    ic.innerHTML = '<div class="kart"><div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap"><input type="search" id="ara" placeholder="Ad, e-posta ya da telefon ara" style="max-width:300px" value="' + esc(durum.ara) + '"><select id="pf" style="max-width:180px"><option value="">Tüm paketler</option><option value="ucretsiz">Ücretsiz</option><option value="pro_aylik">Pro Aylık</option><option value="pro_yillik">Pro Yıllık</option></select></div><div id="tab"></div></div>';
     $('#pf').value = durum.plan;
     var zm; $('#ara').oninput = function () { clearTimeout(zm); zm = setTimeout(function () { durum.ara = $('#ara').value.trim(); durum.sayfa = 0; yukle(); }, 300); };
     $('#pf').onchange = function () { durum.plan = $('#pf').value; durum.sayfa = 0; yukle(); };
@@ -38,12 +55,12 @@
   }
   async function yukle() {
     var r = await Veri.uyeler({ ara: durum.ara, plan: durum.plan, sayfa: durum.sayfa, adet: SAYFA }), top = Math.max(1, Math.ceil(r.toplam / SAYFA));
-    $('#tab').innerHTML = '<div style="overflow-x:auto"><table><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th>Üyelik</th><th>Bitiş</th><th>Bu ay</th><th>Kayıt</th></tr>' + r.satirlar.map(function (u) {
-      return '<tr data-id="' + u.id + '"><td>' + esc(u.ad) + '</td><td>' + esc(u.email) + '</td><td><select class="rol"><option value="uye">Üye</option><option value="seslendirmen">Seslendirmen</option><option value="admin">Yönetici</option></select></td>' +
-        '<td><select class="pl"><option value="ucretsiz">Ücretsiz</option><option value="premium">Premium</option></select></td><td><input type="date" class="bt" value="' + (u.plan_bitis || '') + '" style="width:140px"></td><td>' + u.bu_ay_indirme + '</td><td>' + new Date(u.created_at).toLocaleDateString('tr-TR') + '</td></tr>';
+    $('#tab').innerHTML = '<div style="overflow-x:auto"><table><tr><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Kayıt tarihi</th><th>Paket</th><th>Bitiş</th><th>Bu ay</th><th>Rol</th></tr>' + r.satirlar.map(function (u) {
+      return '<tr data-id="' + u.id + '"><td>' + esc(u.ad) + '</td><td>' + esc(u.email) + '</td><td>' + esc(u.telefon || '') + '</td><td>' + new Date(u.created_at).toLocaleDateString('tr-TR') + '</td>' +
+        '<td><select class="pl"><option value="ucretsiz">Ücretsiz</option><option value="pro_aylik">Pro Aylık</option><option value="pro_yillik">Pro Yıllık</option></select></td><td><input type="date" class="bt" value="' + (u.plan_bitis || '') + '" style="width:140px"></td><td>' + u.bu_ay_indirme + '</td><td><select class="rol"><option value="uye">Üye</option><option value="seslendirmen">Seslendirmen</option><option value="admin">Yönetici</option></select></td></tr>';
     }).join('') + '</table></div><div style="display:flex;gap:.8rem;align-items:center;margin-top:1rem"><button class="btn kucuk" id="on" ' + (durum.sayfa === 0 ? 'disabled' : '') + '>Önceki</button><span class="sol">' + r.toplam + ' üye · sayfa ' + (durum.sayfa + 1) + ' / ' + top + '</span><button class="btn kucuk" id="sn" ' + (durum.sayfa + 1 >= top ? 'disabled' : '') + '>Sonraki</button></div>';
     $$('#tab tr[data-id]').forEach(function (tr, i) {
-      var u = r.satirlar[i]; tr.querySelector('.rol').value = u.role; tr.querySelector('.pl').value = u.plan;
+      var u = r.satirlar[i]; tr.querySelector('.rol').value = u.role; tr.querySelector('.pl').value = (u.plan === 'premium' ? 'pro_aylik' : u.plan);
       async function kaydet() { try { await Veri.uyeGuncelle(u.id, { role: tr.querySelector('.rol').value, plan: tr.querySelector('.pl').value, plan_bitis: tr.querySelector('.bt').value || null }); toast('Kaydedildi'); } catch (e) { toast(e.message); } }
       $$('select,input', tr).forEach(function (x) { x.onchange = kaydet; });
     });
@@ -74,8 +91,14 @@
 
   async function ayar() {
     var a = await Veri.ayarlar();
-    ic.innerHTML = '<div class="kart" style="max-width:520px"><h3 style="font-size:1.3rem;margin-bottom:.8rem">Aylık indirme hakkı</h3><label>Ücretsiz üye (ayda MP3 indirme)</label><input type="number" id="a1" min="0" value="' + esc(a.ucretsiz_indirme_limiti) + '"><label style="margin-top:.8rem">Premium üye (0 = sınırsız)</label><input type="number" id="a2" min="0" value="' + esc(a.premium_indirme_limiti) + '"><div style="margin-top:1rem"><button class="btn ana" id="a-k">Kaydet</button></div><p class="sol" style="margin-top:1rem;font-size:13px">Denemeler sınırsızdır. Yalnız MP3 indirme sayılır.</p></div>';
-    $('#a-k').onclick = async function () { await Veri.ayarKaydet('ucretsiz_indirme_limiti', $('#a1').value || 0); await Veri.ayarKaydet('premium_indirme_limiti', $('#a2').value || 0); toast('Kaydedildi'); };
+    function alan(id, et, d, ek) { return '<div><label>' + et + '</label><input type="number" id="' + id + '" min="0" value="' + esc(d) + '">' + (ek ? '<div class="sol" style="font-size:12.5px;margin-top:.2rem">' + ek + '</div>' : '') + '</div>'; }
+    ic.innerHTML = '<div class="kart" style="max-width:720px"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Paketler ve fiyatlar</h3><div class="sol" style="margin-bottom:1rem">Burada yazdığınız rakamlar üyelerin Panelim sayfasında görünür. 0 yazılan indirme limiti “sınırsız” demektir.</div>' +
+      '<div class="izgara g3" style="gap:1rem">' + alan('a1', 'Ücretsiz: ayda indirme', a.ucretsiz_indirme_limiti) + alan('a2', 'Pro Aylık: fiyat (TL / ay)', a.pro_aylik_fiyat) + alan('a3', 'Pro Aylık: ayda indirme', a.pro_aylik_limit) + alan('a4', 'Pro Yıllık: fiyat (TL / yıl)', a.pro_yillik_fiyat) + alan('a5', 'Pro Yıllık: ayda indirme', a.pro_yillik_limit) + alan('a6', 'Yapay zeka: ayda mesaj (Pro)', a.yz_mesaj_limiti, 'Yapay zeka bağlanınca uygulanır') + '</div>' +
+      '<button class="btn ana" id="a-k" style="margin-top:1.2rem">Kaydet</button></div>';
+    $('#a-k').onclick = async function () {
+      var M = { a1: 'ucretsiz_indirme_limiti', a2: 'pro_aylik_fiyat', a3: 'pro_aylik_limit', a4: 'pro_yillik_fiyat', a5: 'pro_yillik_limit', a6: 'yz_mesaj_limiti' };
+      try { for (var k in M) await Veri.ayarKaydet(M[k], $('#' + k).value || 0); toast('Kaydedildi'); } catch (e) { toast(e.message); }
+    };
   }
   ozet();
 })();

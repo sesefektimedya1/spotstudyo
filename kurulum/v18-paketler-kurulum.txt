@@ -1,0 +1,122 @@
+-- Ses Efekti Spot Stüdyo — v18 kurulumu (paketler, telefon, başvuru/onay)
+-- Supabase > SQL Editor > New query > hepsini yapıştırın > RUN.
+-- Güvenle tekrar çalıştırılabilir. Önce bunu çalıştırın, sonra v18 dosyalarını GitHub'a yükleyin.
+
+-- 1) Telefon alanı
+alter table public.profiles add column if not exists telefon text;
+
+-- 2) Paket türleri: ücretsiz / pro_aylik / pro_yillik  (eski "premium" -> pro_aylik)
+alter table public.profiles drop constraint if exists profiles_plan_check;
+update public.profiles set plan='pro_aylik' where plan='premium';
+alter table public.profiles add constraint profiles_plan_check check (plan in ('ucretsiz','pro_aylik','pro_yillik'));
+
+-- 3) Paket ayarları (yönetim panelinden değiştirilir)
+insert into public.ayarlar values
+  ('ucretsiz_indirme_limiti','5'),
+  ('pro_aylik_limit','30'),('pro_yillik_limit','100'),
+  ('pro_aylik_fiyat','1200'),('pro_yillik_fiyat','7500'),
+  ('yz_mesaj_limiti','100'),('whatsapp','905331509890')
+on conflict do nothing;
+
+-- 4) Yeni üye kaydında telefonu da profile yaz
+create or replace function public.yeni_uye() returns trigger language plpgsql security definer set search_path=public as
+$$ begin
+  insert into public.profiles(id,email,ad,telefon)
+  values (new.id,new.email,coalesce(new.raw_user_meta_data->>'ad',split_part(new.email,'@',1)),nullif(new.raw_user_meta_data->>'telefon',''));
+  return new;
+end $$;
+
+-- 5) Paket başvuruları
+create table if not exists public.paket_basvurulari (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  ad text, eposta text, telefon text,
+  paket text not null check (paket in ('pro_aylik','pro_yillik')),
+  fiyat_tl numeric,
+  durum text not null default 'beklemede' check (durum in ('beklemede','onaylandi','reddedildi')),
+  created_at timestamptz not null default now(),
+  islem_tarihi timestamptz
+);
+create unique index if not exists basvuru_tek_bekleyen on public.paket_basvurulari(user_id) where durum='beklemede';
+alter table public.paket_basvurulari enable row level security;
+drop policy if exists b_ekle on public.paket_basvurulari;
+drop policy if exists b_oku on public.paket_basvurulari;
+create policy b_ekle on public.paket_basvurulari for insert to authenticated with check (user_id=auth.uid() and durum='beklemede');
+create policy b_oku on public.paket_basvurulari for select to authenticated using (user_id=auth.uid() or public.is_admin());
+
+-- 6) Yönetici onayı: paketi açar, bitiş tarihini hesaplar (aylık +1 ay, yıllık +1 yıl; süre bitmeden yenilenirse üstüne eklenir)
+create or replace function public.basvuru_karar(p_id uuid, p_onay boolean) returns void
+language plpgsql security definer set search_path=public as $$
+declare b public.paket_basvurulari; mevcut date; baz date;
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  select * into b from public.paket_basvurulari where id=p_id and durum='beklemede';
+  if not found then raise exception 'Başvuru bulunamadı ya da işlenmiş'; end if;
+  if p_onay then
+    select plan_bitis into mevcut from public.profiles where id=b.user_id and plan<>'ucretsiz';
+    baz := greatest(current_date, coalesce(mevcut, current_date));
+    update public.profiles set plan=b.paket,
+      plan_bitis = (case when b.paket='pro_yillik' then baz + interval '1 year' else baz + interval '1 month' end)::date
+    where id=b.user_id;
+  end if;
+  update public.paket_basvurulari set durum = case when p_onay then 'onaylandi' else 'reddedildi' end, islem_tarihi=now() where id=p_id;
+end $$;
+
+-- 7) İndirme hakkı: pakete göre limit (0 = sınırsız), süresi biten Pro ücretsiz sayılır
+create or replace function public.paket_limit(pl text) returns int language sql stable security definer set search_path=public as $$
+  select coalesce((select deger::int from public.ayarlar where anahtar = case pl when 'pro_yillik' then 'pro_yillik_limit' when 'pro_aylik' then 'pro_aylik_limit' else 'ucretsiz_indirme_limiti' end),5)
+$$;
+
+create or replace function public.indirme_hakki_al(p_proje text, p_tur text) returns json
+language plpgsql security definer set search_path=public as $$
+declare pl text; lim int; kul int; bitis date;
+begin
+  if auth.uid() is null then raise exception 'Giriş gerekli'; end if;
+  select plan, plan_bitis into pl, bitis from public.profiles where id=auth.uid();
+  if pl<>'ucretsiz' and bitis is not null and bitis < current_date then pl:='ucretsiz'; end if;
+  lim := public.paket_limit(pl);
+  select count(*) into kul from public.indirmeler where user_id=auth.uid() and created_at >= date_trunc('month', now());
+  if lim > 0 and kul >= lim then return json_build_object('ok',false,'kullanilan',kul,'limit',lim); end if;
+  insert into public.indirmeler(user_id,proje_adi,tur) values (auth.uid(),p_proje,p_tur);
+  return json_build_object('ok',true,'kullanilan',kul+1,'limit',lim);
+end $$;
+
+create or replace function public.indirme_durumu() returns json
+language plpgsql security definer set search_path=public as $$
+declare pl text; lim int; kul int; bitis date;
+begin
+  select plan, plan_bitis into pl, bitis from public.profiles where id=auth.uid();
+  if pl<>'ucretsiz' and bitis is not null and bitis < current_date then pl:='ucretsiz'; end if;
+  lim := public.paket_limit(coalesce(pl,'ucretsiz'));
+  select count(*) into kul from public.indirmeler where user_id=auth.uid() and created_at >= date_trunc('month', now());
+  return json_build_object('kullanilan',kul,'limit',lim);
+end $$;
+
+-- 8) Yönetici: üye listesi (telefon dahil) ve özet (bekleyen başvuru dahil)
+create or replace function public.uye_listesi(p_ara text, p_plan text, p_sayfa int, p_adet int) returns json
+language plpgsql security definer set search_path=public as $$
+declare toplam int; satirlar json;
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  select count(*) into toplam from public.profiles p
+    where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%' or p.telefon ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan);
+  select coalesce(json_agg(t),'[]'::json) into satirlar from (
+    select p.id,p.email,p.ad,p.telefon,p.role,p.plan,p.plan_bitis,p.created_at,
+      (select count(*) from public.indirmeler i where i.user_id=p.id and i.created_at >= date_trunc('month', now())) as bu_ay_indirme
+    from public.profiles p
+    where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%' or p.telefon ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan)
+    order by p.created_at desc limit p_adet offset p_sayfa*p_adet) t;
+  return json_build_object('toplam',toplam,'satirlar',satirlar);
+end $$;
+
+create or replace function public.yonetim_ozet() returns json
+language plpgsql security definer set search_path=public as $$
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  return json_build_object(
+    'uye',(select count(*) from public.profiles),
+    'premium',(select count(*) from public.profiles where plan<>'ucretsiz'),
+    'bekleyen',(select count(*) from public.paket_basvurulari where durum='beklemede'),
+    'bu_ay',(select count(*) from public.indirmeler where created_at >= date_trunc('month', now())),
+    'ses',(select count(*) from public.sesler),'muzik',(select count(*) from public.muzikler));
+end $$;

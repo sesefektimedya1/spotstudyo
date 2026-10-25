@@ -4,7 +4,20 @@
   var C = window.SPOT_CONFIG || {};
   var canli = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY && window.supabase);
   var sb = canli ? window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY) : null;
-  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', premium_indirme_limiti: '0', marka: C.marka || 'Ses Efekti Spot Stüdyo' };
+  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', pro_aylik_limit: '30', pro_yillik_limit: '100', pro_aylik_fiyat: '1200', pro_yillik_fiyat: '7500', yz_mesaj_limiti: '100', whatsapp: '905331509890', marka: C.marka || 'Ses Efekti Spot Stüdyo' };
+  var PLAN_AD = { ucretsiz: 'Ücretsiz plan', pro_aylik: 'Pro Aylık', pro_yillik: 'Pro Yıllık', premium: 'Pro Aylık' };
+  function planKey(p) { return p === 'premium' ? 'pro_aylik' : (p || 'ucretsiz'); }
+  function etkinPlan(p, bitis) { p = planKey(p); if (p !== 'ucretsiz' && bitis && new Date(bitis + 'T23:59:59') < new Date()) return 'ucretsiz'; return p; }
+  function limitOf(p, a) { p = planKey(p); return +(p === 'pro_yillik' ? a.pro_yillik_limit : (p === 'pro_aylik' ? a.pro_aylik_limit : a.ucretsiz_indirme_limiti)); }
+  function tarihYaz(d) { var z = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
+  function bitisHesapla(paket, mevcut) {
+    var baz = new Date(); if (mevcut) { var m = new Date(mevcut + 'T00:00:00'); if (m > baz) baz = m; }
+    var d = new Date(baz.getFullYear(), baz.getMonth(), baz.getDate()); if (paket === 'pro_yillik') d.setFullYear(d.getFullYear() + 1); else d.setMonth(d.getMonth() + 1); return tarihYaz(d);
+  }
+  /* Yöneticiye e-posta (yalnız canlı sitede) */
+  function bildir(konu, alanlar) {
+    if (!canli) return; try { fetch('https://formsubmit.co/ajax/sesefektimedya@gmail.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(Object.assign({ _subject: konu, _template: 'table' }, alanlar)) }).catch(function () {}); } catch (e) {}
+  }
 
   /* ---------- DENEME MODU ---------- */
   var LS = {
@@ -19,12 +32,12 @@
     oturum: async function () {
       var id = LS.oku('aktif', null); if (!id) return null;
       var u = LS.oku('uyeler', []).find(function (x) { return x.id === id; });
-      return u ? { id: u.id, email: u.email, ad: u.ad, role: u.role, plan: u.plan, plan_bitis: u.plan_bitis } : null;
+      return u ? { id: u.id, email: u.email, ad: u.ad, telefon: u.telefon || '', role: u.role, plan: planKey(u.plan), plan_bitis: u.plan_bitis } : null;
     },
-    kayit: async function (email, sifre, ad) {
+    kayit: async function (email, sifre, ad, telefon) {
       var l = LS.oku('uyeler', []);
       if (l.some(function (x) { return x.email === email; })) throw new Error('Bu e-posta ile zaten kayıt var.');
-      var u = { id: uid(), email: email, ad: ad || email.split('@')[0], role: l.length ? 'uye' : 'admin', plan: 'ucretsiz', plan_bitis: null, sifre: sifre, created_at: new Date().toISOString() };
+      var u = { id: uid(), email: email, ad: ad || email.split('@')[0], telefon: telefon || '', role: l.length ? 'uye' : 'admin', plan: 'ucretsiz', plan_bitis: null, sifre: sifre, created_at: new Date().toISOString() };
       l.push(u); LS.yaz('uyeler', l); LS.yaz('aktif', u.id); return demo.oturum();
     },
     giris: async function (email, sifre) {
@@ -37,7 +50,7 @@
     indirmeler: async function (uid_) { return LS.oku('indirmeler', []).filter(function (x) { return x.user_id === uid_; }).reverse(); },
     indirmeHakki: async function (proje, tur) {
       var o = await demo.oturum(); if (!o) throw new Error('Giriş yapmalısınız.');
-      var a = await demo.ayarlar(), lim = o.plan === 'premium' ? +a.premium_indirme_limiti : +a.ucretsiz_indirme_limiti;
+      var a = await demo.ayarlar(), lim = limitOf(etkinPlan(o.plan, o.plan_bitis), a);
       var l = LS.oku('indirmeler', []), buAy = l.filter(function (x) { return x.user_id === o.id && x.t >= ayBasi(); }).length;
       if (lim > 0 && buAy >= lim) return { ok: false, kullanilan: buAy, limit: lim };
       l.push({ id: uid(), user_id: o.id, proje_adi: proje, tur: tur, t: Date.now(), created_at: new Date().toISOString() }); LS.yaz('indirmeler', l);
@@ -45,9 +58,22 @@
     },
     hakDurumu: async function () {
       var o = await demo.oturum(); if (!o) return { kullanilan: 0, limit: 0 };
-      var a = await demo.ayarlar(), lim = o.plan === 'premium' ? +a.premium_indirme_limiti : +a.ucretsiz_indirme_limiti;
+      var a = await demo.ayarlar(), lim = limitOf(etkinPlan(o.plan, o.plan_bitis), a);
       var buAy = LS.oku('indirmeler', []).filter(function (x) { return x.user_id === o.id && x.t >= ayBasi(); }).length;
       return { kullanilan: buAy, limit: lim };
+    },
+    basvuruYap: async function (paket) {
+      var o = await demo.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); var a = await demo.ayarlar(), l = LS.oku('basvurular', []);
+      if (l.some(function (x) { return x.user_id === o.id && x.durum === 'beklemede'; })) throw new Error('Bekleyen bir başvurunuz zaten var.');
+      var k = { id: uid(), user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || '', paket: paket, fiyat_tl: +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat), durum: 'beklemede', created_at: new Date().toISOString(), islem_tarihi: null };
+      l.push(k); LS.yaz('basvurular', l); return k;
+    },
+    basvurularim: async function () { var o = await demo.oturum(); return LS.oku('basvurular', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
+    basvuruTum: async function () { return LS.oku('basvurular', []).slice().reverse(); },
+    basvuruKarar: async function (id, onay) {
+      var l = LS.oku('basvurular', []), b = l.find(function (x) { return x.id === id && x.durum === 'beklemede'; }); if (!b) throw new Error('Başvuru bulunamadı ya da işlenmiş.');
+      if (onay) { var us = LS.oku('uyeler', []), u = us.find(function (x) { return x.id === b.user_id; }); if (u) { u.plan_bitis = bitisHesapla(b.paket, planKey(u.plan) !== 'ucretsiz' ? u.plan_bitis : null); u.plan = b.paket; LS.yaz('uyeler', us); } }
+      b.durum = onay ? 'onaylandi' : 'reddedildi'; b.islem_tarihi = new Date().toISOString(); LS.yaz('basvurular', l);
     },
     geriBildirim: async function (g) { var o = await demo.oturum(), l = LS.oku('geribildirimler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, eposta: o && o.email, created_at: new Date().toISOString() }, g); l.push(k); LS.yaz('geribildirimler', l); return k; },
     geriBildirimTum: async function () { return LS.oku('geribildirimler', []).reverse(); },
@@ -64,14 +90,14 @@
     url: async function (k) { return k.url; },
     uyeler: async function (o) {
       var l = LS.oku('uyeler', []), ind = LS.oku('indirmeler', []), q = (o.ara || '').toLowerCase();
-      var r = l.filter(function (u) { return (!q || u.email.toLowerCase().indexOf(q) > -1 || (u.ad || '').toLowerCase().indexOf(q) > -1) && (!o.plan || u.plan === o.plan); });
+      var r = l.filter(function (u) { return (!q || u.email.toLowerCase().indexOf(q) > -1 || (u.ad || '').toLowerCase().indexOf(q) > -1 || (u.telefon || '').indexOf(q) > -1) && (!o.plan || u.plan === o.plan); });
       var top = r.length, bas = (o.sayfa || 0) * o.adet;
-      return { toplam: top, satirlar: r.slice(bas, bas + o.adet).map(function (u) { return { id: u.id, email: u.email, ad: u.ad, role: u.role, plan: u.plan, plan_bitis: u.plan_bitis, created_at: u.created_at, bu_ay_indirme: ind.filter(function (x) { return x.user_id === u.id && x.t >= ayBasi(); }).length }; }) };
+      return { toplam: top, satirlar: r.slice(bas, bas + o.adet).map(function (u) { return { id: u.id, email: u.email, ad: u.ad, telefon: u.telefon || '', role: u.role, plan: planKey(u.plan), plan_bitis: u.plan_bitis, created_at: u.created_at, bu_ay_indirme: ind.filter(function (x) { return x.user_id === u.id && x.t >= ayBasi(); }).length }; }) };
     },
     uyeGuncelle: async function (id, d) { var l = LS.oku('uyeler', []); var u = l.find(function (x) { return x.id === id; }); if (u) Object.assign(u, d); LS.yaz('uyeler', l); },
     ozet: async function () {
       var l = LS.oku('uyeler', []), ind = LS.oku('indirmeler', []);
-      return { uye: l.length, premium: l.filter(function (u) { return u.plan === 'premium'; }).length, bu_ay: ind.filter(function (x) { return x.t >= ayBasi(); }).length, ses: bellek.sesler.length, muzik: bellek.muzikler.length };
+      return { uye: l.length, premium: l.filter(function (u) { return planKey(u.plan) !== 'ucretsiz'; }).length, bekleyen: LS.oku('basvurular', []).filter(function (x) { return x.durum === 'beklemede'; }).length, bu_ay: ind.filter(function (x) { return x.t >= ayBasi(); }).length, ses: bellek.sesler.length, muzik: bellek.muzikler.length };
     }
   };
 
@@ -81,10 +107,11 @@
     oturum: async function () {
       var s = (await sb.auth.getSession()).data.session; if (!s) return null;
       var r = await sb.from('profiles').select('*').eq('id', s.user.id).maybeSingle();
-      var p = r.data || {}; return { id: s.user.id, email: s.user.email, ad: p.ad, role: p.role || 'uye', plan: p.plan || 'ucretsiz', plan_bitis: p.plan_bitis };
+      var p = r.data || {}; return { id: s.user.id, email: s.user.email, ad: p.ad, telefon: p.telefon || '', role: p.role || 'uye', plan: planKey(p.plan), plan_bitis: p.plan_bitis };
     },
-    kayit: async function (email, sifre, ad) {
-      var r = await sb.auth.signUp({ email: email, password: sifre, options: { data: { ad: ad } } }); if (r.error) throw new Error(r.error.message);
+    kayit: async function (email, sifre, ad, telefon) {
+      var r = await sb.auth.signUp({ email: email, password: sifre, options: { data: { ad: ad, telefon: telefon || '' } } }); if (r.error) throw new Error(r.error.message);
+      bildir('Yeni üye: ' + (ad || email), { Ad: ad || '', Eposta: email, Telefon: telefon || '(yazmadı)' });
       if (!r.data.session) throw new Error('Kayıt alındı. E-postanıza gelen onay bağlantısına tıklayıp tekrar giriş yapın.');
       return canliApi.oturum();
     },
@@ -95,6 +122,17 @@
     indirmeler: async function () { return hata(await sb.from('indirmeler').select('*').order('created_at', { ascending: false }).limit(200)); },
     indirmeHakki: async function (proje, tur) { var r = hata(await sb.rpc('indirme_hakki_al', { p_proje: proje, p_tur: tur })); return r; },
     hakDurumu: async function () { return hata(await sb.rpc('indirme_durumu')); },
+    basvuruYap: async function (paket) {
+      var o = await canliApi.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); var a = await canliApi.ayarlar();
+      var fy = +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat);
+      var r = await sb.from('paket_basvurulari').insert({ user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || null, paket: paket, fiyat_tl: fy }).select().single();
+      if (r.error) { if (/duplicate|unique/i.test(r.error.message)) throw new Error('Bekleyen bir başvurunuz zaten var.'); throw new Error(r.error.message); }
+      bildir('Paket başvurusu: ' + PLAN_AD[paket], { Ad: o.ad || '', Eposta: o.email, Telefon: o.telefon || '(yok)', Paket: PLAN_AD[paket], Fiyat: fy + ' TL' });
+      return r.data;
+    },
+    basvurularim: async function () { var o = await canliApi.oturum(); return hata(await sb.from('paket_basvurulari').select('*').eq('user_id', o.id).order('created_at', { ascending: false })); },
+    basvuruTum: async function () { return hata(await sb.from('paket_basvurulari').select('*').order('created_at', { ascending: false })); },
+    basvuruKarar: async function (id, onay) { hata(await sb.rpc('basvuru_karar', { p_id: id, p_onay: onay })); },
     geriBildirim: async function (g) { var o = await canliApi.oturum(); return hata(await sb.from('geri_bildirimler').insert(Object.assign({ user_id: o ? o.id : null, eposta: o ? o.email : null }, g)).select().single()); },
     geriBildirimTum: async function () { return hata(await sb.from('geri_bildirimler').select('*').order('created_at', { ascending: false })); },
     yzSor: async function (mesajlar) {
@@ -130,7 +168,7 @@
   } : null;
 
   var api = canli ? canliApi : demo;
-  window.Veri = Object.assign({ canli: canli, marka: C.marka || 'Ses Efekti Spot Stüdyo' }, api);
+  window.Veri = Object.assign({ canli: canli, marka: C.marka || 'Ses Efekti Spot Stüdyo', planAd: function (p) { return PLAN_AD[p] || PLAN_AD.ucretsiz; }, isPro: function (p) { return planKey(p) !== 'ucretsiz'; }, bildir: bildir }, api);
   var url0 = api.url;
   window.Veri.url = function (k, t) { return url0(k, t); };
 })();

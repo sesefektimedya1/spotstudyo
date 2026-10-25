@@ -1,4 +1,4 @@
-<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;650&display=swap&subset=latin-ext"><link rel="stylesheet" href="css/stil.css?v=16"><link rel="stylesheet" href="css/giris.css?v=16"><title>Ses Efekti Spot Stüdyo — Radyo spotu, TV spotu, santral anonsu</title></head><body class="acikSayfa">
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;650&display=swap&subset=latin-ext"><link rel="stylesheet" href="css/stil.css?v=18"><link rel="stylesheet" href="css/giris.css?v=18"><title>Ses Efekti Spot Stüdyo — Radyo spotu, TV spotu, santral anonsu</title></head><body class="acikSayfa">
 <div id="ustyer"></div>
 <section class="kahraman">
 <div>
@@ -11,6 +11,7 @@
 <p class="galt" id="gAlt">E-posta ve şifrenizle girin.</p>
 <form id="f" autocomplete="on">
 <div class="alan" id="adAlan" style="display:none"><label for="ad">Adınız</label><input id="ad" type="text" autocomplete="name" placeholder="Adınız Soyadınız"></div>
+<div class="alan" id="telAlan" style="display:none"><label for="tel">Telefon <span class="ops">(isteğe bağlı)</span></label><input id="tel" type="tel" autocomplete="tel" placeholder="05XX XXX XX XX"><div class="ipucu">Size bildirim ve güncellemeleri iletebilmemiz için telefon numaranızı yazmanız iyi olur.</div></div>
 <div class="alan"><label for="eposta">E-posta</label><input id="eposta" type="email" required autocomplete="email" placeholder="ornek@eposta.com"></div>
 <div class="alan"><label for="sifre">Şifre</label><div class="sifreKap"><input id="sifre" type="password" required minlength="6" autocomplete="current-password" placeholder="En az 6 karakter"><button type="button" id="goz" class="goz" aria-label="Şifreyi göster">Göster</button></div></div>
 <div class="hata" id="hata"></div>
@@ -24,18 +25,20 @@
 <div class="kart kapi"><h3>Stüdyo</h3><p>Kayıt, kırpma, gürültü azaltma, ton, kompresör, efekt, müzik karışımı ve seviye. Türkçe menülerle, dalga formu üzerinde çalışırsınız.</p></div>
 <div class="kart kapi yakinda"><h3>Bize gönderin</h3><p>Metni ve seslendirmeni seçin, kaydı biz yapalım. Çok yakında.</p></div>
 </div></section>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/dil.js?v=16"></script><script src="js/ortak.js?v=16"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/dil.js?v=18"></script><script src="js/ortak.js?v=18"></script>
 <script>
 (async function(){
  var o=await Veri.oturum(); await ustCubuk('',o);
  var kayit=false;
- function mod(k){kayit=k;$('#adAlan').style.display=k?'block':'none';$('#gonder').textContent=k?'Ücretsiz üye ol':'Giriş yap';$('#gBaslik').textContent=k?'Hesabınızı oluşturun':'Tekrar hoş geldiniz';$('#gAlt').textContent=k?'Spotunuzu hemen yapmaya başlayın.':'E-posta ve şifrenizle girin.';$('#gDeg').innerHTML=k?'Zaten üye misiniz? <a href="#" id="sk-giris">Giriş yapın</a>':'Hesabınız yok mu? <a href="#" id="sk-kayit">Ücretsiz üye olun</a>';$('#sifre').autocomplete=k?'new-password':'current-password';$('#hata').textContent='';bagla();}
+ function telTemizle(s){s=(s||'').replace(/[\s()\-]/g,'');if(!s)return '';var m=s.match(/^(?:\+90|90|0)?(5\d{9})$/);return m?('0'+m[1]):null;}
+ function mod(k){kayit=k;$('#adAlan').style.display=k?'block':'none';$('#telAlan').style.display=k?'block':'none';$('#gonder').textContent=k?'Ücretsiz üye ol':'Giriş yap';$('#gBaslik').textContent=k?'Hesabınızı oluşturun':'Tekrar hoş geldiniz';$('#gAlt').textContent=k?'Spotunuzu hemen yapmaya başlayın.':'E-posta ve şifrenizle girin.';$('#gDeg').innerHTML=k?'Zaten üye misiniz? <a href="#" id="sk-giris">Giriş yapın</a>':'Hesabınız yok mu? <a href="#" id="sk-kayit">Ücretsiz üye olun</a>';$('#sifre').autocomplete=k?'new-password':'current-password';$('#hata').textContent='';bagla();}
  function bagla(){var a=$('#sk-giris'),b=$('#sk-kayit');if(a)a.onclick=function(e){e.preventDefault();mod(false)};if(b)b.onclick=function(e){e.preventDefault();mod(true)};}
  bagla();
  $('#goz').onclick=function(){var s=$('#sifre'),g=s.type==='password';s.type=g?'text':'password';this.textContent=g?'Gizle':'Göster';this.setAttribute('aria-label',g?'Şifreyi gizle':'Şifreyi göster');};
- if(o){$('#giris').innerHTML='<h3 style="font-size:1.6rem;margin-bottom:.6rem">Hoş geldiniz</h3><p class="sol" style="margin-bottom:1rem">'+esc(o.ad||o.email)+' olarak giriş yaptınız.</p><a class="btn ana" href="studyo.html">Stüdyoya git</a> <a class="btn" href="panel.html">Panelim</a>';return;}
+ if(o){$('#giris').innerHTML='<h3 style="font-size:1.6rem;margin-bottom:.6rem">Hoş geldiniz</h3><p class="sol" style="margin-bottom:1rem">'+esc(o.ad||o.email)+' olarak giriş yaptınız.</p><a class="btn ana" href="studyo">Stüdyoya git</a> <a class="btn" href="panel">Panelim</a>';return;}
  $('#f').onsubmit=async function(e){e.preventDefault();$('#hata').textContent='';$('#gonder').disabled=true;
-  try{ if(kayit) await Veri.kayit($('#eposta').value.trim(),$('#sifre').value,$('#ad').value.trim()); else await Veri.giris($('#eposta').value.trim(),$('#sifre').value); location.href='studyo.html'; }
+  try{ var tel=telTemizle($('#tel').value); if(kayit&&tel===null) throw new Error('Telefon numarasını 05XX XXX XX XX biçiminde yazın ya da boş bırakın.');
+   if(kayit) await Veri.kayit($('#eposta').value.trim(),$('#sifre').value,$('#ad').value.trim(),tel||''); else await Veri.giris($('#eposta').value.trim(),$('#sifre').value); location.href='studyo'; }
   catch(x){$('#hata').textContent=x.message;} $('#gonder').disabled=false;};
 })();
 </script></body></html>

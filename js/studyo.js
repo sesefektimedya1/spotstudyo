@@ -1262,7 +1262,9 @@
     if (p.sec && p.sec[1] - p.sec[0] > SR * 0.2) { var q = panoAl(p), y = pencereAc(p.ad + ' (seçim)', q.L, q.R || q.L, 'ses'); id = y.id; otoListeleri(); kucult(y); }
     sekme('oto'); $('#otoSes').value = 'p' + id; toast('“' + p.ad + '” Otomatik sekmesine kaynak olarak eklendi. “Otomatik hazırla”ya basın.');
   }
-  (function () { var mn = $('#menu'), b = document.createElement('button'); b.id = 'otoyaGonder'; b.className = 'otoSekme'; b.title = 'Bu sesi Otomatik sekmesine kaynak olarak gönder (kaydetmeye gerek yok)'; b.innerHTML = 'Otomatiğe gönder <span aria-hidden="true">&rarr;</span>'; b.onclick = otoyaGonder; mn.appendChild(b); })();
+  (function () { var mn = $('#menu'), b = document.createElement('button'); b.id = 'otoyaGonder'; b.className = 'otoSekme'; b.title = 'Bu sesi Otomatik sekmesine kaynak olarak gönder (kaydetmeye gerek yok)'; b.textContent = 'Otomatiğe gönder'; b.onclick = otoyaGonder; mn.appendChild(b);
+    function esitle() { var r = $('#hzDip'); if (!r || !r.offsetWidth) return; b.style.width = r.offsetWidth + 'px'; b.style.height = r.offsetHeight + 'px'; var cs = getComputedStyle(r); b.style.fontSize = cs.fontSize; b.style.paddingLeft = b.style.paddingRight = '0'; b.style.marginRight = Math.max(0, Math.round((mn.getBoundingClientRect().right - parseFloat(getComputedStyle(mn).paddingRight) - r.getBoundingClientRect().right) * 10) / 10) + 'px'; }
+    esitle(); window.addEventListener('resize', esitle); setTimeout(esitle, 300); b.addEventListener('mouseenter', esitle); })();
   $('#sonucPaylas').onclick = paylas;
   $('#sonucDisa').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); disaDlg('sonuc'); };
   document.addEventListener('dragover', function (e) { e.preventDefault(); if (S.tab === 'manuel') alan.classList.add('birak'); });

@@ -45,7 +45,6 @@
       h += '<span>' + esc(oturum.ad || oturum.email) + '</span><button class="btn kucuk" id="cikisBtn">Çıkış</button>';
     } else h += '<a class="btn kucuk" href="index.html#giris">Giriş yap</a>';
     h += '</div>';
-    if (oturum && aktif === 'studyo') h += '<div class="hizli"><button id="hzDip" title="Arka plandaki fon gürültüsünü ve hışırtıyı temizler">Dip sesi temizle</button><button id="hzEfekt" title="Her basışta sıradaki hazır ses efekti gelir">Ses efektini değiştir</button></div>';
     h += '</header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
     $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });

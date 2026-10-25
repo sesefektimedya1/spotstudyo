@@ -655,23 +655,22 @@
       d.innerHTML = '<div class="pencere" role="dialog" aria-modal="true" style="width:min(520px,100%)"><h3>Nereye kaydedilsin?</h3><div class="govde">' +
         '<p class="not" style="margin:0 0 8px">İkisini birden de seçebilirsiniz.</p>' +
         '<label class="kn"><input type="checkbox" id="knCal"><span><b>Çalışma alanıma</b><small>Bu tarayıcıda durur. Dosya menüsü > Çalışma alanı’ndan tekrar açarsınız.</small></span></label>' +
-        '<div style="margin:8px 0 4px"><b>Bilgisayarıma da kaydet</b> <small>(masaüstü ya da istediğiniz klasör)</small></div>' +
-        '<label class="kn"><input type="radio" name="kn" value="yok"><span><b>Hayır</b></span></label>' +
-        '<label class="kn"><input type="radio" name="kn" value="wav"><span><b>WAV olarak</b><small>İndirme hakkından düşmez.</small></span></label>' +
-        '<label class="kn"><input type="radio" name="kn" value="mp3"><span><b>MP3 olarak</b><small>İndirme hakkından 1 düşer.</small></span></label>' +
+        '<div style="margin:8px 0 4px"><b>Bilgisayarıma da kaydet</b> <small>(masaüstü ya da istediğiniz klasör; ikisini de işaretleyebilirsiniz)</small></div>' +
+        '<label class="kn"><input type="checkbox" id="knWav"><span><b>WAV olarak</b><small>İndirme hakkından düşmez.</small></span></label>' +
+        '<label class="kn"><input type="checkbox" id="knMp3"><span><b>MP3 olarak</b><small>İndirme hakkından 1 düşer.</small></span></label>' +
         '<div class="sat"><label style="margin:0">Dosya adı</label><input type="text" id="knAd" style="grid-column:2/4"></div></div>' +
         '<div class="alt"><button class="btn" data-k="iptal">İptal</button><button class="btn ana" data-k="tamam">Kaydet</button></div></div>';
       document.body.appendChild(d); $('#knAd', d).value = ad0;
-      $('#knCal', d).checked = KN.cal !== false; var r = $('input[name=kn][value=' + (KN.bil || 'wav') + ']', d); if (r) r.checked = true;
+      $('#knCal', d).checked = KN.cal !== false; $('#knWav', d).checked = !!KN.wav; $('#knMp3', d).checked = !!KN.mp3;
       function bit(v) { d.remove(); document.removeEventListener('keydown', kd, true); res(v); }
       function kd(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); bit(false); } }
       document.addEventListener('keydown', kd, true);
       $('[data-k=iptal]', d).onclick = function () { bit(false); };
       $('[data-k=tamam]', d).onclick = async function () {
-        var bil = ($('input[name=kn]:checked', d) || {}).value || 'yok', cal = $('#knCal', d).checked, ad = ($('#knAd', d).value || ad0).trim() || ad0; KN.bil = bil; KN.cal = cal;
-        if (!cal && bil === 'yok') return toast('Bir yer seçin: çalışma alanı ve/veya bilgisayar');
+        var wv = $('#knWav', d).checked, m3 = $('#knMp3', d).checked, cal = $('#knCal', d).checked, ad = ($('#knAd', d).value || ad0).trim() || ad0; KN.wav = wv; KN.mp3 = m3; KN.cal = cal;
+        if (!cal && !wv && !m3) return toast('En az bir yer seçin');
         var b = $('[data-k=tamam]', d); b.disabled = true;
-        try { var ok = true; if (cal) ok = await kaydetYaz(p, 'calisma', ad); if (ok && bil !== 'yok') ok = await kaydetYaz(p, bil, ad); if (ok) { d.remove(); document.removeEventListener('keydown', kd, true); res(true); } else b.disabled = false; }
+        try { var ok = true; if (cal) ok = await kaydetYaz(p, 'calisma', ad); if (ok && wv) ok = await kaydetYaz(p, 'wav', ad); if (ok && m3) ok = await kaydetYaz(p, 'mp3', ad); if (ok) { d.remove(); document.removeEventListener('keydown', kd, true); res(true); } else b.disabled = false; }
         catch (e) { b.disabled = false; hata(e); }
       };
     });
@@ -956,7 +955,7 @@
   Object.assign(I, {
     sec0: function () { var p = aktifVar(); if (!p) return; p.sec = null; guncelle(); },
     ustune: function () { var p = secimVar(); if (!p) return; if (!S.pano) return toast('Önce kopyalayın'); var a = p.sec[0], b = p.sec[1]; var L = A.birles(p.L, a, b, S.pano.L), R = p.R === p.L && S.pano.R === S.pano.L ? L : A.birles(p.R, a, b, S.pano.R || S.pano.L); degistir(p, L, R); },
-    secimPencere: function () { var p = secimVar(); if (!p) return; var q = panoAl(p); pencereAc(p.ad + ' (seçim)', q.L, q.R || q.L, 'ses'); otoListeleri(); },
+    secimPencere: function () { var p = secimVar(); if (!p) return; var q = panoAl(p); pencereAc(p.ad + ' (seçim)', q.L, q.R || q.L, 'ses').kirli = true; otoListeleri(); },
     faz: function () { var p = aktifVar(); if (!p) return; kanalIs(p, function (x, s, e) { var y = x.slice(); for (var i = s; i < e; i++) y[i] = -y[i]; return y; }); },
     mono: function () { var p = aktifVar(); if (!p) return; if (p.R === p.L) return toast('Zaten mono'); var m = A.monoya(p.L, p.R); degistir(p, m, m); },
     takas: function () { var p = aktifVar(); if (!p) return; if (p.R === p.L) return toast('Mono sesin kanalları yok'); degistir(p, p.R, p.L); },
@@ -989,7 +988,7 @@
       ['Otomatiğe gönder', '', otoyaGonder, 'Bu penceredeki sesi (seçim varsa yalnız seçimi) Otomatik sekmesinde kaynak olarak seçer; masaüstüne kaydetmeniz gerekmez'],
       ['Dışa aktar…', 'Ctrl+E', I.disa, 'MP3, WAV ya da santral dosyası olarak hazırlar (MP3 ve santral indirme hakkından düşer)'],
       '-',
-      ['Panelime dön', '', function () { location.href = 'panel'; }, '']]],
+      ['Panelime dön', '', function () { var a = document.querySelector('header a[href="panel"]'); if (a) a.click(); else location.href = 'panel'; }, '']]],
     ['Düzen', [
       ['Geri al', 'Ctrl+Z', I.geri, 'Pencerede son işlemi geri al'],
       ['Yinele', 'Ctrl+Y', I.yinele, 'Geri alınanı tekrar yap'],
@@ -1255,7 +1254,7 @@
   $('#otoBtn').onclick = function () { oto(false); }; $('#yenidenBtn').onclick = function () { oto(true); };
   $('#sonucDur').onclick = function () { durdur(); };
   $('#sonucCal').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); if (S.cal) durdur(); else calDizi(S.sonuc.L, S.sonuc.R, null, 0); };
-  $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); sekme('manuel'); var p = pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); otoListeleri(); };
+  $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); sekme('manuel'); var p = pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); p.kirli = true; otoListeleri(); };
   function otoyaGonder() {
     var p = akt(); if (!p) return toast('Önce manuel stüdyoda bir pencere seçin');
     if (p.bos) return toast('Bu pencere boş');
@@ -1263,7 +1262,7 @@
     if (p.sec && p.sec[1] - p.sec[0] > SR * 0.2) { var q = panoAl(p), y = pencereAc(p.ad + ' (seçim)', q.L, q.R || q.L, 'ses'); id = y.id; otoListeleri(); kucult(y); }
     sekme('oto'); $('#otoSes').value = 'p' + id; toast('“' + p.ad + '” Otomatik sekmesine kaynak olarak eklendi. “Otomatik hazırla”ya basın.');
   }
-  if ($('#otoyaGonder')) $('#otoyaGonder').onclick = otoyaGonder;
+  (function () { var mn = $('#menu'), b = document.createElement('button'); b.id = 'otoyaGonder'; b.className = 'otoSekme'; b.title = 'Bu sesi Otomatik sekmesine kaynak olarak gönder (kaydetmeye gerek yok)'; b.innerHTML = 'Otomatiğe gönder <span aria-hidden="true">&rarr;</span>'; b.onclick = otoyaGonder; mn.appendChild(b); })();
   $('#sonucPaylas').onclick = paylas;
   $('#sonucDisa').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); disaDlg('sonuc'); };
   document.addEventListener('dragover', function (e) { e.preventDefault(); if (S.tab === 'manuel') alan.classList.add('birak'); });
@@ -1323,30 +1322,54 @@
   });
 
   /* ---------- Yapay zeka modu (ücretli) ---------- */
-  var YZ = { mesajlar: [], mesgul: false };
+  var YZ = { mesajlar: [], mesgul: false, tur: 'reklam' };
+  var YZ_AD = { reklam: 'Reklam metni', jingle: 'Jingle sözü', santral: 'Santral anonsu' };
+  var YZ_ONERI = {
+    reklam: ['30 saniyelik radyo spotu metni yaz', 'Bayram indirimi için 20 saniyelik spot', 'Metni daha samimi ve kısa yap'],
+    jingle: ['Firmam için 15 saniyelik jingle sözü yaz', 'Kısa, akılda kalıcı bir slogan ve nakarat', 'Daha neşeli ve ritimli olsun'],
+    santral: ['Santral karşılama anonsu yaz', 'Mesai dışı anonsu yaz', 'Yoğunluk bekleme anonsu yaz']
+  };
   async function yzDurum() {
     var o = null; try { o = await Veri.oturum(); } catch (e) {}
     var acik = !!o && (o.role === 'admin' || Veri.isPro(o.plan));
     $('#yzKilit').style.display = acik ? 'none' : 'flex'; $('#yzSohbet').style.display = acik ? 'flex' : 'none';
   }
   function yzCiz() {
-    var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Örneğin: “Bayram indirimli 30 saniyelik bir radyo spotu metni yaz.”</span></div>'; return; }
-    k.innerHTML = YZ.mesajlar.map(function (m, i) { return '<div class="yzM ' + m.r + '"><div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + (m.r === 'ai' && !m.hata ? '<button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bu metni “Bize gönder”e aktar</button>' : '') + '</div>'; }).join('');
+    $$('#yzTurler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.yzt === YZ.tur); });
+    $('#yzOneri').innerHTML = YZ_ONERI[YZ.tur].map(function (t) { return '<button class="chip" data-yz="oneri">' + esc(t) + '</button>'; }).join('');
+    var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Üstten türü seçin, aşağıya isteğinizi yazın. Yazdığım reklam metnini tek tuşla jingle’a çevirebilirim; jingle’ı siz seslendirtmeden “Bana jingle yap” diyerek bize sipariş edebilirsiniz.</span></div>'; return; }
+    k.innerHTML = YZ.mesajlar.map(function (m, i) {
+      var ek = '';
+      if (m.r === 'ai' && !m.hata) {
+        ek = '<div class="yzEylem"><button class="btn kucuk" data-yz="kopya" data-i="' + i + '">Kopyala</button>';
+        if (m.tur !== 'jingle') ek += '<button class="btn kucuk yzVurgu" data-yz="jingleCevir" data-i="' + i + '">Jingle’a çevir</button>';
+        ek += '<button class="btn kucuk" data-yz="jingleYap" data-i="' + i + '">Bu metinle bana jingle yap</button><button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bize gönder’e aktar</button></div>';
+      }
+      return '<div class="yzM ' + m.r + '">' + (m.tur && m.r === 'ben' ? '<small class="yzEtiket">' + esc(YZ_AD[m.tur]) + '</small>' : '') + '<div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + ek + '</div>';
+    }).join('');
     k.scrollTop = k.scrollHeight;
   }
-  async function yzGonder(metin) {
-    metin = (metin || '').trim(); if (!metin || YZ.mesgul) return; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ben', t: metin }); $('#yzGirdi').value = ''; yzCiz();
+  async function yzGonder(metin, tur) {
+    metin = (metin || '').trim(); if (!metin || YZ.mesgul) return; tur = tur || YZ.tur; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ben', t: metin, tur: tur }); $('#yzGirdi').value = ''; yzCiz();
     YZ.mesajlar.push({ r: 'ai', t: 'Düşünüyorum…', hata: true }); yzCiz();
-    try { var c = await Veri.yzSor(YZ.mesajlar.filter(function (m) { return !m.hata; }).map(function (m) { return { role: m.r === 'ben' ? 'user' : 'assistant', content: m.t }; })); YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: c }; }
-    catch (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: e.message || 'Yapay zeka şu an yanıt veremedi.', hata: true }; }
+    try {
+      var c = await Veri.yzSor(YZ.mesajlar.filter(function (m) { return !m.hata; }).map(function (m) { return { role: m.r === 'ben' ? 'user' : 'assistant', content: m.r === 'ben' ? '[' + YZ_AD[m.tur || tur] + '] ' + m.t : m.t }; }), tur);
+      YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: c, tur: tur };
+    }
+    catch (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: e.message || 'Yanıt alınamadı.', hata: true }; }
     YZ.mesgul = false; yzCiz();
   }
   $('#yzGonder').onclick = function () { yzGonder($('#yzGirdi').value); };
   $('#yzGirdi').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); yzGonder($('#yzGirdi').value); } });
+  $('#yzTurler').addEventListener('click', function (e) { var b = e.target.closest('[data-yzt]'); if (!b) return; YZ.tur = b.dataset.yzt; yzCiz(); });
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-yz]') : null; if (!b) return;
-    if (b.dataset.yz === 'oneri') yzGonder(b.textContent);
-    else if (b.dataset.yz === 'aktar') { $('#bizeMetin').value = YZ.mesajlar[+b.dataset.i].t; sekme('bize'); toast('Metin “Bize gönder” sayfasına aktarıldı'); }
+    var m = YZ.mesajlar[+b.dataset.i], v = b.dataset.yz;
+    if (v === 'oneri') yzGonder(b.textContent);
+    else if (v === 'kopya') { try { navigator.clipboard.writeText(m.t); toast('Kopyalandı'); } catch (x) { toast('Kopyalanamadı'); } }
+    else if (v === 'jingleCevir') { YZ.tur = 'jingle'; yzGonder('Bu metni kısa, akılda kalıcı ve ritimli bir jingle sözüne çevir (kıta ve nakarat olsun):\n\n' + m.t, 'jingle'); }
+    else if (v === 'jingleYap') { $('#bizeMetin').value = m.t; $('#bTur').value = 'Jingle'; if ($('#bNot') && !$('#bNot').value) $('#bNot').value = 'Jingle siparişi: bu sözlerle jingle yapılsın'; sekme('bize'); toast('Metin “Bize gönder” sayfasına aktarıldı. Jingle olarak işaretlendi.'); }
+    else if (v === 'aktar') { $('#bizeMetin').value = m.t; sekme('bize'); toast('Metin “Bize gönder” sayfasına aktarıldı'); }
   });
   yzCiz();
 
@@ -1357,6 +1380,13 @@
     if (!(e.target.closest && e.target.closest('#ustDisa'))) return;
     if (S.tab === 'oto' && S.sonuc) disaDlg('sonuc'); else if (S.tab === 'bize') toast('Dışa aktarmak için Manuel stüdyoda ya da Otomatik sekmesinde bir ses hazırlayın'); else disaDlg();
   });
+  /* Sayfadan ayrılırken (Panelim, Çıkış, logo…) kaydedilmemiş her pencereyi tek tek sor */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('header a[href], #cikisBtn, a[href="panel"]') : null; if (!el || e.__onayli) return;
+    var kirli = S.pen.filter(function (p) { return p.kirli && !p.kayitta; }); if (!kirli.length) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var l = kirli.slice(); (function ilk() { var p = l.shift(); if (!p) { el.click(); return; } kapatSor(p, function (devam) { if (devam) ilk(); }); })();
+  }, true);
   window.addEventListener('beforeunload', function (e) { if (S.pen.some(function (p) { return p.kirli; })) { e.preventDefault(); e.returnValue = ''; } });
 
   hedefUygula(); otoListeleri(); guncelle(); bankaYukle();

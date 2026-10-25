@@ -81,7 +81,12 @@
     },
     geriBildirim: async function (g) { var o = await demo.oturum(), l = LS.oku('geribildirimler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, eposta: o && o.email, created_at: new Date().toISOString() }, g); l.push(k); LS.yaz('geribildirimler', l); return k; },
     geriBildirimTum: async function () { return LS.oku('geribildirimler', []).reverse(); },
-    yzSor: async function () { throw new Error('Yapay zeka bağlantısı henüz kurulmadı. (Deneme modunda çalışmaz.)'); },
+    yzSor: async function (mesajlar, tur) {
+      var son = (mesajlar[mesajlar.length - 1] || {}).content || '', n = '(Örnek metin: yapay zeka bağlanınca burada sizin konunuza göre yazılır.)\n\n';
+      if (tur === 'jingle') return n + 'Nakarat:\nSes Efekti, Ses Efekti,\nSesin gücü sende, yayında hemen şimdi!\n\nKıta:\nSpotun hazır, radyon açık,\nHer evde bir melodi, her kalpte bir ses.';
+      if (tur === 'santral') return n + 'Merhaba, firmamızı aradığınız için teşekkür ederiz. Yetkili arkadaşlarımız şu anda diğer görüşmelerde. Lütfen hatta kalın, en kısa sürede size dönüş yapacağız.';
+      return n + 'Bu bayram fırsatını kaçırmayın! Seçili ürünlerde yüzde yirmiye varan indirim, sadece bu hafta sonu. Detaylar için mağazamızı ziyaret edin ya da bizi arayın. Sesinizi duyuran marka: Ses Efekti.';
+    },
     siparisVer: async function (s) { var o = await demo.oturum(), l = LS.oku('siparisler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, durum: 'yeni', sonuc_url: '', created_at: new Date().toISOString() }, s); l.push(k); LS.yaz('siparisler', l); return k; },
     siparislerim: async function () { var o = await demo.oturum(); return LS.oku('siparisler', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
     siparisTum: async function () { return LS.oku('siparisler', []).reverse(); },
@@ -140,8 +145,8 @@
     basvuruKarar: async function (id, onay) { hata(await sb.rpc('basvuru_karar', { p_id: id, p_onay: onay })); },
     geriBildirim: async function (g) { var o = await canliApi.oturum(); return hata(await sb.from('geri_bildirimler').insert(Object.assign({ user_id: o ? o.id : null, eposta: o ? o.email : null }, g)).select().single()); },
     geriBildirimTum: async function () { return hata(await sb.from('geri_bildirimler').select('*').order('created_at', { ascending: false })); },
-    yzSor: async function (mesajlar) {
-      var r = await sb.functions.invoke('yz-sohbet', { body: { mesajlar: mesajlar } });
+    yzSor: async function (mesajlar, tur) {
+      var r = await sb.functions.invoke('yz-sohbet', { body: { mesajlar: mesajlar, tur: tur } });
       if (r.error) throw new Error('Yapay zeka bağlantısı henüz kurulmadı ya da yanıt vermedi.');
       if (r.data && r.data.hata) throw new Error(r.data.hata); return (r.data && r.data.yanit) || 'Yanıt alınamadı.';
     },

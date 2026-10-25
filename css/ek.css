@@ -105,3 +105,13 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
 .kn input[type=radio]{appearance:auto;-webkit-appearance:radio;width:18px;height:18px;padding:0;background:#fff;accent-color:#e0452f;flex:none}
 
 .logo .logoIk{display:inline-block;vertical-align:-.2em;margin-right:.4em}
+
+.yzUst{align-items:center!important;background:#111827;color:#fff;border-bottom:0!important}.yzUst h2{color:#fff}.yzUst .yzAlt{color:#aab3c0!important}
+.yzRozet{background:#e03a2c;color:#fff!important;font-size:11px;font-weight:700;letter-spacing:.08em;padding:.25rem .55rem;border-radius:6px}
+.yzTurler{display:flex;gap:.4rem;padding:.6rem 1.2rem;border-bottom:1px solid #e3e6ea;background:#fff;flex-wrap:wrap}
+.yzTurler button{border:1px solid #cfd4da;background:#fff;border-radius:999px;padding:.35rem .9rem;cursor:pointer;font-size:14px;color:#1d2430}
+.yzTurler button.acik{background:#111827;border-color:#111827;color:#fff}
+.yzEylem{display:flex;gap:.4rem;flex-wrap:wrap}.yzVurgu{background:#e03a2c!important;border-color:#e03a2c!important;color:#fff!important}
+.yzEtiket{color:#5d6673;font-size:11px}
+.menu .otoSekme{margin-left:auto;align-self:center;background:#e03a2c;color:#fff;border:0;border-radius:6px 6px 0 0;padding:.35rem 1rem;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.15)}
+.menu .otoSekme:hover{background:#c52f22}

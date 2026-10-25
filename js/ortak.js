@@ -29,7 +29,7 @@
   window.ustCubuk = async function (aktif, oturum) {
     var h = '';
     if (!Veri.canli) h += '<div class="deneme">Deneme modu: kayıtlar yalnız bu tarayıcıda durur. Canlı yayın için Supabase bilgilerini js/config.js dosyasına yazın.</div>';
-    h += '<header class="ust"><a class="logo" href="index.html" title="Ses Efekti Spot Stüdyo"><i></i><b>seseffekti.com</b><span>/spot-stüdyo</span></a><nav>';
+    h += '<header class="ust"><a class="logo" href="index.html" title="Ses Efekti Spot Stüdyo"><i></i><b>sesefekti.com</b><span>/spot-stüdyo</span></a><nav>';
     if (oturum) {
       h += '<a href="studyo.html"' + (aktif === 'studyo' ? ' class="acik"' : '') + '>Stüdyo</a><a href="panel.html"' + (aktif === 'panel' ? ' class="acik"' : '') + '>Panelim</a>';
       if (oturum.role === 'admin') h += '<a href="yonetim.html"' + (aktif === 'yonetim' ? ' class="acik"' : '') + '>Yönetim</a>';
@@ -41,10 +41,12 @@
       h += '<span class="plan' + (oturum.plan === 'premium' ? ' pr' : '') + '">' + (oturum.plan === 'premium' ? 'Premium plan' : 'Ücretsiz plan') + '</span>';
       h += '<span class="kota" title="Bu ayki MP3 indirme hakkınız">Bu ay ' + d.kullanilan + ' / ' + lim + ' indirme</span>';
       h += '<button class="gbBtn" id="gbBtn" title="Bize görüşlerinizi yazın">Geri bildirim</button>';
-      if (aktif === 'studyo') h += '<div class="disaKol"><button class="ustDisa" id="ustDisa" title="MP3, WAV ya da santral dosyası olarak dışa aktar (Ctrl+E)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v3h16v-3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dışa aktar</button><div class="hizli"><button id="hzDip" title="Arka plandaki fon gürültüsünü ve hışırtıyı temizler">Dip sesi temizle</button><button id="hzEfekt" title="Her basışta sıradaki hazır ses efekti gelir">Ses efektini değiştir</button></div></div>';
+      if (aktif === 'studyo') h += '<button class="ustDisa" id="ustDisa" title="MP3, WAV ya da santral dosyası olarak dışa aktar (Ctrl+E)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v3h16v-3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dışa aktar</button>';
       h += '<span>' + esc(oturum.ad || oturum.email) + '</span><button class="btn kucuk" id="cikisBtn">Çıkış</button>';
     } else h += '<a class="btn kucuk" href="index.html#giris">Giriş yap</a>';
-    h += '</div></header>';
+    h += '</div>';
+    if (oturum && aktif === 'studyo') h += '<div class="hizli"><button id="hzDip" title="Arka plandaki fon gürültüsünü ve hışırtıyı temizler">Dip sesi temizle</button><button id="hzEfekt" title="Her basışta sıradaki hazır ses efekti gelir">Ses efektini değiştir</button></div>';
+    h += '</header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
     $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });
     var gb = $('#gbBtn'); if (gb) gb.onclick = function () { geriBildirimAc(aktif); };

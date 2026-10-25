@@ -77,11 +77,11 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
 .kayitIk svg{width:25px;height:25px}
 .ik[id=kayitBtn]{background:linear-gradient(180deg,#fff,#f6e3dc)}
 
-/* Dışa aktar kolonu + hızlı düğmeler */
-.disaKol{display:flex;flex-direction:column;align-items:flex-end;gap:.4rem}
-.hizli{display:flex;gap:.35rem}
-.hizli button{background:#e9f1fe;border:1px solid #9bb8ef;color:#1d54a8;font-size:12px;font-weight:600;line-height:1;padding:.28rem .6rem;border-radius:5px;cursor:pointer;white-space:nowrap}
-.hizli button:hover{background:#d6e6fd;border-color:#5b8fd8}.hizli button:active{background:#bcd5f7}
+/* Hızlı düğmeler: Dışa aktar'ın altında, sağdan sola dizilir, Dışa aktar'ın turuncu tonunda */
+.ust{row-gap:.5rem}
+.hizli{flex:0 0 100%;display:flex;flex-direction:row-reverse;justify-content:flex-start;gap:.45rem;margin-top:-.2rem}
+.hizli button{background:linear-gradient(180deg,#fff4ea,#ffe3cd);border:1px solid #f0a366;color:#b8431a;font-size:12.5px;font-weight:700;line-height:1;padding:.36rem .8rem;border-radius:6px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(224,69,47,.18)}
+.hizli button:hover{background:linear-gradient(180deg,#ffe9d6,#ffd2b0);border-color:#e5762f}.hizli button:active{transform:translateY(1px)}
 .gbBtn{background:#fff;border:1px solid #bcc3cc;color:#1d2430}
 .pro{font-style:normal;font-size:10px;font-weight:700;background:#e8801a;color:#fff;border-radius:4px;padding:.05rem .35rem;margin-left:.35rem;vertical-align:1px}
 

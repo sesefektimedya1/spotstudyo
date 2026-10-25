@@ -111,6 +111,22 @@
       function up() { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); }
       window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
     });
+    /* Telefon: başlığı parmakla sürükleyip başka pencerenin üstüne bırakınca iki pencerenin yeri değişir */
+    (function () {
+      var bs = $('.bas', el), gh = null, ts = null;
+      bs.addEventListener('touchstart', function (e) { if (e.target.closest('button') || e.touches.length !== 1) return; ts = e.touches[0]; odak(p); }, { passive: true });
+      bs.addEventListener('touchmove', function (e) {
+        if (!ts) return; var t = e.touches[0]; e.preventDefault();
+        if (!gh) { gh = document.createElement('div'); gh.className = 'tasiGhost'; gh.textContent = 'Yerini değiştirmek için başka pencerenin üstüne bırakın'; document.body.appendChild(gh); }
+        gh.style.left = '10px'; gh.style.top = (t.clientY + 14) + 'px';
+      }, { passive: false });
+      function bitis(e) {
+        if (!ts) return; var t = (e.changedTouches && e.changedTouches[0]) || ts; ts = null; if (gh) { gh.remove(); gh = null; }
+        var hedef = document.elementFromPoint(t.clientX, t.clientY), pe = hedef && hedef.closest ? hedef.closest('.pen') : null;
+        if (pe && pe !== el) { var a = el.style.top, h1 = el.style.height; el.style.top = pe.style.top; el.style.height = pe.style.height; pe.style.top = a; pe.style.height = h1; S.pen.forEach(ciz); }
+      }
+      bs.addEventListener('touchend', bitis); bs.addEventListener('touchcancel', bitis);
+    })();
     $('.bas', el).addEventListener('dblclick', function (e) { if (e.target.tagName !== 'BUTTON') tumuGoster(p), ciz(p); });
     $$('[data-z]', el).forEach(function (b) { b.onclick = function () { var v = b.dataset.z; if (v === '+') zoomT(p, 0.6); else if (v === '-') zoomT(p, 1.6); else { tumuGoster(p); ciz(p); } }; });
     $$('[data-v]', el).forEach(function (b) { b.onclick = function () { var v = b.dataset.v; p.vz = v === '+' ? Math.min(64, p.vz * 1.6) : (v === '-' ? Math.max(0.1, p.vz / 1.6) : 1); ciz(p); }; });
@@ -231,7 +247,7 @@
     var sonT = null, dokunSure = 0;
     c.addEventListener('touchstart', function (e) { if (e.touches.length !== 1) return; e.preventDefault(); sonT = e.touches[0]; var simdi = Date.now(); if (simdi - dokunSure < 320) { p.sec = [0, p.L.length]; guncelle(); sonT = null; dokunSure = 0; return; } dokunSure = simdi; fareGonder('mousedown', sonT, c); }, { passive: false });
     c.addEventListener('touchmove', function (e) { if (e.touches.length !== 1 || !surukle) return; e.preventDefault(); sonT = e.touches[0]; fareGonder('mousemove', sonT, window); }, { passive: false });
-    c.addEventListener('touchend', function (e) { if (!sonT) return; e.preventDefault(); fareGonder('mouseup', sonT, window); sonT = null; }, { passive: false });
+    c.addEventListener('touchend', function (e) { if (!sonT) return; e.preventDefault(); fareGonder('mouseup', sonT, window); sonT = null; if (p.sec && p.sec[1] - p.sec[0] > SR * 0.3 && !S.dokunIpucu) { S.dokunIpucu = 1; toast('Seçili bölüme basıp sürükleyerek başka pencerenin üstüne bırakabilirsiniz (karıştırır)'); } }, { passive: false });
     c.addEventListener('touchcancel', function () { if (sonT) { fareGonder('mouseup', sonT, window); sonT = null; } });
     c.addEventListener('dblclick', function () { p.sec = [0, p.L.length]; guncelle(); });
     c.addEventListener('wheel', function (e) {

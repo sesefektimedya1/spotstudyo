@@ -62,20 +62,19 @@
   .ust{flex-wrap:wrap!important}
   body.st .ust{flex-wrap:nowrap!important}
   body.st .menu .otoSekme{display:none!important}
-  #mobSerit{display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;background:#eceae6;border-bottom:1px solid #cfd4da}
-  #mobSerit button{flex:1 1 auto;min-height:40px;padding:0 .7rem;border-radius:8px;border:1px solid #c3c9d1;background:#fff;color:#1d2430;font-size:13.5px;font-weight:600}
-  #mobSerit .mKayit{flex:1 1 100%;background:#d83a2c;border-color:#b9301d;color:#fff;font-size:15px;min-height:46px}
+  #mobSerit{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:5px 6px;background:#eceae6;border-bottom:1px solid #cfd4da}
+  #mobSerit .mAyir{display:none}
+  #mobSerit button{min-height:0;height:32px;padding:0 .3rem;border-radius:6px;border:1px solid #c3c9d1;background:#fff;color:#1d2430;font-size:12px;font-weight:700;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #mobSerit .mKayit,#mobSerit .mOto{background:linear-gradient(180deg,#f0594a,#d8372a);border-color:#b9301d;color:#fff}
   #mobSerit .mKayit.kayitta{background:#111827;border-color:#111827}
-  #mobSerit .mAyir{flex:1 1 100%;height:0}
-  #mobSerit [data-m=efekt],#mobSerit [data-m=dip]{background:#ffeede;border-color:#f0a366;color:#b8431a}
-  #mobSerit .mOto{flex:1 1 100%;background:#d83a2c;border-color:#b9301d;color:#fff}
+  #mobSerit [data-m=efekt],#mobSerit [data-m=dip]{background:linear-gradient(180deg,#fff4ea,#ffe3cd);border-color:#f0a366;color:#b8431a;font-size:11.5px}
   body.st .menu>div{position:static}
   body.st .acilir{position:fixed;left:8px;right:8px;top:auto;bottom:calc(66px + env(safe-area-inset-bottom,0px));min-width:0;max-height:62vh;border-radius:12px;z-index:3300;box-shadow:0 8px 30px rgba(0,0,0,.35)}
   body.st .acilir button{padding:.7rem 1rem;font-size:15px;gap:.6rem}
   body.st .acilir button span,body.st .acilir button small{display:none}
   body.st .acilir button{padding:.8rem 1rem}
   #altSekme{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:3200;background:#fff;border-top:1px solid #cfd4da;padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -2px 10px rgba(0,0,0,.06)}
-  #altSekme button,#altSekme a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:58px;background:none;border:0;color:#6b7482;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}
+  #altSekme button,#altSekme a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:58px;background:none;border:0;color:#6b7482;font-size:10.5px;font-weight:600;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}
   #altSekme svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   #altSekme .acik{color:#d83a2c}
   .otoSayfa{padding-bottom:1.5rem!important}

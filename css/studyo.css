@@ -48,3 +48,7 @@ body.st{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 .serit.aktif{border-color:var(--pirinc);box-shadow:0 0 0 1px var(--pirinc)}
 .arac2{gap:.35rem}
 .serit .et .btn{margin-top:auto;align-self:flex-start}
+.acilir button>div{display:flex;flex-direction:column;align-items:flex-start;gap:.05rem}
+.acilir button small{color:var(--sol);font-size:12px;font-weight:400}
+.acilir{min-width:340px}
+.serit .et.secili{background:rgba(200,162,76,.22)}

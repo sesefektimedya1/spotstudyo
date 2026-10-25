@@ -77,6 +77,7 @@
     $('#bosSonuc').style.display = S.sonuc ? 'none' : 'flex';
   }
   function guncelle() {
+    var sc0 = $$('.serit .et'); sc0.forEach(function (e) { e.classList.toggle('secili', !!S.serit && e.parentNode.classList.contains(S.aktif)); });
     var st = S.ses ? Motor.istatistik(S.ses, SR) : null;
     $('#sesBilgi').innerHTML = st ? sn(st.sure) + '<br>tepe ' + st.tepeDb.toFixed(1) + ' dB' : 'Boş';
     $('#muzikBilgi').textContent = S.muzik ? S.muzikAd.slice(0, 22) + ' · ' + sn(S.muzik.L.length / SR) : 'Seçilmedi';
@@ -98,7 +99,7 @@
     function getSec() { return ad === 'ses' ? S.sec : S.msec; }
     function setSec(v) { if (ad === 'ses') S.sec = v; else S.msec = v; }
     c.addEventListener('mousedown', function (e) {
-      var d = dizi(); S.aktif = ad; if (!d) { guncelle(); return; }
+      var d = dizi(); S.aktif = ad; S.serit = false; if (!d) { guncelle(); return; }
       var s2 = Math.min(x2s(c, e), d.length), sc = getSec(), tol = 6 * S.spp;
       if (sc && Math.abs(s2 - sc[0]) <= tol) { mod = 'kenar'; sabit = sc[1]; }
       else if (sc && Math.abs(s2 - sc[1]) <= tol) { mod = 'kenar'; sabit = sc[0]; }
@@ -120,7 +121,7 @@
     }, { passive: false });
   }
   seritBagla('ses'); seritBagla('muzik');
-  cv.sonuc.addEventListener('mousedown', function () { S.aktif = 'sonuc'; guncelle(); });
+  cv.sonuc.addEventListener('mousedown', function () { S.aktif = 'sonuc'; S.serit = false; guncelle(); });
   tekerBagla(cv.sonuc);
   window.addEventListener('resize', function () { guncelle(); });
   function zoom(k, odak) {
@@ -355,6 +356,17 @@
   }
 
   /* ---------- Düzenleme ---------- */
+  async function dipTemizle() {
+    if (!S.ses) return toast('Önce bir ses kaydedin ya da yükleyin');
+    if (S.aktif === 'muzik') toast('Dip ses temizliği konuşma kaydına uygulanır');
+    if (S.mesgul) return; S.mesgul = true; mesaj('Dip ses temizleniyor…'); await bekle();
+    try {
+      var y = Motor.gurultuAzalt(S.ses, SR, { db: 18, bias: 0, hiz: 50 }, S.z.gurultu.iz || null);
+      y = Motor.kapi(y, SR, { esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 });
+      degistirK('ses', y); toast('Dip ses temizlendi. Beğenmezseniz Ctrl+Z');
+    } catch (e) { hata(e); }
+    S.mesgul = false; mesaj('');
+  }
   var AD = { ses: 'ses', muzik: 'müzik' };
   function sonucKilit() { if (S.aktif === 'sonuc') { toast('Sonuç şeridi düzenlenemez. SES ya da MÜZİK şeridini seçin'); return true; } return false; }
   function dizideMi() { if (sonucKilit()) return false; if (!aktifDizi()) { toast(S.aktif === 'muzik' ? 'Önce bir müzik seçin' : 'Önce bir ses kaydedin ya da yükleyin'); return false; } return true; }
@@ -366,7 +378,9 @@
   function seciliUygula(fn) { if (!secimVar()) return; uygula(fn); }
   var islem = {
     kirp: function () { if (!secimVar()) return; uygula(function (x, a, b) { return Motor.kirp(x, a, b); }); S.imlec = 0; tumuGoster(); guncelle(); },
-    sil: function () { if (!secimVar()) return; var a = aktifSec()[0]; uygula(function (x, a2, b) { return Motor.sil(x, a2, b); }); if (S.aktif === 'ses') S.imlec = a; guncelle(); },
+    sil: function () {
+      if (S.serit && S.aktif !== 'sonuc' && !aktifSec()) return islem.kaldir();
+      if (!secimVar()) return; var a = aktifSec()[0]; uygula(function (x, a2, b) { return Motor.sil(x, a2, b); }); if (S.aktif === 'ses') S.imlec = a; guncelle(); },
     sessiz: function () { seciliUygula(function (x, a, b) { return Motor.sessizYap(x, a, b); }); },
     giris: function () { seciliUygula(function (x, a, b) { return Motor.fade(x, a, b, 'giris'); }); },
     cikis: function () { seciliUygula(function (x, a, b) { return Motor.fade(x, a, b, 'cikis'); }); },
@@ -382,6 +396,7 @@
     normal: function () { if (!dizideMi()) return; uygula(function (x) { return Motor.normallestir(x, -1); }); toast('Tepe −1 dB’e getirildi'); },
     dc: function () { if (!dizideMi()) return; uygula(function (x) { return Motor.dcSil(x); }); },
     tumu: function () { if (!dizideMi()) return; var n = aktifDizi().length; if (S.aktif === 'ses') S.sec = [0, n]; else S.msec = [0, n]; guncelle(); },
+    dip: function () { dipTemizle(); },
     kaldir: function () {
       if (sonucKilit()) return;
       if (!aktifDizi()) return toast('Kaldırılacak ' + AD[S.aktif] + ' yok');
@@ -392,27 +407,73 @@
   };
   function aracDugmeleri() {
     $$('[data-i]').forEach(function (b) { b.onclick = function () { islem[b.dataset.i](); }; });
+    $$('.serit.ses .et, .serit.muzik .et').forEach(function (e) { e.style.cursor = 'pointer'; e.title = 'Tıkla: şeridi seç. Delete: dosyanın tamamını kaldırır'; e.onclick = function (ev) { if (ev.target.tagName === 'BUTTON') return; S.aktif = e.parentNode.classList.contains('ses') ? 'ses' : 'muzik'; S.serit = true; if (S.aktif === 'ses') S.sec = null; else S.msec = null; guncelle(); toast((S.aktif === 'ses' ? 'SES' : 'MÜZİK') + ' şeridi seçildi. Delete: tamamını kaldırır'); }; });
     $$('[data-kaldir]').forEach(function (b) { b.onclick = function () { S.aktif = b.dataset.kaldir; islem.kaldir(); }; });
     $$('[data-db]').forEach(function (b) { b.onclick = function () { islem.kazancHizli(+b.dataset.db); }; });
   }
 
   /* ---------- Menüler ---------- */
+  function yardimBilgi(b, h) { bilgi(b, h); }
+  // [ad, kısayol, işlev, açıklama]
   var M = [
-    ['Dosya', [['Ses aç…', 'Ctrl+O', function () { $('#dosyaSes').click(); }], ['Müzik aç…', '', function () { $('#dosyaMuzik').click(); }], '-', ['MP3 indir', 'Ctrl+S', function () { indir('mp3'); }], ['WAV indir', '', function () { indir('wav'); }], ['Santral WAV indir (8 kHz)', '', function () { indir('santral'); }], '-', ['Sesi kaldır (seçili şerit)', 'Ctrl+K', islem.kaldir], '-', ['Panelime dön', '', function () { location.href = 'panel.html'; }]]],
-    ['Düzen', [['Geri al', 'Ctrl+Z', islem.geri], ['Yinele', 'Ctrl+Y', islem.yinele], '-', ['Tümünü seç', 'Ctrl+A', islem.tumu], ['Seçimi sil', 'Delete / Backspace', islem.sil], ['Yalnız seçimi tut (kırp)', 'Ctrl+T', islem.kirp], ['Sessizlik ekle…', '', islem.sessizlikEkle]]],
-    ['Görünüm', [['Yakınlaştır (fare tekerleği)', '', function () { zoom(0.6); }], ['Uzaklaştır', '', function () { zoom(1.6); }], ['Tümünü göster', '', function () { tumuGoster(); guncelle(); }]]],
-    ['Ekle', [['Seçimi sessiz yap', '', islem.sessiz], ['Sessizlik ekle…', '', islem.sessizlikEkle]]],
-    ['Aktarım', [['Oynat / Durdur', 'Boşluk', oynatToggle], ['Sesi dinle', '', oynatSes], ['Müziği dinle', '', oynatMuzik], ['Sonucu dinle', '', oynatSonuc], ['Başa dön', '', function () { $('#basaBtn').click(); }], '-', ['Kayıt başlat / bitir', 'Ctrl+R', kayitBasla]]],
-    ['İşlem', [['Kazanç…', '', islem.kazanc], ['Kazanç +1 dB', '', function () { islem.kazancHizli(1); }], ['Kazanç −1 dB', '', function () { islem.kazancHizli(-1); }], ['Seçimi sessiz yap', '', islem.sessiz], ['Yumuşak giriş (fade in)', '', islem.giris], ['Yumuşak çıkış (fade out)', '', islem.cikis], ['Normalleştir (tepe −1 dB)', '', islem.normal], ['DC kaymasını kaldır', '', islem.dc]]],
-    ['Efektler', [['Gürültü azaltma…', '', gurultuDlg], ['Kapı…', '', kapiDlg], ['Ton (EQ)…', '', tonDlg], ['Kuvvet (kompresör)…', '', kuvvetDlg], ['Efekt (yankı, telefon, robot)…', '', efektDlg]]],
-    ['Araçlar', [['Müzik karışımı…', '', muzikDlg], ['Seviye (radyo / TV / santral)…', '', seviyeDlg], ['Sonucu hazırla', '', function () { uret(); }]]],
-    ['Seçenekler', [['Mikrofon seç…', '', mikSec]]],
-    ['Yardım', [['Kısayollar', '', function () { bilgi('Kısayollar', '<p>Boşluk: oynat / durdur<br>Ctrl+Z / Ctrl+Y: geri al / yinele<br>Ctrl+A: tümünü seç<br>Delete: seçimi sil<br>Ctrl+T: yalnız seçimi tut<br>Ctrl+O: ses aç<br>Ctrl+R: kayıt<br>Ctrl+S: MP3 indir<br>Ctrl + fare tekerleği: yakınlaştır</p>'); }], ['Nasıl çalışır?', '', function () { bilgi('Nasıl çalışır?', '<p>1. Sesinizi kaydedin ya da yükleyin.<br>2. Müzik seçin (isteğe bağlı).<br>3. “Otomatik hazırla”ya basın. Beğenmezseniz “Yeniden dene”.<br>4. İnce ayar için Efektler ve Araçlar menülerini kullanın.<br>5. Hazırsa MP3 indirin.</p><p class="sol">Dinleme ve denemeler sınırsızdır; yalnız indirme sayılır.</p>'); }]]]
+    ['Dosya', [
+      ['Ses yükle…', 'Ctrl+O', function () { $('#dosyaSes').click(); }, 'Bilgisayarından konuşma kaydı seç'],
+      ['Müzik yükle…', '', function () { $('#dosyaMuzik').click(); }, 'Kendi müziğini altına koy'],
+      ['Sesi komple kaldır', '', function () { S.aktif = 'ses'; islem.kaldir(); }, 'Yüklenen konuşmayı sil, yenisini yükle'],
+      ['Müziği komple kaldır', '', function () { S.aktif = 'muzik'; islem.kaldir(); }, 'Yüklenen müziği sil'],
+      '-',
+      ['MP3 indir', 'Ctrl+S', function () { indir('mp3'); }, 'Radyo ve TV için bitmiş spot (indirme hakkından düşer)'],
+      ['WAV indir', '', function () { indir('wav'); }, 'Kayıpsız dosya'],
+      ['Santral WAV indir', '', function () { indir('santral'); }, '8 kHz, santral anonsu için'],
+      '-',
+      ['Panelime dön', '', function () { location.href = 'panel.html'; }, '']]],
+    ['Düzen', [
+      ['Geri al', 'Ctrl+Z', islem.geri, 'Son işlemi geri al'],
+      ['Yinele', 'Ctrl+Y', islem.yinele, 'Geri alınanı tekrar yap'],
+      '-',
+      ['Hepsini seç', 'Ctrl+A', islem.tumu, 'Şeridin tamamını seç'],
+      ['Seçimi sil', 'Delete', islem.sil, 'Seçili bölümü kes at. Soldaki yazıya tıklayıp Delete: dosyanın tamamı gider'],
+      ['Seçimi tut, gerisini at', 'Ctrl+T', islem.kirp, 'Başı ve sonu kırp'],
+      ['Sessizlik ekle…', '', islem.sessizlikEkle, 'İmlecin olduğu yere boşluk koy']]],
+    ['Temizlik', [
+      ['Dip sesi temizle', '', function () { dipTemizle(); }, 'Tek tuş: parazit, uğultu ve boşluklardaki gürültüyü siler'],
+      ['Gürültü azaltma (ayarlı)…', '', gurultuDlg, 'Daha güçlü ya da daha hafif temizlik, kendi gürültü izin'],
+      ['Sessizlikte sesi kıs…', '', kapiDlg, 'Konuşma yokken sesi kapatır']]],
+    ['Ses ayarı', [
+      ['Ses rengi (EQ)…', '', tonDlg, 'Tok, parlak, sıcak gibi ton ayarı'],
+      ['Sesi sıkıştır (kompresör)…', '', kuvvetDlg, 'Alçak ve yüksek yerleri dengeler, ses güçlü çıkar'],
+      ['Efekt…', '', efektDlg, 'Yankı, telefon, megafon, robot'],
+      ['Müzik karışımı…', '', muzikDlg, 'Müziğin sesin ne kadar altında kalacağı'],
+      ['Çıkış seviyesi…', '', seviyeDlg, 'Radyo, TV, santral için ses yüksekliği']]],
+    ['İşlem', [
+      ['Ses seviyesi ayarla…', '', islem.kazanc, 'Seçimi ya da şeridi yükselt/alçalt'],
+      ['+1 dB', '', function () { islem.kazancHizli(1); }, ''],
+      ['−1 dB', '', function () { islem.kazancHizli(-1); }, ''],
+      ['Seçimi sessiz yap', '', islem.sessiz, 'Sesi siler ama süre kalır'],
+      ['Yumuşak giriş (fade in)', '', islem.giris, 'Seçimin başında sesi yavaş açar'],
+      ['Yumuşak çıkış (fade out)', '', islem.cikis, 'Seçimin sonunda sesi yavaş kısar'],
+      ['En yüksek seviyeye getir', '', islem.normal, 'Bozmadan olabildiğince yükseltir (−1 dB)']]],
+    ['Çal', [
+      ['Oynat / Durdur', 'Boşluk', oynatToggle, ''],
+      ['Sesi dinle', '', oynatSes, 'Yalnız konuşma'],
+      ['Müziği dinle', '', oynatMuzik, 'Yalnız müzik'],
+      ['Sonucu dinle', '', oynatSonuc, 'Müzikli bitmiş hali'],
+      ['Başa dön', '', function () { $('#basaBtn').click(); }, ''],
+      '-',
+      ['Mikrofonla kayıt', 'Ctrl+R', kayitBasla, 'Başlat / bitir'],
+      ['Mikrofon seç…', '', mikSec, 'Birden fazla mikrofonun varsa']]],
+    ['Görünüm', [
+      ['Yakınlaştır', 'Fare tekerleği', function () { zoom(0.6); }, ''],
+      ['Uzaklaştır', 'Fare tekerleği', function () { zoom(1.6); }, ''],
+      ['Hepsini göster', '', function () { tumuGoster(); guncelle(); }, '']]],
+    ['Yardım', [
+      ['Kısayollar', '', function () { bilgi('Kısayollar', '<p>Boşluk: oynat / durdur<br>Delete ya da Backspace: seçimi sil<br>Soldaki SES / MÜZİK yazısına tıkla + Delete: dosyanın tamamını kaldır<br>Ctrl+Z / Ctrl+Y: geri al / yinele<br>Ctrl+A: hepsini seç<br>Ctrl+T: seçimi tut<br>Ctrl+O: ses yükle<br>Ctrl+R: kayıt<br>Ctrl+S: MP3 indir<br>Fare tekerleği: yakınlaştır, Shift ile tekerlek: kaydır</p>'); }, ''],
+      ['Nasıl çalışır?', '', function () { bilgi('Nasıl çalışır?', '<p>1. Sesinizi kaydedin ya da yükleyin.<br>2. Müzik seçin (isteğe bağlı).<br>3. “Otomatik hazırla”ya basın. Beğenmezseniz “Yeniden dene”.<br>4. İnce ayar için Temizlik ve Ses ayarı menülerini kullanın.<br>5. Hazırsa MP3 indirin.</p><p class="sol">Dinleme ve denemeler sınırsızdır; yalnız indirme sayılır.</p>'); }, '']]]
   ];
   var mm = $('#menu');
   M.forEach(function (g) {
     var d = document.createElement('div'), b = document.createElement('button'), a = document.createElement('div'); b.textContent = g[0]; a.className = 'acilir';
-    g[1].forEach(function (m) { if (m === '-') { a.appendChild(document.createElement('hr')); return; } var x = document.createElement('button'); x.innerHTML = esc(m[0]) + '<span>' + esc(m[1]) + '</span>'; x.onclick = function () { d.classList.remove('ac'); m[2](); }; a.appendChild(x); });
+    g[1].forEach(function (m) { if (m === '-') { a.appendChild(document.createElement('hr')); return; } var x = document.createElement('button'); x.innerHTML = '<div><b>' + esc(m[0]) + '</b>' + (m[3] ? '<small>' + esc(m[3]) + '</small>' : '') + '</div><span>' + esc(m[1]) + '</span>'; x.onclick = function () { d.classList.remove('ac'); m[2](); }; a.appendChild(x); });
     d.appendChild(b); d.appendChild(a); mm.appendChild(d);
     b.onclick = function (e) { e.stopPropagation(); var w = d.classList.contains('ac'); $$('.menu>div').forEach(function (z) { z.classList.remove('ac'); }); if (!w) d.classList.add('ac'); };
   });
@@ -446,7 +507,7 @@
     else if (c && k === 's') { e.preventDefault(); indir($('#hedef').value === 'santral' ? 'santral' : 'mp3'); }
     else if (k === 'delete' || k === 'backspace') { e.preventDefault(); islem.sil(); }
   });
-  window.__studyo = { S: S, Motor: Motor, sesYukle: sesYukle, setSes: setSes, setMuzik: setMuzik, oto: oto, uret: uret, indir: indir, islem: islem };
+  window.__studyo = { dipTemizle: dipTemizle, S: S, Motor: Motor, sesYukle: sesYukle, setSes: setSes, setMuzik: setMuzik, oto: oto, uret: uret, indir: indir, islem: islem };
 
   aracDugmeleri(); hedefUygula(); tumuGoster(); guncelle();
 })();

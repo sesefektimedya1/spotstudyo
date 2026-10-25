@@ -14,7 +14,24 @@
   function hata(e) { console.error(e); mesaj(''); toast(e && e.message ? e.message : String(e)); }
   function tekKanal(b) { var n = b.length, o = new Float32Array(n), c = b.numberOfChannels, i, k; for (k = 0; k < c; k++) { var d = b.getChannelData(k); for (i = 0; i < n; i++) o[i] += d[i] / c; } return o; }
   function stereoAl(b) { var L = b.getChannelData(0).slice(); if (b.numberOfChannels < 2) return { L: L, R: L }; var R = b.getChannelData(1).slice(); return { L: L, R: R }; }
-  async function coz(ab) { return await ac().decodeAudioData(ab); }
+  /* Her tarayıcıda (telefon dahil) ses, motorun beklediği 44100 Hz'e çevrilerek okunur */
+  async function coz(ab) {
+    var OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, kopya = ab.slice(0);
+    if (OC) {
+      try { var oc = new OC(1, 1, SR); var b = await new Promise(function (ok, no) { var r = oc.decodeAudioData(ab, ok, no); if (r && r.then) r.then(ok, no); }); if (b && Math.round(b.sampleRate) === SR) return b; } catch (e) {}
+    }
+    var b2 = await ac().decodeAudioData(kopya);
+    if (Math.round(b2.sampleRate) !== SR) {
+      var oc2 = new (OC || window.AudioContext)(b2.numberOfChannels, Math.max(1, Math.ceil(b2.duration * SR)), SR), kn = oc2.createBufferSource(); kn.buffer = b2; kn.connect(oc2.destination); kn.start(0); return await oc2.startRendering();
+    }
+    return b2;
+  }
+  function yenidenOrnekle(x, kaynakHz) {
+    if (Math.round(kaynakHz) === SR) return x;
+    var oran = kaynakHz / SR, m = Math.max(1, Math.floor(x.length / oran)), o = new Float32Array(m);
+    for (var i = 0; i < m; i++) { var t = i * oran, k = Math.floor(t), f = t - k; o[i] = (x[k] || 0) * (1 - f) + (x[k + 1] || 0) * f; }
+    return o;
+  }
   function mono(L, R) { if (L === R) return L; var o = new Float32Array(L.length); for (var i = 0; i < o.length; i++) o[i] = 0.5 * (L[i] + R[i]); return o; }
 
   /* ---------- Pencereler ---------- */
@@ -284,6 +301,7 @@
         alive = false; try { sp.onaudioprocess = null; sp.disconnect(); src.disconnect(); } catch (e) {} stream.getTracks().forEach(function (t) { t.stop(); });
         $('#metre i').style.width = '0'; $('#kayitBtn').classList.remove('kayitta'); $('#kayitBtn').title = 'Mikrofonla kayıt  (Ctrl+R)'; $('#otoKayit').textContent = '● Mikrofonla kayıt al'; oynatIk(0);
         p.kayitta = false; kayit = null;
+        if (Math.round(c.sampleRate) !== SR) { buf = yenidenOrnekle(buf.subarray(0, n), c.sampleRate); n = buf.length; }
         if (n < SR * 0.1) { toast('Kayıt çok kısa, alınmadı'); if (p.el.isConnected) { p.L = p.R = new Float32Array(SR * 2); p.bos = true; p.ovC = null; tumuGoster(p); } guncelle(); return; }
         p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (S.tab === 'oto' && S.aktif) $('#otoSes').value = 'p' + S.aktif; guncelle();
       };

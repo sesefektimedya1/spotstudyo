@@ -2,7 +2,7 @@
   var o = await korumali('yonetim', true); if (!o) return;
   var ic = $('#icerik'), SAYFA = 25, durum = { sayfa: 0, ara: '', plan: '' };
   $$('#sekme button').forEach(function (b) { b.onclick = function () { $$('#sekme button').forEach(function (x) { x.classList.remove('acik'); }); b.classList.add('acik'); ac(b.dataset.s); }; });
-  function ac(s) { ({ ozet: ozet, siparis: siparis, uyeler: uyeler, sesler: kutuphane.bind(null, 'sesler'), muzikler: kutuphane.bind(null, 'muzikler'), ayar: ayar })[s](); }
+  function ac(s) { ({ ozet: ozet, siparis: siparis, geri: geri, uyeler: uyeler, sesler: kutuphane.bind(null, 'sesler'), muzikler: kutuphane.bind(null, 'muzikler'), ayar: ayar })[s](); }
 
   async function ozet() {
     var z = await Veri.ozet();
@@ -20,6 +20,13 @@
       tr.querySelector('.dr').value = L[i].durum;
       tr.querySelector('.kyd').onclick = async function () { try { await Veri.siparisGuncelle(L[i].id, { durum: tr.querySelector('.dr').value, sonuc_url: tr.querySelector('.su').value.trim() }); toast('Kaydedildi'); } catch (e) { toast(e.message); } };
     });
+  }
+
+  async function geri() {
+    var L = await Veri.geriBildirimTum();
+    ic.innerHTML = '<div class="kart">' + (L.length ? L.map(function (x) {
+      return '<div style="padding:.8rem 0;border-bottom:1px solid var(--cizgi)"><div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:baseline"><span class="etiket">' + esc(x.tur || '') + '</span><b>' + esc(x.eposta || 'Üye değil') + '</b><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + ' · ' + esc(x.sayfa || '') + '</span></div><div style="margin-top:.35rem;white-space:pre-wrap">' + esc(x.mesaj || '') + '</div></div>';
+    }).join('') : '<span class="sol">Henüz geri bildirim yok.</span>') + '</div>';
   }
 
   async function uyeler() {

@@ -22,7 +22,7 @@
     'Spot metninizi buraya yazın.': 'Write your script here.', 'Müzik ara': 'Search music',
     'Kaydetmek istiyor musunuz?': 'Do you want to save?', 'Evet': 'Yes', 'Hayır': 'No', 'İptal': 'Cancel', 'Tamam': 'OK', 'Önizleme': 'Preview', 'Ön ayar': 'Preset',
     'Siparişiniz alındı.': 'Your order has been received.', 'Siparişlerim': 'My orders', 'İndirmelerim': 'My downloads', 'Üyelik': 'Plan', 'Ücretsiz plan': 'Free plan', 'Premium plan': 'Premium plan', 'Hesap': 'Account', 'Yeni spot yap': 'Make a new spot', 'Bu ay indirme': 'Downloads this month', 'İndir': 'Download', 'Henüz sipariş yok.': 'No orders yet.',
-    'Yeni': 'New', 'Hazırlanıyor': 'In progress', 'Tamamlandı': 'Completed', 'Durum': 'Status', 'Tarih': 'Date', 'Sipariş': 'Order', 'Equalizer': 'Equalizer', 'Alçak kes': 'Low cut', 'Yüksek kes': 'High cut', 'Bas': 'Low', 'Alt orta': 'Low-mid', 'Üst orta': 'High-mid', 'Tiz': 'High', 'Frekans': 'Frequency', 'Kazanç': 'Gain', 'Genişlik': 'Width'
+    'Yeni': 'New', 'Hazırlanıyor': 'In progress', 'Tamamlandı': 'Completed', 'Durum': 'Status', 'Tarih': 'Date', 'Sipariş': 'Order', '■ Durdur': '■ Stop', 'Ses efektini değiştir': 'Change sound effect', 'Geri bildirim': 'Feedback', 'Yapay zeka modu': 'AI mode', 'ÜCRETLİ': 'PAID', 'Sizi önemsiyoruz': 'We care about you', 'Vazgeç': 'Cancel', 'Gönder': 'Send', 'Equalizer': 'Equalizer', 'Alçak kes': 'Low cut', 'Yüksek kes': 'High cut', 'Bas': 'Low', 'Alt orta': 'Low-mid', 'Üst orta': 'High-mid', 'Tiz': 'High', 'Frekans': 'Frequency', 'Kazanç': 'Gain', 'Genişlik': 'Width'
   };
   var RE = [
     [/^Bu ay (\d+) \/ (\S+) indirme$/, '$1 / $2 downloads this month'],

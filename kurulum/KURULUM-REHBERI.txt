@@ -17,9 +17,15 @@ SPOTSTÜDYO — KURULUM (sırayla, ilk deneme için 1. adım yeter)
 
 
 === v10 EKİ: SİPARİŞ SİSTEMİ ("Bize gönder") ===
-1) Supabase > SQL Editor: kurulum/siparis-kurulum.txt dosyasının tamamını yapıştırıp RUN'a basın (bir kez).
+1) Supabase > SQL Editor: kurulum/siparis-ve-geribildirim-kurulum.txt dosyasının tamamını yapıştırıp RUN'a basın (bir kez).
 2) E-posta bildirimi: sesefektimedya@gmail.com adresine, ilk sipariş gönderildiğinde FormSubmit'ten bir "onay" maili gelir.
    O maildeki düğmeye bir kez tıklayın. Bundan sonra her sipariş otomatik mailinize düşer.
 3) WhatsApp (0533 150 98 90): müşteri siparişi gönderince ekranda "WhatsApp'tan da haber ver" düğmesi çıkar; tıklayınca mesaj hazır yazılı açılır.
    (Tam otomatik WhatsApp için ücretli WhatsApp Business API gerekir; şimdilik bu yöntem ücretsizdir.)
 4) Yönetim > Siparişler: sipariş durumunu seçin, hazır dosyanın indirme bağlantısını yapıştırıp Kaydet deyin; müşteri Panelim > Siparişlerim'de "İndir" düğmesini görür.
+
+=== v11 EKİ ===
+- Geri bildirim kutusu: üst çubukta "Geri bildirim" düğmesi. Mesajlar Yönetim > Geri bildirimler'de görünür ve mailinize de düşer.
+  (Tablo kurulumu yukarıdaki siparis-ve-geribildirim-kurulum.txt içinde; zaten çalıştırdıysanız tekrar çalıştırın, zarar vermez.)
+- Yapay zeka modu: sekme ve sohbet ekranı hazır, ÜCRETLİ üyeye açılır. Gerçek yapay zeka bağlantısı için kurulum/yz-sohbet-fonksiyonu.txt
+  hazır bekliyor; bunu birlikte kuracağız (bir API anahtarı gerekir). O zamana kadar sohbet "bağlantı henüz kurulmadı" der.

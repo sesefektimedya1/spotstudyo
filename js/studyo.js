@@ -144,6 +144,7 @@
     var c = p.cv, d = boyutla(c), g = c.getContext('2d'), W = c.width, H = c.height, RH = 18 * d, dz = H - RH;
     g.fillStyle = '#d9d9d9'; g.fillRect(0, 0, W, H);
     g.fillStyle = '#ececec'; g.fillRect(0, 0, W, RH); g.fillStyle = '#9a9a9a'; g.fillRect(0, RH - 1, W, 1);
+    var nL = p.L.length, wP = gW(p); if (!p.kayitta && nL > 0 && wP > 0 && p.spp * wP > nL * 1.0001) { p.spp = Math.max(0.05, nL / wP); p.bas = 0; }
     var st = p.R !== p.L, nk = st ? 2 : 1, ch = dz / nk;
     kanalCiz(g, p.L, p, RH, ch, W, d, 1, RH); if (st) kanalCiz(g, p.R, p, RH + ch, ch, W, d, 2, RH);
     // cetvel
@@ -418,7 +419,7 @@
     });
   }
   function dipTemizle() {
-    var p = aktifVar(); if (!p) return; var T = Motor.TEMIZLE.standart;
+    var p = aktifVar(); if (!p) return; var zm0 = Motor.istatistik(mono(p.L, p.R), SR).zeminDb, T = Motor.TEMIZLE[zm0 > -34 ? 'cokguclu' : 'guclu'];
     calis('Dip ses temizleniyor', function () { bolgeUygula(p, function (sL, sR) { return gurultuIsle(sL, sR, { db: T.g.db, bias: T.g.bias, hiz: T.g.hiz, kapi: true, konum: T.k.konum, aralik: T.k.aralik }); }); toast('Dip ses temizlendi. Beğenmezseniz Ctrl+Z'); });
   }
   function kapiDlg() {
@@ -760,11 +761,13 @@
       var muzik = null, mv = $('#otoMuzik').value;
       if (mv[0] === 'k') muzik = await bankaDizi('muzikler', +mv.slice(1)); else if (mv[0] === 'p') { var mp = S.pen.filter(function (z) { return 'p' + z.id === mv; })[0]; if (mp) muzik = { L: mp.L, R: mp.R }; }
       var iz = S.z.gurultu.iz; S.tarzNo = yeniden ? S.tarzNo + 1 : 0; var T = Motor.TARZ[S.tarzNo % Motor.TARZ.length];
-      var ham = mono(p.L, p.R), zem = Motor.istatistik(ham, SR).zeminDb, tm = zem > -34 ? 'cokguclu' : zem > -42 ? 'guclu' : 'standart';
+      var ham = mono(p.L, p.R), zem = Motor.istatistik(ham, SR).zeminDb, tm = zem > -34 ? 'cokguclu' : 'guclu'; /* HER SESE güçlü dip ses temizliği uygulanır (en az 'guclu') */
       S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: tm })); S.z.gurultu.iz = S.iz || iz || null;
       if (S.tarzNo >= Motor.TARZ.length) { var j = function (a) { return (Math.random() - 0.5) * 2 * a; }; S.z.muzik.altDb += j(1); S.z.muzik.yuksel = Math.max(0, S.z.muzik.yuksel + j(1)); S.z.muzik.giris = Math.max(0.5, S.z.muzik.giris + j(0.5)); }
       hedefUygula(); $('#tarzAd').textContent = T.ad + (S.tarzNo >= Motor.TARZ.length ? ' (ince ayar)' : '');
-      S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb; sonucCiz(); calDizi(S.sonuc.L, S.sonuc.R, null, 0);
+      S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb;
+      if (S.sonuc.zeminSonra > -62 && tm !== 'cokguclu') { /* dip ses hâlâ duyulur: daha güçlü ikinci tur */ S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: 'cokguclu' })); S.z.gurultu.iz = S.iz || iz || null; S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb; }
+      sonucCiz(); calDizi(S.sonuc.L, S.sonuc.R, null, 0);
     } catch (e) { hata(e); }
     S.mesgul = false; mesaj('');
   }
@@ -833,7 +836,7 @@
   function sekme(t) {
     S.tab = t; $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
     ['#menu', '#arac', '.durum'].forEach(function (q) { $(q).style.display = t === 'manuel' ? '' : 'none'; });
-    if (t === 'manuel') guncelle(); if (t === 'oto') { otoListeleri(); sonucCiz(); }
+    if (t === 'manuel') guncelle(); if (t === 'oto') { otoListeleri(); sonucCiz(); } if (t === 'yz') yzDurum();
   }
   $$('#sekmeler button').forEach(function (b) { b.onclick = function () { sekme(b.dataset.t); }; });
 
@@ -1174,6 +1177,7 @@
   function dzBagla(id, secId) { var el = $(id); ['dragenter', 'dragover'].forEach(function (ev) { el.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); el.classList.add('uzerinde'); }); }); el.addEventListener('dragleave', function () { el.classList.remove('uzerinde'); }); el.addEventListener('drop', async function (e) { e.preventDefault(); e.stopPropagation(); el.classList.remove('uzerinde'); var f = e.dataTransfer && e.dataTransfer.files[0]; if (!f) return; var p = await dosyadanAc(f, 'ses'); if (p) { $(secId).value = 'p' + p.id; toast('Yüklendi: ' + p.ad); } }); }
   dzBagla('#dzSes', '#otoSes'); dzBagla('#dzMuzik', '#otoMuzik');
   $('#otoBtn').onclick = function () { oto(false); }; $('#yenidenBtn').onclick = function () { oto(true); };
+  $('#sonucDur').onclick = function () { durdur(); };
   $('#sonucCal').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); if (S.cal) durdur(); else calDizi(S.sonuc.L, S.sonuc.R, null, 0); };
   $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); otoListeleri(); sekme('manuel'); };
   $('#sonucDisa').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); disaDlg('sonuc'); };
@@ -1194,6 +1198,75 @@
     else if (k === 'delete' || k === 'backspace') { e.preventDefault(); I.sil(); }
   });
   window.__studyo = { S: S, Motor: Motor, I: I, pencereAc: pencereAc, dosyadanAc: dosyadanAc, oto: oto, diz: diz, ciz: ciz, kapat: kapat, karistirDlg: karistirDlg, gurultuDlg: gurultuDlg, disaDlg: disaDlg, sekme: sekme, bolgeUygula: bolgeUygula, dipTemizle: dipTemizle };
+
+
+  /* ---------- Hızlı düğmeler: her basışta sıradaki ses efekti ---------- */
+  function kazanc(sL, sR, db) { var g = Motor.dB(db), o = kanalDo(sL, sR, function (x) { var y = new Float32Array(x.length); for (var i = 0; i < y.length; i++) y[i] = x[i] * g; return y; }); var s = Motor.sinirla(o.L, o.R, SR, -0.5, 80); return { L: s.L, R: sR === sL ? s.L : s.R }; }
+  var EF = [
+    ['Radyo spikeri', function (a, b) { return zincirHammer(zincirEq(a, b, Motor.TON.radyo.bantlar), b, Motor.KUVVET.radyo, -1.5); }],
+    ['Sıcak spiker', function (a, b) { return zincirHammer(zincirEq(a, b, Motor.TON.sicak.bantlar), b, Motor.KUVVET.hafif, -1.5); }],
+    ['Parlak spiker', function (a, b) { return zincirHammer(zincirEq(a, b, Motor.TON.parlak.bantlar), b, Motor.KUVVET.radyo, -1.5); }],
+    ['Tok ve resmi', function (a, b) { return zincirHammer(zincirEq(a, b, Motor.TON.tok.bantlar), b, Motor.KUVVET.radyo, -1.5); }],
+    ['Net ve berrak', function (a, b) { return zincirHammer(zincirEq(a, b, Motor.TON.net.bantlar), b, Motor.KUVVET.hafif, -1.5); }],
+    ['Sesi dengele (güçlü)', function (a, b) { return zincirHammer({ L: a, R: b }, b, Motor.KUVVET.siki, -1.5); }],
+    ['Sesi kıs (−6 dB)', function (a, b) { return kazanc(a, b, -6); }, true],
+    ['Sesi yükselt (+6 dB)', function (a, b) { return kazanc(a, b, 6); }, true],
+    ['Oda yankısı', function (a, b) { return monoEfekt(a, b, { tur: 'oda', p: {} }); }],
+    ['Salon yankısı', function (a, b) { return monoEfekt(a, b, { tur: 'salon', p: {} }); }],
+    ['Yankı (slapback)', function (a, b) { return monoEfekt(a, b, { tur: 'yanki', p: {} }); }],
+    ['Plak havası', function (a, b) { return monoEfekt(a, b, { tur: 'plak', p: {} }); }],
+    ['Telefon hattı', function (a, b) { return monoEfekt(a, b, { tur: 'telefon', p: {} }); }],
+    ['Megafon', function (a, b) { return monoEfekt(a, b, { tur: 'megafon', p: {} }); }],
+    ['Robot', function (a, b) { return monoEfekt(a, b, { tur: 'robot', p: {} }); }],
+    ['Orijinal ses (efektsiz)', null, true]
+  ];
+  function efektDegistir() {
+    var p = aktifVar(); if (!p) return; if (p.kayitta) return toast('Önce kaydı bitirin');
+    if (S.mesgul) return; var orj;
+    if (p.efSon && p.efSon === p.L && p.efOrj) { orj = p.efOrj; p.undo.pop(); } else { orj = { L: p.L, R: p.R }; p.efIdx = -1; }
+    p.efIdx = (p.efIdx + 1) % EF.length; var e = EF[p.efIdx], no = p.efIdx + 1;
+    try {
+      var r = e[1] ? e[1](orj.L, orj.R) : { L: orj.L, R: orj.R }; if (!r) return;
+      if (e[1] && !e[2]) r = tepeyeAyarla(r);
+      var monoP = orj.R === orj.L; degistir(p, r.L, monoP && r.R !== r.L ? r.L : (monoP ? r.L : r.R));
+      p.efOrj = orj; p.efSon = p.L; p.kirli = true; guncelle();
+      toast('Efekt ' + no + '/' + EF.length + ': ' + e[0] + '  (tekrar basın: sıradaki efekt, Ctrl+Z: geri al)');
+      var h = $('#hzEfekt'); if (h) h.title = 'Şu an: ' + e[0];
+    } catch (er) { hata(er); }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('#hzDip,#hzEfekt') : null; if (!b) return;
+    if (S.tab !== 'manuel') sekme('manuel');
+    if (b.id === 'hzDip') dipTemizle(); else efektDegistir();
+  });
+
+  /* ---------- Yapay zeka modu (ücretli) ---------- */
+  var YZ = { mesajlar: [], mesgul: false };
+  async function yzDurum() {
+    var o = null; try { o = await Veri.oturum(); } catch (e) {}
+    var acik = !!o && (o.role === 'admin' || o.plan === 'premium');
+    $('#yzKilit').style.display = acik ? 'none' : 'flex'; $('#yzSohbet').style.display = acik ? 'flex' : 'none';
+  }
+  function yzCiz() {
+    var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Örneğin: “Bayram indirimli 30 saniyelik bir radyo spotu metni yaz.”</span></div>'; return; }
+    k.innerHTML = YZ.mesajlar.map(function (m, i) { return '<div class="yzM ' + m.r + '"><div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + (m.r === 'ai' && !m.hata ? '<button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bu metni “Bize gönder”e aktar</button>' : '') + '</div>'; }).join('');
+    k.scrollTop = k.scrollHeight;
+  }
+  async function yzGonder(metin) {
+    metin = (metin || '').trim(); if (!metin || YZ.mesgul) return; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ben', t: metin }); $('#yzGirdi').value = ''; yzCiz();
+    YZ.mesajlar.push({ r: 'ai', t: 'Düşünüyorum…', hata: true }); yzCiz();
+    try { var c = await Veri.yzSor(YZ.mesajlar.filter(function (m) { return !m.hata; }).map(function (m) { return { role: m.r === 'ben' ? 'user' : 'assistant', content: m.t }; })); YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: c }; }
+    catch (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: e.message || 'Yapay zeka şu an yanıt veremedi.', hata: true }; }
+    YZ.mesgul = false; yzCiz();
+  }
+  $('#yzGonder').onclick = function () { yzGonder($('#yzGirdi').value); };
+  $('#yzGirdi').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); yzGonder($('#yzGirdi').value); } });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-yz]') : null; if (!b) return;
+    if (b.dataset.yz === 'oneri') yzGonder(b.textContent);
+    else if (b.dataset.yz === 'aktar') { $('#bizeMetin').value = YZ.mesajlar[+b.dataset.i].t; sekme('bize'); toast('Metin “Bize gönder” sayfasına aktarıldı'); }
+  });
+  yzCiz();
 
   /* Bize gönder: kısayol, giriş yapan üyenin bilgileri, üst çubuktaki Dışa aktar */
   $('#bizeGit').onclick = function () { sekme('bize'); };

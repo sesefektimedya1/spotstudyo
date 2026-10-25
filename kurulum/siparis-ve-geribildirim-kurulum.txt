@@ -1,0 +1,31 @@
+-- Ses Efekti Spot Stüdyo — SİPARİŞ + GERİ BİLDİRİM tabloları.
+-- Supabase > SQL Editor'e tamamını yapıştırıp RUN'a basın. İstediğiniz kadar tekrar çalıştırabilirsiniz (zarar vermez).
+
+create table if not exists public.siparisler (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  ad text, telefon text, eposta text,
+  metin text not null, ses_adi text, muzik_adi text, tur text, notu text,
+  durum text not null default 'yeni' check (durum in ('yeni','hazirlaniyor','tamamlandi')),
+  sonuc_url text,
+  created_at timestamptz not null default now()
+);
+alter table public.siparisler enable row level security;
+drop policy if exists sip_ekle on public.siparisler;
+drop policy if exists sip_oku on public.siparisler;
+drop policy if exists sip_yonetici_guncelle on public.siparisler;
+create policy sip_ekle on public.siparisler for insert with check (user_id = auth.uid());
+create policy sip_oku on public.siparisler for select using (user_id = auth.uid() or public.is_admin());
+create policy sip_yonetici_guncelle on public.siparisler for update using (public.is_admin()) with check (public.is_admin());
+
+create table if not exists public.geri_bildirimler (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  eposta text, tur text, mesaj text not null, sayfa text,
+  created_at timestamptz not null default now()
+);
+alter table public.geri_bildirimler enable row level security;
+drop policy if exists gb_ekle on public.geri_bildirimler;
+drop policy if exists gb_oku on public.geri_bildirimler;
+create policy gb_ekle on public.geri_bildirimler for insert with check (user_id = auth.uid());
+create policy gb_oku on public.geri_bildirimler for select using (public.is_admin());

@@ -435,15 +435,19 @@
     parlak: { ad: 'Parlak', bantlar: [{ t: 'hp', f: 80 }, { t: 'peak', f: 3000, g: 2.5, bw: 1.2 }, { t: 'highshelf', f: 7000, g: 3.5 }] },
     tok: { ad: 'Tok erkek sesi', bantlar: [{ t: 'hp', f: 60 }, { t: 'lowshelf', f: 120, g: 3 }, { t: 'peak', f: 350, g: -2, bw: 1 }, { t: 'peak', f: 3000, g: 1.5, bw: 1.2 }, { t: 'highshelf', f: 8000, g: 1 }] },
     net: { ad: 'Net kadın sesi', bantlar: [{ t: 'hp', f: 100 }, { t: 'peak', f: 250, g: -2, bw: 1 }, { t: 'peak', f: 4000, g: 2.5, bw: 1.5 }, { t: 'highshelf', f: 9000, g: 2 }] },
+    uRadyo: { ad: 'Prodüksiyon: radyo', bantlar: [{ t: 'hp', f: 90 }, { t: 'lowshelf', f: 130, g: 1.5 }, { t: 'peak', f: 300, g: -3.5, bw: 1.3 }, { t: 'peak', f: 550, g: -1, bw: 1 }, { t: 'peak', f: 3200, g: 3, bw: 1.4 }, { t: 'highshelf', f: 9500, g: 3 }] },
+    uSicak: { ad: 'Prodüksiyon: sıcak', bantlar: [{ t: 'hp', f: 80 }, { t: 'lowshelf', f: 160, g: 2.5 }, { t: 'peak', f: 320, g: -3, bw: 1.3 }, { t: 'peak', f: 3500, g: 1.5, bw: 1.3 }, { t: 'highshelf', f: 10000, g: 1.5 }] },
+    uParlak: { ad: 'Prodüksiyon: parlak', bantlar: [{ t: 'hp', f: 90 }, { t: 'peak', f: 280, g: -3.5, bw: 1.3 }, { t: 'peak', f: 3000, g: 3.5, bw: 1.3 }, { t: 'highshelf', f: 7500, g: 4 }] },
+    uTok: { ad: 'Prodüksiyon: tok', bantlar: [{ t: 'hp', f: 70 }, { t: 'lowshelf', f: 120, g: 3 }, { t: 'peak', f: 320, g: -3, bw: 1.2 }, { t: 'peak', f: 3000, g: 2.5, bw: 1.3 }, { t: 'highshelf', f: 9000, g: 2 }] },
     sonytiz: { ad: 'Tizi aç (Sony hazır ayarına benzer)', bantlar: [{ t: 'highshelf', f: 5000, g: 9 }] },
     fletcher: { ad: 'Fletcher-Munson (Sony)', bantlar: [{ t: 'lowshelf', f: 200, g: 6 }, { t: 'peak', f: 4000, g: -12, bw: 1 }, { t: 'highshelf', f: 8000, g: 6 }] }
   };
   var KUVVET = {
     kapali: { ad: 'Kapalı', aktif: false },
-    hafif: { ad: 'Hafif (Graphic Dynamics)', aktif: true, esik: -14.5, oran: 1.4, atak: 1, birak: 500, makyaj: 0 },
-    radyo: { ad: 'Radyo (Wave Hammer)', aktif: true, esik: -8.1, oran: 4, atak: 40, birak: 80, makyaj: 2 },
-    siki: { ad: 'Sıkı', aktif: true, esik: -12, oran: 6, atak: 10, birak: 120, makyaj: 3 },
-    coksiki: { ad: 'Çok sıkı', aktif: true, esik: -16, oran: 8, atak: 5, birak: 150, makyaj: 4 }
+    hafif: { ad: 'Hafif (Graphic Dynamics)', aktif: true, uEsik: -22, esik: -14.5, oran: 1.4, atak: 1, birak: 500, makyaj: 0 },
+    radyo: { ad: 'Radyo (Wave Hammer)', aktif: true, uEsik: -22, esik: -8.1, oran: 4, atak: 40, birak: 80, makyaj: 2 },
+    siki: { ad: 'Sıkı', aktif: true, uEsik: -25, esik: -12, oran: 6, atak: 10, birak: 120, makyaj: 3 },
+    coksiki: { ad: 'Çok sıkı', aktif: true, uEsik: -28, esik: -16, oran: 8, atak: 5, birak: 150, makyaj: 4 }
   };
   var TEMIZLE = {
     yok: { ad: 'Temizlik yok', g: { aktif: false }, k: { aktif: false } },
@@ -469,11 +473,11 @@
     santral: { ad: 'Santral', hedef: -16, tavan: -1.5, bicim: 'wav8' }
   };
   var TARZ = [
-    { ad: 'Dengeli radyo', temizle: 'standart', ton: 'radyo', kuvvet: 'radyo', efekt: 'yok', muzik: { altDb: 10, yuksel: 0, giris: 2, kuyruk: 2, cikisFade: 1.5 } },
-    { ad: 'Sıcak', temizle: 'standart', ton: 'sicak', kuvvet: 'radyo', efekt: 'oda', muzik: { altDb: 9, yuksel: 3, giris: 2.5, kuyruk: 2.5, cikisFade: 2 } },
-    { ad: 'Parlak', temizle: 'standart', ton: 'parlak', kuvvet: 'siki', efekt: 'yok', muzik: { altDb: 11, yuksel: 4, giris: 2, kuyruk: 2, cikisFade: 1.5 } },
-    { ad: 'Enerjik', temizle: 'standart', ton: 'parlak', kuvvet: 'siki', efekt: 'plak', muzik: { altDb: 8, yuksel: 6, giris: 1, kuyruk: 1.5, cikisFade: 1 } },
-    { ad: 'Tok ve resmi', temizle: 'standart', ton: 'tok', kuvvet: 'radyo', efekt: 'yok', muzik: { altDb: 12, yuksel: 4, giris: 3, kuyruk: 3, cikisFade: 2 } }
+    { ad: 'Dengeli radyo', temizle: 'standart', ton: 'uRadyo', kuvvet: 'radyo', efekt: 'yok', muzik: { altDb: 15, yuksel: 1.5, giris: 1, kuyruk: 1.2, cikisFade: 1 } },
+    { ad: 'Sıcak', temizle: 'standart', ton: 'uSicak', kuvvet: 'radyo', efekt: 'oda', muzik: { altDb: 14, yuksel: 2, giris: 1.2, kuyruk: 1.4, cikisFade: 1.2 } },
+    { ad: 'Parlak', temizle: 'standart', ton: 'uParlak', kuvvet: 'siki', efekt: 'yok', muzik: { altDb: 16, yuksel: 2, giris: 0.9, kuyruk: 1.1, cikisFade: 1 } },
+    { ad: 'Enerjik', temizle: 'standart', ton: 'uParlak', kuvvet: 'siki', efekt: 'plak', muzik: { altDb: 13, yuksel: 3, giris: 0.8, kuyruk: 1, cikisFade: 0.8 } },
+    { ad: 'Tok ve resmi', temizle: 'standart', ton: 'uTok', kuvvet: 'radyo', efekt: 'yok', muzik: { altDb: 17, yuksel: 2, giris: 1.4, kuyruk: 1.5, cikisFade: 1.2 } }
   ];
 
   function varsayilanZincir() {
@@ -483,7 +487,7 @@
       ton: { onayar: 'duz', bantlar: [] },
       kuvvet: { aktif: true, esik: -8.1, oran: 4, atak: 40, birak: 80, makyaj: 2, diz: 6 },
       efekt: { tur: 'yok', onayar: 'yok', p: {} },
-      muzik: { altDb: 10, yuksel: 0, giris: 2, kuyruk: 2, cikisFade: 1.5, girisFade: 0.05, duckAtak: 200, duckBirak: 600 },
+      muzik: { altDb: 15, yuksel: 1.5, giris: 1, kuyruk: 1.2, cikisFade: 1, girisFade: 0.05, duckAtak: 200, duckBirak: 600 },
       seviye: { tur: 'radyo', hedef: -11.6, tavan: -1.5 }
     };
   }
@@ -492,7 +496,7 @@
     z.gurultu = Object.assign({ aktif: false, db: 12, bias: 0, hiz: 50, iz: z.gurultu.iz }, T.g);
     z.kapi = Object.assign({ aktif: false, esik: null, aralik: 30, bekle: 60, ac: 15, kapa: 120 }, T.k);
     z.ton = { onayar: t.ton, bantlar: JSON.parse(JSON.stringify(TON[t.ton].bantlar)) };
-    var K = KUVVET[t.kuvvet]; z.kuvvet = Object.assign({ aktif: true, diz: 6 }, K);
+    var K = KUVVET[t.kuvvet]; z.kuvvet = Object.assign({ aktif: true, diz: 6 }, K, K.uEsik != null ? { esik: K.uEsik } : {}); z.uretim = { aktif: true, hedefLufs: -20 };
     var E = EFEKT[t.efekt]; z.efekt = { tur: E.tur, onayar: t.efekt, p: JSON.parse(JSON.stringify(E.p)) };
     z.muzik = Object.assign({}, z.muzik, t.muzik);
     return z;
@@ -503,7 +507,12 @@
     var y = x;
     if (z.gurultu && z.gurultu.aktif) y = gurultuAzalt(y, sr, z.gurultu, z.gurultu.iz);
     if (z.kapi && z.kapi.aktif) y = kapi(y, sr, z.kapi);
-    if (z.ton && z.ton.bantlar && z.ton.bantlar.length) y = eq(y, sr, z.ton.bantlar);
+    if (z.uretim && z.uretim.aktif) {
+      /* PRODÜKSİYON ZİNCİRİ: ses önce sabit bir seviyeye getirilir, sonra çamurluk kesilir, parlaklık eklenir, iki kademe sıkıştırılır */
+      var lf = lufs([y, y], sr); if (isFinite(lf) && lf > -70) { var gg = dB(z.uretim.hedefLufs - lf), y2 = new Float32Array(y.length); for (var q = 0; q < y.length; q++) y2[q] = y[q] * gg; y = y2; }
+      if (z.ton && z.ton.bantlar && z.ton.bantlar.length) y = eq(y, sr, z.ton.bantlar);
+      y = kompresor(y, sr, { esik: -26, oran: 2.2, atak: 12, birak: 220, makyaj: 0, diz: 6 });
+    } else if (z.ton && z.ton.bantlar && z.ton.bantlar.length) y = eq(y, sr, z.ton.bantlar);
     if (z.kuvvet && z.kuvvet.aktif) { y = kompresor(y, sr, z.kuvvet); if (z.kapi && z.kapi.aktif) y = kapi(y, sr, z.kapi); }
     return y;
   }

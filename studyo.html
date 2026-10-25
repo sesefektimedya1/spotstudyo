@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap&subset=latin-ext">
-<link rel="stylesheet" href="css/stil.css?v=10"><link rel="stylesheet" href="css/studyo.css?v=11"><link rel="stylesheet" href="css/ek.css?v=10"><title>Stüdyo — Ses Efekti Spot Stüdyo</title></head>
+<link rel="stylesheet" href="css/stil.css?v=12"><link rel="stylesheet" href="css/studyo.css?v=12"><link rel="stylesheet" href="css/ek.css?v=12"><title>Stüdyo — Ses Efekti Spot Stüdyo</title></head>
 <body class="st">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="ikBeyaz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d5deea"/></linearGradient>
@@ -13,7 +13,7 @@
 <linearGradient id="ikSari2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0bb"/><stop offset="1" stop-color="#f0c957"/></linearGradient>
 </defs></svg>
 <div class="sekmeler" id="sekmeler">
- <button data-t="oto">Otomatik</button><button data-t="manuel" class="acik">Manuel stüdyo</button><button data-t="bize">Bize gönder · Prodüksiyonu biz yapalım</button>
+ <button data-t="oto">Otomatik</button><button data-t="manuel" class="acik">Manuel stüdyo</button><button data-t="yz">Yapay zeka modu <em class="pro">ÜCRETLİ</em></button><button data-t="bize">Bize gönder · Prodüksiyonu biz yapalım</button>
  <span class="sagdurum"><span id="dMesaj"></span></span>
 </div>
 <div id="menu" class="menu"></div>
@@ -50,11 +50,19 @@
     <div class="sonucUst"><h3>Sonuç</h3><span class="tarz" id="tarzAd"></span></div>
     <div class="sonucKutu"><canvas id="cSonuc"></canvas><div class="bos" id="bosSonuc">Sonuç burada görünür</div></div>
     <div class="sonucEylem"><button class="btn ana buyuk" id="otoBtn">Otomatik hazırla</button><button class="btn buyuk" id="yenidenBtn">Başka bir tarz dene</button></div>
-    <div class="sonucEylem"><button class="btn" id="sonucCal">▶ Sonucu dinle</button><button class="btn" id="sonucManuel">Manuel stüdyoda düzenle</button><button class="btn ana" id="sonucDisa">Dışa aktar…</button></div>
+    <div class="sonucEylem"><button class="btn" id="sonucCal">▶ Sonucu dinle</button><button class="btn" id="sonucDur" title="Dinlemeyi durdur">■ Durdur</button><button class="btn" id="sonucManuel">Manuel stüdyoda düzenle</button><button class="btn ana" id="sonucDisa">Dışa aktar…</button></div>
     <div class="sol" id="sonucBilgi"></div>
    </div>
   </div>
  </section>
+ <section id="p-yz" class="panel"><div class="yzSayfa">
+  <div id="yzKilit" class="yzKilit"><div><h2>Yapay zeka modu</h2><p>Spot metnini, müzik seçimini ve hazırlığı yapay zekaya bırakın. Bu bölüm ücretli pakete dahildir.</p><a class="btn ana buyuk" target="_blank" rel="noopener" href="https://wa.me/905331509890?text=Merhaba%2C%20yapay%20zeka%20modu%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum">Ücretli pakete geç · bize yazın</a></div></div>
+  <div id="yzSohbet" class="yzSohbet" style="display:none">
+   <div class="yzUst"><h2>Yapay zeka modu</h2><span>Ne istediğinizi yazın, metni birlikte hazırlayalım.</span></div>
+   <div id="yzMesajlar" class="yzMesajlar"></div>
+   <div class="yzOneri"><button class="chip" data-yz="oneri">30 saniyelik radyo spotu metni yaz</button><button class="chip" data-yz="oneri">Metni daha samimi ve kısa yap</button><button class="chip" data-yz="oneri">Santral karşılama anonsu yaz</button></div>
+   <div class="yzGiris"><textarea id="yzGirdi" rows="2" placeholder="Mesajınızı yazın…"></textarea><button class="btn ana" id="yzGonder">Gönder</button></div>
+  </div></div></section>
  <section id="p-bize" class="panel"><div class="bizeSayfa">
   <div class="bizeSol">
    <div class="bizeBaslik"><h2>Prodüksiyonu biz yapalım</h2><p>Spot metninizi yazın, sağdan seslendirmen ve müzik seçin. Gönderince siparişiniz bize ulaşır; hazır dosyayı Panelim sayfanızdan indirirsiniz.</p></div>
@@ -75,5 +83,5 @@
 </div>
 <div class="durum"><span id="dPen">—</span><span id="dSecim">yok</span><span id="dSes">—</span><span class="sag" id="dFmt"></span></div>
 <input type="file" id="dosyaSes" accept="audio/*,video/*" hidden><input type="file" id="dosyaMuzik" accept="audio/*" hidden>
-<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/dil.js?v=10"></script><script src="js/ortak.js?v=10"></script><script src="js/motor.js?v=10"></script><script src="js/araclar.js?v=10"></script><script src="js/studyo.js?v=11"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/dil.js?v=12"></script><script src="js/ortak.js?v=12"></script><script src="js/motor.js?v=12"></script><script src="js/araclar.js?v=12"></script><script src="js/studyo.js?v=12"></script>
 </body></html>

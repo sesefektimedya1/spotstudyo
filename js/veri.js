@@ -49,6 +49,9 @@
       var buAy = LS.oku('indirmeler', []).filter(function (x) { return x.user_id === o.id && x.t >= ayBasi(); }).length;
       return { kullanilan: buAy, limit: lim };
     },
+    geriBildirim: async function (g) { var o = await demo.oturum(), l = LS.oku('geribildirimler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, eposta: o && o.email, created_at: new Date().toISOString() }, g); l.push(k); LS.yaz('geribildirimler', l); return k; },
+    geriBildirimTum: async function () { return LS.oku('geribildirimler', []).reverse(); },
+    yzSor: async function () { throw new Error('Yapay zeka bağlantısı henüz kurulmadı. (Deneme modunda çalışmaz.)'); },
     siparisVer: async function (s) { var o = await demo.oturum(), l = LS.oku('siparisler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, durum: 'yeni', sonuc_url: '', created_at: new Date().toISOString() }, s); l.push(k); LS.yaz('siparisler', l); return k; },
     siparislerim: async function () { var o = await demo.oturum(); return LS.oku('siparisler', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
     siparisTum: async function () { return LS.oku('siparisler', []).reverse(); },
@@ -92,6 +95,13 @@
     indirmeler: async function () { return hata(await sb.from('indirmeler').select('*').order('created_at', { ascending: false }).limit(200)); },
     indirmeHakki: async function (proje, tur) { var r = hata(await sb.rpc('indirme_hakki_al', { p_proje: proje, p_tur: tur })); return r; },
     hakDurumu: async function () { return hata(await sb.rpc('indirme_durumu')); },
+    geriBildirim: async function (g) { var o = await canliApi.oturum(); return hata(await sb.from('geri_bildirimler').insert(Object.assign({ user_id: o ? o.id : null, eposta: o ? o.email : null }, g)).select().single()); },
+    geriBildirimTum: async function () { return hata(await sb.from('geri_bildirimler').select('*').order('created_at', { ascending: false })); },
+    yzSor: async function (mesajlar) {
+      var r = await sb.functions.invoke('yz-sohbet', { body: { mesajlar: mesajlar } });
+      if (r.error) throw new Error('Yapay zeka bağlantısı henüz kurulmadı ya da yanıt vermedi.');
+      if (r.data && r.data.hata) throw new Error(r.data.hata); return (r.data && r.data.yanit) || 'Yanıt alınamadı.';
+    },
     siparisVer: async function (s) { var o = await canliApi.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); return hata(await sb.from('siparisler').insert(Object.assign({ user_id: o.id }, s)).select().single()); },
     siparislerim: async function () { var o = await canliApi.oturum(); return hata(await sb.from('siparisler').select('*').eq('user_id', o.id).order('created_at', { ascending: false })); },
     siparisTum: async function () { return hata(await sb.from('siparisler').select('*').order('created_at', { ascending: false })); },

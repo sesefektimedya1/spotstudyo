@@ -56,3 +56,5 @@ th{color:var(--sol);font-weight:500}
 @media(max-width:800px){.kahraman{grid-template-columns:1fr;padding-top:2rem}.ust{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 :root{color-scheme:dark}input[type=date]{background:var(--y1);border:1px solid var(--cizgi);border-radius:var(--r);padding:.4rem .5rem}
+.logo b{font-weight:700}.logo span{font-weight:500;opacity:.55}
+.gbBtn{background:transparent;border:1px solid var(--cizgi);color:var(--yazi);border-radius:8px;padding:.3rem .8rem;font-size:13.5px;cursor:pointer}.gbBtn:hover{border-color:#8fb0e6;color:#1f5fd6}

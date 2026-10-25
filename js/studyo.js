@@ -26,15 +26,47 @@
   function pencereAc(ad, L, R, tur) {
     var p = { id: ++S.sayac, ad: ad, tur: tur || 'ses', L: L, R: R || L, sec: null, imlec: 0, bas: 0, spp: 1, vz: 1, undo: [], redo: [], ov: null };
     var el = document.createElement('div'); el.className = 'pen';
-    el.innerHTML = '<div class="bas"><b></b><small></small><button class="x" title="Pencereyi kapat">✕</button></div><div class="ov" title="Genel görünüm: tıklayıp sürükleyerek gezinin"><canvas></canvas></div><div class="dalga"><canvas class="cv"></canvas></div><div class="kay" title="Kaydırma çubuğu"><div class="th"></div></div><div class="zb">' + zbHtml() + '<span class="sure"></span></div>';
+    el.innerHTML = '<div class="bas"><b></b><small></small><button class="wb mn" title="Küçült (alta indir)"><svg viewBox="0 0 12 12" width="11" height="11"><path d="M2 9h8" stroke="currentColor" stroke-width="1.6"/></svg></button><button class="wb mx" title="Büyüt / eski boyuta dön"><svg viewBox="0 0 12 12" width="11" height="11"><rect x="2" y="2" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><button class="x" title="Pencereyi kapat">✕</button></div><div class="ov" title="Genel görünüm: tıklayıp sürükleyerek gezinin"><canvas></canvas></div><div class="dalga"><canvas class="cv"></canvas></div><div class="kay" title="Kaydırma çubuğu"><div class="th"></div></div><i class="rz rzr" data-d="r"></i><i class="rz rzl" data-d="l"></i><i class="rz rzb" data-d="b"></i><i class="rz rzbr" data-d="rb"></i><i class="rz rzbl" data-d="lb"></i><div class="zb">' + zbHtml() + '<span class="sure"></span></div>';
     alan.appendChild(el); p.el = el; p.cv = $('.cv', el); p.ovc = $('.ov canvas', el); p.kay = $('.kay', el); p.th = $('.th', el);
     var w = alan.clientWidth, h = alan.clientHeight, n = S.pen.length;
-    var MG = 110, yuk = Math.max(240, Math.floor((h - 32) / 3) + 60), satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
+    var MG = 110, yuk = Math.max(240, Math.floor((h - 32) / 3) + 85), satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
     el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 8 + ((n - satir) % 6 + 1) * 28) + 'px';
-    S.pen.push(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
+    S.pen.push(p); kenarlar(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
     baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle();
     if (window.ResizeObserver) new ResizeObserver(function () { if (p.el.isConnected) ciz(p); }).observe(p.el);
     return p;
+  }
+  function kenarlar(p) {
+    var el = p.el;
+    $$('.rz', el).forEach(function (h) {
+      h.addEventListener('pointerdown', function (e) {
+        e.preventDefault(); e.stopPropagation(); odak(p); try { h.setPointerCapture(e.pointerId); } catch (x) {}
+        var d = h.dataset.d, x0 = e.clientX, y0 = e.clientY, L = el.offsetLeft, W = el.offsetWidth, H = el.offsetHeight;
+        function mv(ev) {
+          var dx = ev.clientX - x0, dy = ev.clientY - y0;
+          if (d.indexOf('r') >= 0) el.style.width = Math.max(380, W + dx) + 'px';
+          if (d.indexOf('l') >= 0) { var nw = Math.max(380, W - dx); el.style.width = nw + 'px'; el.style.left = (L + W - nw) + 'px'; }
+          if (d.indexOf('b') >= 0) el.style.height = Math.max(170, H + dy) + 'px';
+        }
+        function up() { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); ciz(p); }
+        h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+      });
+    });
+    $('.mn', el).onclick = function (e) { e.stopPropagation(); kucult(p); };
+    $('.mx', el).onclick = function (e) { e.stopPropagation(); buyut(p); };
+    $('.bas', el).ondblclick = function (e) { if (e.target.closest('button')) return; buyut(p); };
+  }
+  function buyut(p) {
+    var el = p.el;
+    if (p.maks) { el.style.left = p.geo[0] + 'px'; el.style.top = p.geo[1] + 'px'; el.style.width = p.geo[2] + 'px'; el.style.height = p.geo[3] + 'px'; p.maks = false; }
+    else { p.geo = [el.offsetLeft, el.offsetTop, el.offsetWidth, el.offsetHeight]; alan.scrollTop = 0; el.style.left = '0'; el.style.top = '0'; el.style.width = alan.clientWidth + 'px'; el.style.height = alan.clientHeight + 'px'; p.maks = true; }
+    el.classList.toggle('maks', !!p.maks); odak(p); ciz(p);
+  }
+  function kucult(p) {
+    p.el.style.display = 'none'; p.kucuk = true; if (S.aktif === p.id) { var d = S.pen.filter(function (q) { return !q.kucuk; })[0]; if (d) odak(d); }
+    var c = document.createElement('button'); c.className = 'dockChip'; c.title = 'Eski boyuta getir: ' + p.ad; c.innerHTML = '<span class="nokta"></span>' + esc(p.ad); p.chip = c;
+    c.onclick = function () { p.el.style.display = ''; p.kucuk = false; c.remove(); p.chip = null; odak(p); ciz(p); };
+    $('#dock').appendChild(c);
   }
   function yeniVeyaBos(ad, L, R, tur) {
     var p = akt();
@@ -43,7 +75,7 @@
   }
   function odak(p) { S.aktif = p ? p.id : null; S.pen.forEach(function (q) { q.el.classList.toggle('aktif', q === p); }); if (p) p.el.style.zIndex = ++S.z0; guncelle(); }
   function kapat(p) {
-    if (!p) return; if (S.calP === p) durdur(); p.el.remove(); S.pen = S.pen.filter(function (q) { return q !== p; });
+    if (!p) return; if (S.calP === p) durdur(); p.el.remove(); if (p.chip) p.chip.remove(); S.pen = S.pen.filter(function (q) { return q !== p; });
     if (S.aktif === p.id) { S.aktif = null; var son = S.pen[S.pen.length - 1]; if (son) odak(son); }
     if (!S.pen.length) $('#bosAlan').style.display = 'flex'; guncelle(); otoListeleri();
   }
@@ -569,12 +601,12 @@
   }
   /* Pencere düzeni */
   function diz(tip) {
-    var n = S.pen.length; if (!n) return; var w = alan.clientWidth, h = alan.clientHeight;
-    S.pen.forEach(function (p, i) {
+    var pl = S.pen.filter(function (q) { return !q.kucuk; }), n = pl.length; if (!n) return; var w = alan.clientWidth, h = alan.clientHeight;
+    pl.forEach(function (p, i) {
       var e = p.el;
       if (tip === 'alt') { var yh = Math.max(170, Math.floor((h - 8 - (n - 1) * 6) / n)); e.style.left = '110px'; e.style.width = (w - 220) + 'px'; e.style.top = (4 + i * (yh + 6)) + 'px'; e.style.height = yh + 'px'; }
       else if (tip === 'yan') { var gw = Math.floor((w - 8) / n); e.style.left = (4 + i * gw) + 'px'; e.style.width = (gw - 4) + 'px'; e.style.top = '4px'; e.style.height = (h - 8) + 'px'; }
-      else { e.style.left = (110 + (i % 6) * 28) + 'px'; e.style.top = (8 + (i % 6) * 28) + 'px'; e.style.width = Math.max(420, w - 220 - 28 * 5) + 'px'; e.style.height = Math.max(240, Math.floor((h - 32) / 3) + 60) + 'px'; }
+      else { e.style.left = (110 + (i % 6) * 28) + 'px'; e.style.top = (8 + (i % 6) * 28) + 'px'; e.style.width = Math.max(420, w - 220 - 28 * 5) + 'px'; e.style.height = Math.max(240, Math.floor((h - 32) / 3) + 85) + 'px'; }
       ciz(p);
     });
   }

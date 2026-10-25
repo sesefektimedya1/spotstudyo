@@ -30,7 +30,7 @@
     alan.appendChild(el); p.el = el; p.cv = $('.cv', el); p.ovc = $('.ov canvas', el); p.kay = $('.kay', el); p.th = $('.th', el);
     var w = alan.clientWidth, h = alan.clientHeight, n = S.pen.length;
     var gizli = !alan.clientHeight, pn = null; if (gizli) { pn = alan.closest('.panel'); if (pn) { pn.classList.add('acik'); w = alan.clientWidth; h = alan.clientHeight; } }
-    var MG = 110, yuk = (n === 0 && h > 340) ? h - 16 : 340, satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
+    var MG = 110, yuk = 340, satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
     el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 8 + ((n - satir) % 6 + 1) * 28) + 'px';
     if (gizli && pn && S.tab !== 'manuel') pn.classList.remove('acik');
     S.pen.push(p); kenarlar(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
@@ -1241,12 +1241,21 @@
   $('#dosyaMuzik').onchange = async function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) { var p = await dosyadanAc(f, 'ses'); if (p) { if (S.tab === 'oto') $('#otoMuzik').value = 'p' + p.id; else sekme('manuel'); } } };
   $('#hedef').onchange = function () { hedefUygula(); };
   $$('#hedefKart button').forEach(function (b) { b.onclick = function () { $('#hedef').value = b.dataset.h; hedefUygula(); $$('#hedefKart button').forEach(function (x) { x.classList.toggle('secili', x === b); }); }; });
-  function dzBagla(id, secId) { var el = $(id); ['dragenter', 'dragover'].forEach(function (ev) { el.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); el.classList.add('uzerinde'); }); }); el.addEventListener('dragleave', function () { el.classList.remove('uzerinde'); }); el.addEventListener('drop', async function (e) { e.preventDefault(); e.stopPropagation(); el.classList.remove('uzerinde'); var f = e.dataTransfer && e.dataTransfer.files[0]; if (!f) return; var p = await dosyadanAc(f, 'ses'); if (p) { $(secId).value = 'p' + p.id; toast('Yüklendi: ' + p.ad); } }); }
+  function sesDosyasiMi(f) { return /^(audio|video)\//.test(f.type) || /\.(mp3|wav|m4a|aac|ogg|flac|aif|aiff|wma|mp4|mov|webm|mkv)$/i.test(f.name); }
+  async function birakIsle(files, secId) {
+    var l = Array.prototype.slice.call(files || []), gecerli = l.filter(sesDosyasiMi);
+    if (!l.length) return; if (!gecerli.length) return toast('Bu dosya ses ya da video değil: ' + l[0].name);
+    if (l.length > gecerli.length) toast((l.length - gecerli.length) + ' dosya ses olmadığı için atlandı');
+    var ilk = null; for (var i = 0; i < gecerli.length; i++) { var p = await dosyadanAc(gecerli[i], 'ses'); if (p && !ilk) ilk = p; }
+    if (!ilk) return;
+    if (S.tab === 'oto') { otoListeleri(); if (secId) $(secId).value = 'p' + ilk.id; toast('Yüklendi: ' + ilk.ad); } else sekme('manuel');
+  }
+  function dzBagla(id, secId) { var el = $(id); ['dragenter', 'dragover'].forEach(function (ev) { el.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); el.classList.add('uzerinde'); }); }); el.addEventListener('dragleave', function () { el.classList.remove('uzerinde'); }); el.addEventListener('drop', function (e) { e.preventDefault(); e.stopPropagation(); el.classList.remove('uzerinde'); birakIsle(e.dataTransfer && e.dataTransfer.files, secId); }); }
   dzBagla('#dzSes', '#otoSes'); dzBagla('#dzMuzik', '#otoMuzik');
   $('#otoBtn').onclick = function () { oto(false); }; $('#yenidenBtn').onclick = function () { oto(true); };
   $('#sonucDur').onclick = function () { durdur(); };
   $('#sonucCal').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); if (S.cal) durdur(); else calDizi(S.sonuc.L, S.sonuc.R, null, 0); };
-  $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); sekme('manuel'); var p = pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); buyut(p); otoListeleri(); };
+  $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); sekme('manuel'); var p = pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); otoListeleri(); };
   function otoyaGonder() {
     var p = akt(); if (!p) return toast('Önce manuel stüdyoda bir pencere seçin');
     if (p.bos) return toast('Bu pencere boş');
@@ -1259,10 +1268,7 @@
   $('#sonucDisa').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); disaDlg('sonuc'); };
   document.addEventListener('dragover', function (e) { e.preventDefault(); if (S.tab === 'manuel') alan.classList.add('birak'); });
   document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) alan.classList.remove('birak'); });
-  document.addEventListener('drop', async function (e) {
-    e.preventDefault(); alan.classList.remove('birak'); var f = e.dataTransfer && e.dataTransfer.files[0]; if (!f) return;
-    var p = await dosyadanAc(f, 'ses'); if (p) { if (S.tab === 'oto') $('#otoSes').value = 'p' + p.id; else sekme('manuel'); }
-  });
+  document.addEventListener('drop', function (e) { e.preventDefault(); alan.classList.remove('birak'); birakIsle(e.dataTransfer && e.dataTransfer.files, '#otoSes'); });
   document.addEventListener('keydown', function (e) {
     var t = e.target.tagName; if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return; if (document.querySelector('.perde')) return; if (S.tab !== 'manuel') return;
     var c = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();

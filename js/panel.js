@@ -36,7 +36,7 @@
       '<div id="fBir">' + f('f_ad', 'Ad Soyad', son.ad || o.ad) + f('f_tc', 'TC kimlik no', son.tc, 'inputmode="numeric" maxlength="11"') + '</div>' +
       '<div id="fTic">' + f('f_unvan', 'Ticari unvan', son.unvan) + f('f_vd', 'Vergi dairesi', son.vd) + f('f_vkn', 'Vergi numarası', son.vkn, 'inputmode="numeric" maxlength="10"') + '</div>' +
       '<div style="margin-bottom:.6rem"><label>Fatura adresi</label><textarea id="f_adres" rows="3" style="width:100%">' + esc(son.adres || '') + '</textarea></div>' +
-      '<label style="display:flex;gap:.5rem;align-items:flex-start;margin:.4rem 0 .8rem;font-size:13px;font-weight:400"><input type="checkbox" id="f_kvkk" style="width:auto;margin-top:3px"> Kimlik/vergi bilgilerimin yalnızca fatura düzenlemek amacıyla işlenmesini kabul ediyorum (KVKK).</label>' +
+      '<label style="display:flex;gap:.5rem;align-items:flex-start;margin:.4rem 0 .8rem;font-size:13px;font-weight:400"><input type="checkbox" id="f_kvkk" style="width:auto;margin-top:3px"> Kimlik/vergi bilgilerimin yalnızca fatura düzenlemek amacıyla işlenmesini kabul ediyorum. <a href="kvkk" target="_blank" rel="noopener">Aydınlatma metni</a></label>' +
       '<button class="btn ana" id="fGonder">Başvuruyu gönder</button> <button class="btn" id="fIptal">Vazgeç</button></div>';
     function goster() { var t = document.querySelector('input[name=ftur]:checked').value; $('#fBir').style.display = t === 'bireysel' ? '' : 'none'; $('#fTic').style.display = t === 'ticari' ? '' : 'none'; }
     $$('input[name=ftur]').forEach(function (r) { r.onchange = goster; }); goster();

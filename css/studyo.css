@@ -120,7 +120,8 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .adim h3 span{display:inline-flex;width:26px;height:26px;border-radius:50%;background:#d83a2c;color:#fff;align-items:center;justify-content:center;font-size:14px;font-family:Barlow,sans-serif}
 .adim h3 em{font-style:normal;font-size:13px;color:#5d6673;font-family:Barlow,sans-serif;font-weight:400}
 .birakAlan{border:2px dashed #b8c0ca;border-radius:12px;background:#fafbfc;padding:1.3rem 1rem;display:flex;flex-direction:column;align-items:center;gap:.4rem;text-align:center}
-.birakAlan.uzerinde{border-color:#d83a2c;background:#fff1ef}
+.birakAlan.uzerinde{border-color:#d83a2c;background:#fff1ef;transform:scale(1.01)}
+.birakAlan.uzerinde b::after{content:' – bırakın'}
 .birakAlan b{font-size:1.05rem;font-weight:600}
 .birakAlan small{color:#5d6673}
 .btnler{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;margin-top:.4rem}

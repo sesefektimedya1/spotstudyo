@@ -99,3 +99,8 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
 .yzBalon{padding:.6rem .9rem;border-radius:12px;line-height:1.5}.yzM.ben .yzBalon{background:#1f5fd6;color:#fff}.yzM.ai .yzBalon{background:#fff;border:1px solid #dde1e6}
 .yzOneri{display:flex;gap:.4rem;flex-wrap:wrap;padding:.6rem 1.2rem 0}
 .yzGiris{display:flex;gap:.6rem;padding:.8rem 1.2rem}.yzGiris textarea{flex:1;background:#fff;color:#1d2430;border:1px solid #bcc3cc;border-radius:8px;padding:.5rem .7rem;resize:none}
+
+/* Nereye kaydedilsin */
+.kn{display:flex;gap:.7rem;align-items:flex-start;border:1px solid #cfd4da;border-radius:8px;padding:.6rem .8rem;cursor:pointer;margin:0;color:#1d2430}
+.kn:hover{background:#f3f6fb}.kn input{margin-top:.3rem}.kn b{display:block}.kn small{color:#5d6673;font-size:12.5px}
+.kn input[type=radio]{appearance:auto;-webkit-appearance:radio;width:18px;height:18px;padding:0;background:#fff;accent-color:#e0452f;flex:none}

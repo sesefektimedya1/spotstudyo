@@ -638,10 +638,53 @@
     if (!p) return; if (!p.kirli || p.kayitta) { kapat(p); if (sonra) sonra(true); return; }
     odak(p);
     uc('Kaydetmek istiyor musunuz?', '“' + esc(p.ad) + '” penceresinde kaydedilmemiş değişiklikler var.', function (c) {
-      if (c === 'evet') calismayaKaydet(p).then(function () { kapat(p); if (sonra) sonra(true); }).catch(hata);
+      if (c === 'evet') kaydetNereye(p).then(function (ok) { if (ok) { kapat(p); if (sonra) sonra(true); } else if (sonra) sonra(false); }).catch(hata);
       else if (c === 'hayir') { kapat(p); if (sonra) sonra(true); }
       else if (sonra) sonra(false);
     });
+  }
+  /* ---------- Nereye kaydedilsin? ---------- */
+  var KN = { tur: 'calisma' };
+  function kaydetNereye(p) {
+    return new Promise(function (res) {
+      var d = document.createElement('div'); d.className = 'perde';
+      var ad0 = (p.ad || 'Ses').replace(/\.(wav|mp3)$/i, '');
+      d.innerHTML = '<div class="pencere" role="dialog" aria-modal="true" style="width:min(520px,100%)"><h3>Nereye kaydedilsin?</h3><div class="govde">' +
+        '<label class="kn"><input type="radio" name="kn" value="calisma"><span><b>Çalışma alanıma</b><small>Bu tarayıcıda durur. Dosya menüsü > Çalışma alanı’ndan tekrar açarsınız.</small></span></label>' +
+        '<label class="kn"><input type="radio" name="kn" value="wav"><span><b>Bilgisayarıma, WAV olarak</b><small>Masaüstü ya da istediğiniz klasörü seçersiniz. İndirme hakkından düşmez.</small></span></label>' +
+        '<label class="kn"><input type="radio" name="kn" value="mp3"><span><b>Bilgisayarıma, MP3 olarak</b><small>Masaüstü ya da istediğiniz klasörü seçersiniz. İndirme hakkından 1 düşer.</small></span></label>' +
+        '<div class="sat"><label style="margin:0">Dosya adı</label><input type="text" id="knAd" style="grid-column:2/4"></div></div>' +
+        '<div class="alt"><button class="btn" data-k="iptal">İptal</button><button class="btn ana" data-k="tamam">Kaydet</button></div></div>';
+      document.body.appendChild(d); $('#knAd', d).value = ad0;
+      var r = $('input[value=' + KN.tur + ']', d); if (r) r.checked = true;
+      function bit(v) { d.remove(); document.removeEventListener('keydown', kd, true); res(v); }
+      function kd(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); bit(false); } }
+      document.addEventListener('keydown', kd, true);
+      $('[data-k=iptal]', d).onclick = function () { bit(false); };
+      $('[data-k=tamam]', d).onclick = async function () {
+        var tur = ($('input[name=kn]:checked', d) || {}).value || 'calisma', ad = ($('#knAd', d).value || ad0).trim() || ad0; KN.tur = tur;
+        var b = $('[data-k=tamam]', d); b.disabled = true;
+        try { var ok = await kaydetYaz(p, tur, ad); if (ok) { d.remove(); document.removeEventListener('keydown', kd, true); res(true); } else b.disabled = false; }
+        catch (e) { b.disabled = false; hata(e); }
+      };
+    });
+  }
+  async function kaydetYaz(p, tur, ad) {
+    var dos = ad.replace(/[^\wÇĞİÖŞÜçğıöşü\- ]+/g, '').replace(/\s+/g, '_') || 'Ses';
+    if (tur === 'calisma') { p.ad = ad; $('.bas b', p.el).textContent = ad; await calismayaKaydet(p); guncelle(); return true; }
+    var mp3 = tur === 'mp3', uzanti = mp3 ? '.mp3' : '.wav', tip = mp3 ? 'audio/mpeg' : 'audio/wav', handle = null;
+    if (mp3) { var h = await Veri.hakDurumu(); if (h.limit > 0 && h.kullanilan >= h.limit) { bilgi('Aylık indirme hakkınız doldu', '<p>Bu ay ' + h.limit + ' MP3 indirme hakkınızı kullandınız. WAV olarak ya da çalışma alanınıza kaydedebilirsiniz.</p>'); return false; } }
+    if (window.showSaveFilePicker) {
+      try { handle = await window.showSaveFilePicker({ suggestedName: dos + uzanti, startIn: 'desktop', types: [{ description: mp3 ? 'MP3 ses dosyası' : 'WAV ses dosyası', accept: (function () { var o = {}; o[tip] = [uzanti]; return o; })() }] }); }
+      catch (e) { if (e && e.name === 'AbortError') return false; handle = null; }
+    }
+    mesaj('Dosya hazırlanıyor…'); await bekle();
+    var blob = mp3 ? new Blob(Motor.mp3Kodla(p.L, p.R, SR, 192), { type: tip }) : new Blob([Motor.wav16([p.L, p.R], SR)], { type: tip });
+    if (mp3) { var r = await Veri.indirmeHakki(dos, 'mp3'); if (!r.ok) { mesaj(''); bilgi('Aylık indirme hakkınız doldu', '<p>MP3 indirme hakkınız bitti.</p>'); return false; } ustYenile(); }
+    if (handle) { var w = await handle.createWritable(); await w.write(blob); await w.close(); }
+    else indirDosya(blob, dos + uzanti);
+    mesaj(''); p.ad = ad; $('.bas b', p.el).textContent = ad; p.kirli = false; guncelle();
+    toast(handle ? 'Dosya seçtiğiniz yere kaydedildi' : 'Dosya indirildi (tarayıcının indirilenler klasörü)'); return true;
   }
   function hepsiniKapatSor() { var l = S.pen.slice(); (function ilk() { var p = l.shift(); if (!p) return; kapatSor(p, function (devam) { if (devam) ilk(); }); })(); }
   function idb() {
@@ -655,19 +698,9 @@
     if (!p) return Promise.resolve();
     return idbIs('readwrite', function (st) { return st.put({ ad: p.ad, L: p.L, R: p.R === p.L ? null : p.R, t: Date.now() }); }).then(function () { p.kirli = false; toast('Çalışma alanına kaydedildi: ' + p.ad); });
   }
-  function kaydetAkt() { var p = aktifVar(); if (p) calismayaKaydet(p).catch(hata); }
+  function kaydetAkt() { var p = aktifVar(); if (p) kaydetNereye(p).catch(hata); }
   function tumunuKaydet() { if (!S.pen.length) return toast('Kaydedilecek pencere yok'); Promise.all(S.pen.map(calismayaKaydet)).then(function () { toast(S.pen.length + ' pencere çalışma alanına kaydedildi'); }).catch(hata); }
-  function farkliKaydet() {
-    var p = aktifVar(); if (!p) return;
-    diyalog('Farklı kaydet', [{ k: 'ad', ad: 'Dosya adı', tur: 'metin' }], { ad: p.ad }, {
-      not: 'Pencere bu adla WAV dosyası olarak bilgisayarınıza iner ve çalışma alanına da kaydedilir. MP3 ve santral çıkışı için “Dışa aktar” kullanın.',
-      tamam: function (d) {
-        var ad = (d.ad || p.ad).trim() || p.ad, dos = ad.replace(/[^\wÇĞİÖŞÜçğıöşü\- ]+/g, '').replace(/\s+/g, '_') || 'Ses';
-        p.ad = ad; $('.bas b', p.el).textContent = ad;
-        indirDosya(new Blob([Motor.wav16([p.L, p.R], SR)], { type: 'audio/wav' }), dos + '.wav'); calismayaKaydet(p).catch(hata); guncelle();
-      }
-    });
-  }
+  function farkliKaydet() { var p = aktifVar(); if (p) kaydetNereye(p).catch(hata); }
   async function calismaAlani() {
     var l = []; try { l = await idbIs('readonly', function (st) { return st.getAll(); }) || []; } catch (e) { return hata(e); }
     l.sort(function (a, b) { return b.t - a.t; });
@@ -917,8 +950,8 @@
       ['Tüm pencereleri kapat', '', I.hepsiniKapat, 'Çalışma alanını boşaltır. Değişiklik olan pencereler için sorar'],
       '-',
       ['Çalışma alanı…', '', calismaAlani, 'Daha önce kaydettiğiniz çalışmaları listeler; açabilir ya da silebilirsiniz'],
-      ['Kaydet', 'Ctrl+S', kaydetAkt, 'Seçili pencereyi çalışma alanına kaydeder (bu tarayıcıda durur, indirme hakkından düşmez)'],
-      ['Farklı kaydet…', 'Ctrl+Shift+S', farkliKaydet, 'Pencereyi yeni bir adla WAV dosyası olarak bilgisayarınıza indirir'],
+      ['Kaydet', 'Ctrl+S', kaydetAkt, 'Nereye kaydedileceğini sorar: çalışma alanınıza ya da bilgisayarınıza (WAV / MP3)'],
+      ['Farklı kaydet…', 'Ctrl+Shift+S', farkliKaydet, 'Yeni bir adla, istediğiniz yere (çalışma alanı, masaüstü ya da klasör) kaydeder'],
       ['Tümünü kaydet', '', tumunuKaydet, 'Açık bütün pencereleri çalışma alanına kaydeder'],
       '-',
       ['Dışa aktar…', 'Ctrl+E', I.disa, 'MP3, WAV ya da santral dosyası olarak hazırlar (MP3 ve santral indirme hakkından düşer)'],
@@ -1190,7 +1223,7 @@
   document.addEventListener('keydown', function (e) {
     var t = e.target.tagName; if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return; if (document.querySelector('.perde')) return; if (S.tab !== 'manuel') return;
     var c = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
-    if (e.code === 'Space') { e.preventDefault(); oynatToggle(); }
+    if (e.code === 'Space') { e.preventDefault(); if (kayit && !kayit.bekle) kayitDur(); else oynatToggle(); }
     else if (c && k === 'z') { e.preventDefault(); I.geri(); } else if (c && k === 'y') { e.preventDefault(); I.yinele(); }
     else if (c && k === 'x') { e.preventDefault(); I.kes(); } else if (c && k === 'c') { e.preventDefault(); I.kopyala(); } else if (c && k === 'v') { e.preventDefault(); I.yapistir(); }
     else if (c && k === 'm') { e.preventDefault(); I.karistir(); } else if (c && k === 'a') { e.preventDefault(); I.tumu(); } else if (c && k === 't') { e.preventDefault(); I.kirp(); }

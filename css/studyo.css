@@ -1,0 +1,47 @@
+body.st{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.menu{display:flex;background:var(--y1);border-bottom:1px solid var(--cizgi);padding:0 .6rem;position:relative;z-index:30;flex-wrap:wrap}
+.menu>div{position:relative}
+.menu>div>button{background:none;border:0;padding:.45rem .8rem;color:var(--yazi);cursor:pointer;font-size:14px}
+.menu>div:hover>button,.menu>div.ac>button{background:var(--y3)}
+.acilir{display:none;position:absolute;top:100%;left:0;min-width:260px;background:var(--y2);border:1px solid var(--cizgi);border-radius:0 0 8px 8px;padding:.3rem 0;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.menu>div.ac .acilir{display:block}
+.acilir button{display:flex;justify-content:space-between;gap:1.5rem;width:100%;background:none;border:0;text-align:left;padding:.38rem .9rem;color:var(--yazi);cursor:pointer;font-size:14px}
+.acilir button:hover{background:var(--y3)}
+.acilir button span{color:var(--sol);font-size:12px}
+.acilir hr{border:0;border-top:1px solid var(--cizgi);margin:.3rem 0}
+.arac{display:flex;gap:.5rem;align-items:center;padding:.5rem .8rem;background:var(--y2);border-bottom:1px solid var(--cizgi);flex-wrap:wrap}
+.arac .zaman{font-family:'Barlow Condensed';font-size:1.7rem;min-width:7.5ch;color:var(--pirinc2);letter-spacing:.03em}
+.arac .ayir{width:1px;align-self:stretch;background:var(--cizgi);margin:0 .3rem}
+.arac select,.arac input[type=text]{width:auto;padding:.3rem .5rem;font-size:14px}
+.arac input.proje{width:150px}
+#kayitBtn.kayitta{background:var(--kirmizi);border-color:var(--kirmizi);color:#fff;animation:nabiz 1s infinite}
+@keyframes nabiz{50%{opacity:.65}}
+#metre{width:90px;height:10px;background:var(--y1);border:1px solid var(--cizgi);border-radius:5px;overflow:hidden}
+#metre i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--yesil),var(--pirinc) 70%,var(--kirmizi))}
+.oto{display:flex;gap:.7rem;align-items:center;padding:.6rem .8rem;border-bottom:1px solid var(--cizgi);background:linear-gradient(180deg,#1d2127,#181b1f);flex-wrap:wrap}
+.oto b{font-family:'Barlow Condensed';font-size:1.2rem;font-weight:600}
+.oto select{width:auto;font-size:14px;padding:.3rem .5rem}
+.oto .tarz{color:var(--pirinc2);min-width:9em}
+.seritler{flex:1;overflow:auto;padding:.6rem .8rem;display:flex;flex-direction:column;gap:.5rem;min-height:0}
+.serit{display:grid;grid-template-columns:96px 1fr;background:var(--y1);border:1px solid var(--cizgi);border-radius:8px;overflow:hidden;min-height:120px}
+.serit .et{padding:.6rem;border-right:1px solid var(--cizgi);background:var(--y2);display:flex;flex-direction:column;gap:.2rem}
+.serit .et b{font-family:'Barlow Condensed';font-size:1.1rem}
+.serit .et small{color:var(--sol);font-size:12px;line-height:1.3}
+.serit.ses .et b{color:var(--ses)}.serit.muzik .et b{color:var(--muzik)}.serit.sonuc .et b{color:var(--yazi)}
+.serit canvas{width:100%;height:100%;display:block;cursor:crosshair}
+.serit .kap{position:relative;min-height:118px}
+.bos{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sol);text-align:center;padding:1rem;pointer-events:none;font-size:14px}
+.durum{display:flex;gap:1.5rem;padding:.35rem .9rem;background:var(--y1);border-top:1px solid var(--cizgi);font-size:13px;color:var(--sol);flex-wrap:wrap}
+.durum b{color:var(--yazi);font-weight:500}
+.perde{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:60;padding:1rem}
+.pencere{background:var(--y2);border:1px solid var(--cizgi);border-radius:10px;width:min(520px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.pencere h3{padding:.8rem 1rem;border-bottom:1px solid var(--cizgi);font-size:1.3rem}
+.pencere .govde{padding:1rem;display:grid;gap:.8rem}
+.pencere .alt{display:flex;gap:.5rem;justify-content:flex-end;padding:.8rem 1rem;border-top:1px solid var(--cizgi);flex-wrap:wrap}
+.pencere .alt .sol-b{margin-right:auto}
+.sat{display:grid;grid-template-columns:150px 1fr 70px;gap:.6rem;align-items:center}
+.sat input[type=range]{accent-color:var(--pirinc)}
+.sat output{text-align:right;color:var(--pirinc2)}
+.bant{display:grid;grid-template-columns:110px 1fr 1fr 1fr 28px;gap:.3rem;align-items:center}
+.bant input,.bant select{padding:.25rem .35rem;font-size:13px}
+@media(max-width:700px){.serit{grid-template-columns:60px 1fr}.sat{grid-template-columns:1fr 1fr 60px}}

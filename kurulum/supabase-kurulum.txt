@@ -1,0 +1,111 @@
+-- SpotStüdyo — Supabase kurulumu. Tamamını SQL Editor'e yapıştırıp RUN'a basın.
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text, ad text,
+  role text not null default 'uye' check (role in ('uye','admin','seslendirmen')),
+  plan text not null default 'ucretsiz' check (plan in ('ucretsiz','premium')),
+  plan_bitis date,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.ayarlar (anahtar text primary key, deger text not null);
+insert into public.ayarlar values ('ucretsiz_indirme_limiti','5'),('premium_indirme_limiti','0'),('marka','SpotStüdyo') on conflict do nothing;
+
+create table if not exists public.sesler (
+  id uuid primary key default gen_random_uuid(), ad text not null, aciklama text, fiyat_tl numeric,
+  dosya_yolu text, aktif boolean not null default true, created_at timestamptz not null default now());
+create table if not exists public.muzikler (
+  id uuid primary key default gen_random_uuid(), ad text not null, etiket text, sure_sn numeric,
+  dosya_yolu text, aktif boolean not null default true, created_at timestamptz not null default now());
+create table if not exists public.indirmeler (
+  id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
+  proje_adi text, tur text, created_at timestamptz not null default now());
+create index if not exists indirmeler_user_ay on public.indirmeler(user_id, created_at);
+create index if not exists profiles_email on public.profiles(email);
+
+create or replace function public.is_admin() returns boolean language sql stable security definer set search_path=public as
+$$ select exists(select 1 from public.profiles where id=auth.uid() and role='admin') $$;
+
+create or replace function public.yeni_uye() returns trigger language plpgsql security definer set search_path=public as
+$$ begin insert into public.profiles(id,email,ad) values (new.id,new.email,coalesce(new.raw_user_meta_data->>'ad',split_part(new.email,'@',1))); return new; end $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users for each row execute function public.yeni_uye();
+
+alter table public.profiles enable row level security;
+alter table public.ayarlar enable row level security;
+alter table public.sesler enable row level security;
+alter table public.muzikler enable row level security;
+alter table public.indirmeler enable row level security;
+
+-- Üye kendi satırını görür; rol/plan değiştiremez (yalnız yönetici)
+create policy p_oku on public.profiles for select using (id=auth.uid() or public.is_admin());
+create policy p_yonetici_yaz on public.profiles for update using (public.is_admin()) with check (public.is_admin());
+create policy a_oku on public.ayarlar for select using (true);
+create policy a_yaz on public.ayarlar for all using (public.is_admin()) with check (public.is_admin());
+create policy s_oku on public.sesler for select using (aktif or public.is_admin());
+create policy s_yaz on public.sesler for all using (public.is_admin()) with check (public.is_admin());
+create policy m_oku on public.muzikler for select using (aktif or public.is_admin());
+create policy m_yaz on public.muzikler for all using (public.is_admin()) with check (public.is_admin());
+create policy i_oku on public.indirmeler for select using (user_id=auth.uid() or public.is_admin());
+
+-- İndirme hakkı: kontrol eder, kaydeder, sonucu döndürür
+create or replace function public.indirme_hakki_al(p_proje text, p_tur text) returns json
+language plpgsql security definer set search_path=public as $$
+declare pl text; lim int; kul int; bitis date;
+begin
+  if auth.uid() is null then raise exception 'Giriş gerekli'; end if;
+  select plan, plan_bitis into pl, bitis from profiles where id=auth.uid();
+  if pl='premium' and bitis is not null and bitis < current_date then pl:='ucretsiz'; end if;
+  select deger::int into lim from ayarlar where anahtar = case when pl='premium' then 'premium_indirme_limiti' else 'ucretsiz_indirme_limiti' end;
+  select count(*) into kul from indirmeler where user_id=auth.uid() and created_at >= date_trunc('month', now());
+  if lim > 0 and kul >= lim then return json_build_object('ok',false,'kullanilan',kul,'limit',lim); end if;
+  insert into indirmeler(user_id,proje_adi,tur) values (auth.uid(),p_proje,p_tur);
+  return json_build_object('ok',true,'kullanilan',kul+1,'limit',lim);
+end $$;
+
+create or replace function public.indirme_durumu() returns json
+language plpgsql security definer set search_path=public as $$
+declare pl text; lim int; kul int; bitis date;
+begin
+  select plan, plan_bitis into pl, bitis from profiles where id=auth.uid();
+  if pl='premium' and bitis is not null and bitis < current_date then pl:='ucretsiz'; end if;
+  select deger::int into lim from ayarlar where anahtar = case when pl='premium' then 'premium_indirme_limiti' else 'ucretsiz_indirme_limiti' end;
+  select count(*) into kul from indirmeler where user_id=auth.uid() and created_at >= date_trunc('month', now());
+  return json_build_object('kullanilan',kul,'limit',coalesce(lim,5));
+end $$;
+
+-- Yönetici: sayfalı üye listesi (binlerce üye için)
+create or replace function public.uye_listesi(p_ara text, p_plan text, p_sayfa int, p_adet int) returns json
+language plpgsql security definer set search_path=public as $$
+declare toplam int; satirlar json;
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  select count(*) into toplam from profiles p where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan);
+  select coalesce(json_agg(t),'[]'::json) into satirlar from (
+    select p.id,p.email,p.ad,p.role,p.plan,p.plan_bitis,p.created_at,
+      (select count(*) from indirmeler i where i.user_id=p.id and i.created_at >= date_trunc('month', now())) as bu_ay_indirme
+    from profiles p where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan)
+    order by p.created_at desc limit p_adet offset p_sayfa*p_adet) t;
+  return json_build_object('toplam',toplam,'satirlar',satirlar);
+end $$;
+
+create or replace function public.yonetim_ozet() returns json
+language plpgsql security definer set search_path=public as $$
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  return json_build_object(
+    'uye',(select count(*) from profiles),
+    'premium',(select count(*) from profiles where plan='premium'),
+    'bu_ay',(select count(*) from indirmeler where created_at >= date_trunc('month', now())),
+    'ses',(select count(*) from sesler),'muzik',(select count(*) from muzikler));
+end $$;
+
+-- Dosya depoları (özel). İmzalı bağlantı ile çalınır.
+insert into storage.buckets(id,name,public) values ('sesler','sesler',false),('muzikler','muzikler',false) on conflict do nothing;
+create policy st_oku on storage.objects for select to authenticated using (bucket_id in ('sesler','muzikler'));
+create policy st_yaz on storage.objects for insert to authenticated with check (bucket_id in ('sesler','muzikler') and public.is_admin());
+create policy st_sil on storage.objects for delete to authenticated using (bucket_id in ('sesler','muzikler') and public.is_admin());
+
+-- YÖNETİCİ YAPMAK: önce siteden kendi e-postanızla kayıt olun, sonra bu satırı çalıştırın
+-- (e-postayı kendinizinkiyle değiştirin):
+-- update public.profiles set role='admin' where email='BURAYA_KENDI_EPOSTANIZ';

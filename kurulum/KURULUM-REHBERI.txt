@@ -1,0 +1,16 @@
+SPOTSTÜDYO — KURULUM (sırayla, ilk deneme için 1. adım yeter)
+
+0) DENEME: spot-studyo klasörünü bilgisayarda açıp index.html'e çift tıklayın. Deneme modunda çalışır
+   (üyelik ve indirme sayacı yalnız o tarayıcıda durur; ilk kayıt olan yönetici olur). Mikrofon için
+   tarayıcı Chrome/Edge olmalı; mikrofon izni sitede https ya da yerelde istenir.
+
+1) SUPABASE (yeni proje): supabase.com → New project → ad: spotstudyo → bölge: Frankfurt → şifreyi kendiniz saklayın.
+2) Sol menü "SQL Editor" → New query → kurulum/supabase-kurulum.txt içeriğini yapıştır → RUN.
+3) Sol menü "Authentication" → Providers → Email açık. (İlk denemede "Confirm email" kapalı olsun; yayında açın.)
+4) Sol menü "Project Settings" → "API": "Project URL" ve "anon public" anahtarını kopyalayın.
+5) js/config.js dosyasını açıp SUPABASE_URL ve SUPABASE_ANON_KEY satırlarına yapıştırın. (service_role anahtarını ASLA yapıştırmayın.)
+6) GitHub: yeni depo oluşturun → "uploading an existing file" → spot-studyo klasörünün İÇİNDEKİ her şeyi sürükleyin (klasör yapısıyla).
+   Settings → Pages → Branch: main → Save. Adres birkaç dakikada açılır.
+7) Siteden kendi e-postanızla üye olun. SQL Editor'de şu satırı kendi e-postanızla çalıştırın:
+   update public.profiles set role='admin' where email='BURAYA_KENDI_EPOSTANIZ';
+8) Yönetim sekmesinden seslendirmen örneklerini ve müzikleri yükleyin; Ayarlar'dan ücretsiz indirme sayısını değiştirebilirsiniz (varsayılan 5).

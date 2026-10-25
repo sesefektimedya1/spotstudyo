@@ -1,9 +1,19 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap&subset=latin-ext">
-<link rel="stylesheet" href="css/stil.css?v=9"><link rel="stylesheet" href="css/studyo.css?v=9"><title>Stüdyo — SpotStüdyo</title></head>
+<link rel="stylesheet" href="css/stil.css?v=10"><link rel="stylesheet" href="css/studyo.css?v=11"><link rel="stylesheet" href="css/ek.css?v=10"><title>Stüdyo — Ses Efekti Spot Stüdyo</title></head>
 <body class="st">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="ikBeyaz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d5deea"/></linearGradient>
+<linearGradient id="ikMavi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6aa5f2"/><stop offset="1" stop-color="#2058b8"/></linearGradient>
+<linearGradient id="ikYesil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58d083"/><stop offset="1" stop-color="#1f8a4a"/></linearGradient>
+<linearGradient id="ikKirmizi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a68"/><stop offset="1" stop-color="#c52a1a"/></linearGradient>
+<linearGradient id="ikTuruncu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffbb6a"/><stop offset="1" stop-color="#e5760f"/></linearGradient>
+<linearGradient id="ikKoyu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a7686"/><stop offset="1" stop-color="#27303c"/></linearGradient>
+<linearGradient id="ikSari" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe49a"/><stop offset="1" stop-color="#e6b73a"/></linearGradient>
+<linearGradient id="ikSari2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0bb"/><stop offset="1" stop-color="#f0c957"/></linearGradient>
+</defs></svg>
 <div class="sekmeler" id="sekmeler">
- <button data-t="oto">Otomatik</button><button data-t="manuel" class="acik">Manuel stüdyo</button><button data-t="ses">Ses bankası</button><button data-t="muzik">Müzik bankası</button>
+ <button data-t="oto">Otomatik</button><button data-t="manuel" class="acik">Manuel stüdyo</button><button data-t="bize">Bize gönder · Prodüksiyonu biz yapalım</button>
  <span class="sagdurum"><span id="dMesaj"></span></span>
 </div>
 <div id="menu" class="menu"></div>
@@ -34,9 +44,7 @@
       <button data-h="tv"><b>Televizyon</b><small>Yayın standardı, −23 LUFS</small></button>
       <button data-h="santral"><b>Santral</b><small>Telefon anonsu, 8 kHz WAV</small></button></div>
      <select id="hedef" hidden><option value="radyo">Radyo</option><option value="tv">Televizyon</option><option value="santral">Santral</option></select></div>
-    <div class="adim bize"><h3><span>4</span> Sesiniz yok mu? <em>Biz seslendirelim</em></h3>
-     <textarea id="bizeMetin" rows="4" placeholder="Spot metninizi buraya yazın. Profesyonel seslendirmenlerimiz okusun, biz hazırlayıp size gönderelim."></textarea>
-     <div class="btnler"><button class="btn" id="bizeGonder" disabled title="Çok yakında">Metni gönder · çok yakında</button></div></div>
+    <div class="adim bize"><h3><span>4</span> Sesiniz yok mu? <em>Biz seslendirelim</em></h3><p class="sol" style="margin-bottom:.6rem">Metninizi yazın, seslendirmen ve müziği seçin; prodüksiyonu biz yapıp panelinize gönderelim.</p><div class="btnler"><button class="btn ana" id="bizeGit">Bize gönder sekmesine git</button></div></div>
    </div>
    <div class="otoSag">
     <div class="sonucUst"><h3>Sonuç</h3><span class="tarz" id="tarzAd"></span></div>
@@ -47,10 +55,25 @@
    </div>
   </div>
  </section>
- <section id="p-ses" class="panel"><div class="bankaKutu"><h2>Ses bankası</h2><p class="sol">Seslendirmenlerin örnek sesleri. Dinleyebilirsiniz. Bir sesle spot yaptırmak için “Bize gönder” siparişi verilir; bu sesler doğrudan stüdyoya alınmaz.</p><div id="sesListe" class="liste"></div></div></section>
- <section id="p-muzik" class="panel"><div class="bankaKutu"><h2>Müzik bankası</h2><p class="sol">Telifsiz müzikler. Dinleyin, manuel stüdyoda pencere olarak açın ya da otomatik hazırlamada kullanın.</p><div id="muzikListe" class="liste"></div></div></section>
+ <section id="p-bize" class="panel"><div class="bizeSayfa">
+  <div class="bizeSol">
+   <div class="bizeBaslik"><h2>Prodüksiyonu biz yapalım</h2><p>Spot metninizi yazın, sağdan seslendirmen ve müzik seçin. Gönderince siparişiniz bize ulaşır; hazır dosyayı Panelim sayfanızdan indirirsiniz.</p></div>
+   <label for="bizeMetin">Spot metni</label>
+   <textarea id="bizeMetin" rows="10" placeholder="Spot metninizi buraya yazın."></textarea>
+   <div class="secimler"><div><small>Seslendirmen</small><b id="bSes">Seçilmedi</b></div><div><small>Müzik</small><b id="bMuz">Seçilmedi</b></div></div>
+   <div class="bIki"><div><label for="bTur">Çıkış türü</label><select id="bTur"><option>Radyo</option><option>Televizyon</option><option>Santral</option></select></div><div><label for="bAd">Adınız</label><input type="text" id="bAd" autocomplete="name"></div></div>
+   <div class="bIki"><div><label for="bTel">Telefon</label><input type="text" id="bTel" autocomplete="tel"></div><div><label for="bMail">E-posta</label><input type="email" id="bMail" autocomplete="email"></div></div>
+   <label for="bNot">Not (isteğe bağlı)</label><input type="text" id="bNot" placeholder="Örn. hızlı, samimi bir ton">
+   <button class="btn ana buyuk" id="bizeGonder">Siparişi gönder</button>
+   <div id="bizeSonuc" class="bizeSonuc" style="display:none"></div>
+  </div>
+  <div class="bizeSag">
+   <div class="bKutu bSes"><h3>Seslendirmenler</h3><div id="sesListe" class="spListe"></div></div>
+   <div class="bKutu bMuz"><h3>Müzik klasörü</h3><input type="search" id="mAra" placeholder="Müzik ara" aria-label="Müzik ara"><div id="mFiltre" class="chipler"></div><div id="muzikListe" class="spListe"></div></div>
+  </div>
+ </div></section>
 </div>
 <div class="durum"><span id="dPen">—</span><span id="dSecim">yok</span><span id="dSes">—</span><span class="sag" id="dFmt"></span></div>
 <input type="file" id="dosyaSes" accept="audio/*,video/*" hidden><input type="file" id="dosyaMuzik" accept="audio/*" hidden>
-<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/ortak.js"></script><script src="js/motor.js?v=9"></script><script src="js/araclar.js?v=9"></script><script src="js/studyo.js?v=9"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/dil.js?v=10"></script><script src="js/ortak.js?v=10"></script><script src="js/motor.js?v=10"></script><script src="js/araclar.js?v=10"></script><script src="js/studyo.js?v=11"></script>
 </body></html>

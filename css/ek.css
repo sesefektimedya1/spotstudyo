@@ -1,0 +1,78 @@
+/* ===== v10 eklentileri ===== */
+/* Üst çubuk: rahat, nefes alan */
+.ust{padding:1.05rem 1.5rem 1.15rem;gap:1.6rem;flex-wrap:wrap}
+.logo{font-size:1.6rem;line-height:1.25;margin-right:.4rem;padding-bottom:.1rem}
+body.st .ust{padding-right:34px}
+.sag{gap:.9rem;flex-wrap:wrap}
+.dilSec{display:inline-flex;border:1px solid var(--cizgi);border-radius:7px;overflow:hidden}
+.dilSec button{background:transparent;border:0;padding:.28rem .65rem;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:var(--sol);cursor:pointer}
+.dilSec button.acik{background:var(--pirinc);color:#1a1507}
+.plan{border:1px solid var(--cizgi);border-radius:99px;padding:.2rem .8rem;font-size:13px;color:var(--yazi);background:var(--y2)}
+.plan.pr{border-color:#e8801a;color:#ffb877}
+.ustDisa{display:inline-flex;align-items:center;gap:.5rem;background:linear-gradient(180deg,#ff7a2e,#e0452f);border:1px solid #b9301d;color:#fff;font-weight:700;font-size:15px;padding:.5rem 1.15rem;border-radius:8px;cursor:pointer;box-shadow:0 2px 0 #9c2616,0 4px 12px rgba(224,69,47,.35)}
+.ustDisa:hover{filter:brightness(1.08)}.ustDisa:active{transform:translateY(1px);box-shadow:0 1px 0 #9c2616}
+body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
+
+/* Bize gönder */
+#p-bize{overflow:auto;background:#f3f4f6}
+.bizeSayfa{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1.4rem;padding:1.4rem 110px 2rem;max-width:none;align-items:start;color:#1d2430}
+.bizeSol,.bKutu{background:#fff;border:1px solid #cfd4da;border-radius:10px;padding:1.2rem 1.3rem}
+.bizeSol label{color:#5d6673;margin-top:.8rem}
+.bizeSol textarea,.bizeSol input,.bizeSol select,.bKutu input{background:#fff;color:#1d2430;border:1px solid #bcc3cc}
+.bizeSol textarea{width:100%;resize:vertical;min-height:210px;font-size:16px;line-height:1.55}
+.bizeBaslik h2{font-size:1.9rem;color:#1d2430}.bizeBaslik p{color:#5d6673;margin-top:.3rem}
+.secimler{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:.9rem}
+.secimler>div{border:1px dashed #bcc3cc;border-radius:8px;padding:.55rem .8rem;background:#f8f9fb}
+.secimler>div.dolu{border:1px solid #2e9d57;background:#eef8f1}
+.secimler small{display:block;color:#5d6673;font-size:12px}.secimler b{font-size:15px}
+.bIki{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+#bizeGonder{margin-top:1.1rem;width:100%;background:linear-gradient(180deg,#ff7a2e,#e0452f);border-color:#b9301d;color:#fff;font-size:17px;padding:.75rem}
+.bizeSonuc{margin-top:1rem;border:1px solid #2e9d57;background:#eef8f1;border-radius:8px;padding:.8rem 1rem;color:#1d2430}.bizeSonuc a{color:#1f6fd0}
+.bizeSag{display:grid;gap:1.1rem}
+.bKutu h3{font-size:1.35rem;margin-bottom:.7rem;color:#1d2430}
+.spListe{display:grid;gap:.15rem;max-height:300px;overflow:auto}
+.bKutu.bMuz .spListe{max-height:340px}
+.spRow{display:flex;align-items:center;gap:.7rem;padding:.4rem .5rem;border-radius:8px}
+.spRow:hover{background:#f1f3f6}.spRow.sec{background:#fff3e9}
+.spPlay{width:34px;height:34px;border-radius:50%;border:0;background:#1d2430;color:#fff;cursor:pointer;font-size:13px;flex:none}
+.spPlay:hover{background:#d83a2c}
+.spAd{flex:1;min-width:0}.spAd b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.spAd small{color:#5d6673}
+.bKutu .btn{background:#eef0f3;border-color:#cfd4da;color:#1d2430}.bKutu .btn.ana{background:#2e9d57;border-color:#2e9d57;color:#fff}
+.chipler{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0}
+.chip{border:1px solid #cfd4da;background:#fff;border-radius:99px;padding:.2rem .8rem;font-size:13px;cursor:pointer;color:#1d2430}.chip.acik{background:#1d2430;color:#fff;border-color:#1d2430}
+.bosNot{color:#5d6673;padding:.8rem .4rem}
+@media(max-width:1100px){.bizeSayfa{grid-template-columns:1fr;padding-left:24px;padding-right:24px}}
+
+/* Çalışma alanı penceresi */
+.caSatir{display:grid;grid-template-columns:1fr auto auto auto;gap:.6rem;align-items:center;padding:.45rem 0;border-bottom:1px solid #e3e6ea}
+.caSatir small{color:#5d6673}
+
+/* Equalizer */
+.eqPen .govde{background:#1b222b;color:#dbe4ee}.eqPen .not{color:#9fb0c2}.eqPen select{background:#232c37;color:#dbe4ee;border-color:#35414f}
+#eqCv{width:100%;height:150px;border-radius:8px;border:1px solid #2a3542;display:block}
+#eqMod{display:grid;grid-template-columns:1fr repeat(4,1.5fr) 1fr;gap:.55rem}
+.eqModul{background:linear-gradient(180deg,#27313d,#1e2630);border:1px solid #35414f;border-radius:10px;padding:.55rem .5rem .7rem}
+.eqModul.kapali{opacity:.5}
+.eqBas{display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem}.eqBas b{font-size:13px;color:#dbe4ee}
+.eqOn{width:14px;height:14px;border-radius:50%;border:2px solid #5b6b7c;background:#1a2028;cursor:pointer;padding:0}
+.eqOn.acik{background:#ff8a2a;border-color:#ffb877;box-shadow:0 0 8px #ff8a2a}
+.eqKnoblar{display:flex;justify-content:space-around;gap:.2rem}
+.knobK{display:flex;flex-direction:column;align-items:center;min-width:56px}
+.knobK small{font-size:11px;color:#8fa0b3}.knobK b{font-size:11.5px;font-weight:600;color:#ffb877;min-height:1.1em}
+.knob svg{width:56px;height:56px;cursor:ns-resize;touch-action:none;display:block}
+.knob .iz{fill:none;stroke:#3a4655;stroke-width:4;stroke-linecap:round}.knob .ark{fill:none;stroke:#ff8a2a;stroke-width:4;stroke-linecap:round}
+.knob .gov{fill:url(#knobG);fill:#47535f;stroke:#0f1419;stroke-width:1.5}.knob .cb{fill:#ffb877}
+.knobK.kapali .ark{stroke:#6b7b8c}
+@media(max-width:900px){#eqMod{grid-template-columns:repeat(2,1fr)}}
+
+/* Daha güçlü araç çubuğu ikonları */
+.ik{width:32px;height:32px;border-radius:5px}
+.ik svg{width:23px;height:23px;filter:drop-shadow(0 1px 0 rgba(255,255,255,.7)) drop-shadow(0 1.5px 1.5px rgba(20,30,45,.28))}
+.ik svg *{stroke-width:1.6}
+.ik svg .f{fill:url(#ikBeyaz)}.ik svg .fl{fill:#b9d3f7}.ik svg .fb{fill:url(#ikMavi);stroke:#1d54a8}.ik svg .fg{fill:url(#ikYesil);stroke:#1f7a41}
+.ik svg .fr{fill:url(#ikKirmizi);stroke:#a52619}.ik svg .fo{fill:url(#ikTuruncu);stroke:#b85a0a}.ik svg .fd{fill:url(#ikKoyu);stroke:#1f2733}
+.ik svg .y{fill:url(#ikSari);stroke:#8a6d12}.ik svg .y2{fill:url(#ikSari2);stroke:#8a6d12}
+.ik:hover{background:linear-gradient(180deg,#fff,#e6effc);border-color:#7ea6e6;box-shadow:0 1px 3px rgba(40,80,150,.25)}
+.ik:active,.ik.on{background:linear-gradient(180deg,#bcd5f7,#d7e6fb);border-color:#4f86d6;box-shadow:inset 0 1px 3px rgba(30,70,140,.35)}
+.kayitIk svg{width:25px;height:25px}
+.ik[id=kayitBtn]{background:linear-gradient(180deg,#fff,#f6e3dc)}

@@ -14,3 +14,12 @@ SPOTSTÜDYO — KURULUM (sırayla, ilk deneme için 1. adım yeter)
 7) Siteden kendi e-postanızla üye olun. SQL Editor'de şu satırı kendi e-postanızla çalıştırın:
    update public.profiles set role='admin' where email='BURAYA_KENDI_EPOSTANIZ';
 8) Yönetim sekmesinden seslendirmen örneklerini ve müzikleri yükleyin; Ayarlar'dan ücretsiz indirme sayısını değiştirebilirsiniz (varsayılan 5).
+
+
+=== v10 EKİ: SİPARİŞ SİSTEMİ ("Bize gönder") ===
+1) Supabase > SQL Editor: kurulum/siparis-kurulum.txt dosyasının tamamını yapıştırıp RUN'a basın (bir kez).
+2) E-posta bildirimi: sesefektimedya@gmail.com adresine, ilk sipariş gönderildiğinde FormSubmit'ten bir "onay" maili gelir.
+   O maildeki düğmeye bir kez tıklayın. Bundan sonra her sipariş otomatik mailinize düşer.
+3) WhatsApp (0533 150 98 90): müşteri siparişi gönderince ekranda "WhatsApp'tan da haber ver" düğmesi çıkar; tıklayınca mesaj hazır yazılı açılır.
+   (Tam otomatik WhatsApp için ücretli WhatsApp Business API gerekir; şimdilik bu yöntem ücretsizdir.)
+4) Yönetim > Siparişler: sipariş durumunu seçin, hazır dosyanın indirme bağlantısını yapıştırıp Kaydet deyin; müşteri Panelim > Siparişlerim'de "İndir" düğmesini görür.

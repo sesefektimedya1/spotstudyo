@@ -244,3 +244,9 @@ body.st .ust nav a,body.st .sag{font-size:13px}
 .led,.metreKutu{max-width:100%;box-sizing:border-box}
 .skala u:last-child{margin-right:2px}
 .aracSol{flex-wrap:nowrap;align-content:stretch}.sira{width:100%}
+/* sağ kenardan güvenli boşluk */
+.arac{padding-right:34px}
+.aracSag{width:340px}
+@media(min-width:1420px){.aracSag{width:340px}}
+.skala{padding-right:4px}
+body.st .ust{padding-right:34px}

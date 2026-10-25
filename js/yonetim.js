@@ -2,11 +2,24 @@
   var o = await korumali('yonetim', true); if (!o) return;
   var ic = $('#icerik'), SAYFA = 25, durum = { sayfa: 0, ara: '', plan: '' };
   $$('#sekme button').forEach(function (b) { b.onclick = function () { $$('#sekme button').forEach(function (x) { x.classList.remove('acik'); }); b.classList.add('acik'); ac(b.dataset.s); }; });
-  function ac(s) { ({ ozet: ozet, uyeler: uyeler, sesler: kutuphane.bind(null, 'sesler'), muzikler: kutuphane.bind(null, 'muzikler'), ayar: ayar })[s](); }
+  function ac(s) { ({ ozet: ozet, siparis: siparis, uyeler: uyeler, sesler: kutuphane.bind(null, 'sesler'), muzikler: kutuphane.bind(null, 'muzikler'), ayar: ayar })[s](); }
 
   async function ozet() {
     var z = await Veri.ozet();
     ic.innerHTML = '<div class="izgara g4">' + [['Toplam üye', z.uye], ['Premium üye', z.premium], ['Bu ay indirme', z.bu_ay], ['Seslendirme kaydı', z.ses], ['Müzik', z.muzik]].map(function (a) { return '<div class="kart"><div class="sol">' + a[0] + '</div><div class="sayi">' + a[1] + '</div></div>'; }).join('') + '</div>';
+  }
+
+  async function siparis() {
+    var L = await Veri.siparisTum();
+    ic.innerHTML = '<div class="kart">' + (L.length ? L.map(function (x) {
+      return '<div class="sipSatir" data-id="' + x.id + '" style="padding:.9rem 0;border-bottom:1px solid var(--cizgi)"><div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:baseline"><b>' + esc(x.ad || '') + '</b><span class="sol">' + esc(x.telefon || '') + ' · ' + esc(x.eposta || '') + '</span><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span><span class="etiket">' + esc(x.tur || '') + '</span></div>' +
+        '<div style="margin:.4rem 0;white-space:pre-wrap">' + esc(x.metin || '') + '</div><div class="sol" style="font-size:13px">Seslendirmen: ' + esc(x.ses_adi || '-') + ' · Müzik: ' + esc(x.muzik_adi || '-') + (x.notu ? ' · Not: ' + esc(x.notu) : '') + '</div>' +
+        '<div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap"><select class="dr" style="max-width:170px"><option value="yeni">Yeni</option><option value="hazirlaniyor">Hazırlanıyor</option><option value="tamamlandi">Tamamlandı</option></select><input type="text" class="su" placeholder="Hazır dosyanın indirme bağlantısı" value="' + esc(x.sonuc_url || '') + '" style="flex:1;min-width:240px"><button class="btn kucuk ana kyd">Kaydet</button></div></div>';
+    }).join('') : '<span class="sol">Henüz sipariş yok.</span>') + '</div>';
+    $$('.sipSatir', ic).forEach(function (tr, i) {
+      tr.querySelector('.dr').value = L[i].durum;
+      tr.querySelector('.kyd').onclick = async function () { try { await Veri.siparisGuncelle(L[i].id, { durum: tr.querySelector('.dr').value, sonuc_url: tr.querySelector('.su').value.trim() }); toast('Kaydedildi'); } catch (e) { toast(e.message); } };
+    });
   }
 
   async function uyeler() {

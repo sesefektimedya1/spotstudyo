@@ -17,12 +17,17 @@
       if (oturum.role === 'admin') h += '<a href="yonetim.html"' + (aktif === 'yonetim' ? ' class="acik"' : '') + '>Yönetim</a>';
     }
     h += '</nav><div class="sag">';
+    h += '<div class="dilSec" role="group" aria-label="Dil / Language"><button data-dil="tr" class="' + (window.DIL !== 'en' ? 'acik' : '') + '">TR</button><button data-dil="en" class="' + (window.DIL === 'en' ? 'acik' : '') + '">EN</button></div>';
     if (oturum) {
       var d = await Veri.hakDurumu(), lim = d.limit > 0 ? d.limit : '∞';
-      h += '<span class="kota" title="Bu ayki MP3 indirme hakkınız">Bu ay ' + d.kullanilan + ' / ' + lim + ' indirme</span><span>' + esc(oturum.ad || oturum.email) + '</span><button class="btn kucuk" id="cikisBtn">Çıkış</button>';
+      h += '<span class="plan' + (oturum.plan === 'premium' ? ' pr' : '') + '">' + (oturum.plan === 'premium' ? 'Premium plan' : 'Ücretsiz plan') + '</span>';
+      h += '<span class="kota" title="Bu ayki MP3 indirme hakkınız">Bu ay ' + d.kullanilan + ' / ' + lim + ' indirme</span>';
+      if (aktif === 'studyo') h += '<button class="ustDisa" id="ustDisa" title="MP3, WAV ya da santral dosyası olarak dışa aktar (Ctrl+E)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v3h16v-3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dışa aktar</button>';
+      h += '<span>' + esc(oturum.ad || oturum.email) + '</span><button class="btn kucuk" id="cikisBtn">Çıkış</button>';
     } else h += '<a class="btn kucuk" href="index.html#giris">Giriş yap</a>';
     h += '</div></header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
+    $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });
     var c = $('#cikisBtn'); if (c) c.onclick = async function () { await Veri.cikis(); location.href = 'index.html'; };
   };
   window.korumali = async function (aktif, yonetici) {

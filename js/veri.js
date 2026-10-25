@@ -4,7 +4,7 @@
   var C = window.SPOT_CONFIG || {};
   var canli = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY && window.supabase);
   var sb = canli ? window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY) : null;
-  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', premium_indirme_limiti: '0', marka: C.marka || 'SpotStüdyo' };
+  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', premium_indirme_limiti: '0', marka: C.marka || 'Ses Efekti Spot Stüdyo' };
 
   /* ---------- DENEME MODU ---------- */
   var LS = {
@@ -49,6 +49,10 @@
       var buAy = LS.oku('indirmeler', []).filter(function (x) { return x.user_id === o.id && x.t >= ayBasi(); }).length;
       return { kullanilan: buAy, limit: lim };
     },
+    siparisVer: async function (s) { var o = await demo.oturum(), l = LS.oku('siparisler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, durum: 'yeni', sonuc_url: '', created_at: new Date().toISOString() }, s); l.push(k); LS.yaz('siparisler', l); return k; },
+    siparislerim: async function () { var o = await demo.oturum(); return LS.oku('siparisler', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
+    siparisTum: async function () { return LS.oku('siparisler', []).reverse(); },
+    siparisGuncelle: async function (id, d) { var l = LS.oku('siparisler', []), k = l.find(function (x) { return x.id === id; }); if (k) Object.assign(k, d); LS.yaz('siparisler', l); },
     liste: async function (t) { return bellek[t].filter(function (x) { return x.aktif !== false; }); },
     hepsi: async function (t) { return bellek[t].slice(); },
     ekle: async function (t, meta, dosya) { var k = Object.assign({ id: uid(), aktif: true, url: URL.createObjectURL(dosya) }, meta); bellek[t].push(k); return k; },
@@ -88,6 +92,10 @@
     indirmeler: async function () { return hata(await sb.from('indirmeler').select('*').order('created_at', { ascending: false }).limit(200)); },
     indirmeHakki: async function (proje, tur) { var r = hata(await sb.rpc('indirme_hakki_al', { p_proje: proje, p_tur: tur })); return r; },
     hakDurumu: async function () { return hata(await sb.rpc('indirme_durumu')); },
+    siparisVer: async function (s) { var o = await canliApi.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); return hata(await sb.from('siparisler').insert(Object.assign({ user_id: o.id }, s)).select().single()); },
+    siparislerim: async function () { var o = await canliApi.oturum(); return hata(await sb.from('siparisler').select('*').eq('user_id', o.id).order('created_at', { ascending: false })); },
+    siparisTum: async function () { return hata(await sb.from('siparisler').select('*').order('created_at', { ascending: false })); },
+    siparisGuncelle: async function (id, d) { hata(await sb.from('siparisler').update(d).eq('id', id)); },
     liste: async function (t) { return hata(await sb.from(t).select('*').eq('aktif', true).order('ad')); },
     hepsi: async function (t) { return hata(await sb.from(t).select('*').order('created_at', { ascending: false })); },
     ekle: async function (t, meta, dosya) {
@@ -112,7 +120,7 @@
   } : null;
 
   var api = canli ? canliApi : demo;
-  window.Veri = Object.assign({ canli: canli, marka: C.marka || 'SpotStüdyo' }, api);
+  window.Veri = Object.assign({ canli: canli, marka: C.marka || 'Ses Efekti Spot Stüdyo' }, api);
   var url0 = api.url;
   window.Veri.url = function (k, t) { return url0(k, t); };
 })();

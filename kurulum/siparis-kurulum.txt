@@ -1,0 +1,15 @@
+-- Ses Efekti Spot Stüdyo — SİPARİŞ tablosu. Supabase > SQL Editor'e yapıştırıp RUN'a basın. (Bir kez yeterli)
+
+create table if not exists public.siparisler (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  ad text, telefon text, eposta text,
+  metin text not null, ses_adi text, muzik_adi text, tur text, notu text,
+  durum text not null default 'yeni' check (durum in ('yeni','hazirlaniyor','tamamlandi')),
+  sonuc_url text,
+  created_at timestamptz not null default now()
+);
+alter table public.siparisler enable row level security;
+create policy sip_ekle on public.siparisler for insert with check (user_id = auth.uid());
+create policy sip_oku on public.siparisler for select using (user_id = auth.uid() or public.is_admin());
+create policy sip_yonetici_guncelle on public.siparisler for update using (public.is_admin()) with check (public.is_admin());

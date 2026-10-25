@@ -29,7 +29,7 @@
     el.innerHTML = '<div class="bas"><b></b><small></small><button class="wb mn" title="Küçült (alta indir)"><svg viewBox="0 0 12 12" width="11" height="11"><path d="M2 9h8" stroke="currentColor" stroke-width="1.6"/></svg></button><button class="wb mx" title="Büyüt / eski boyuta dön"><svg viewBox="0 0 12 12" width="11" height="11"><rect x="2" y="2" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><button class="x" title="Pencereyi kapat">✕</button></div><div class="ov" title="Genel görünüm: tıklayıp sürükleyerek gezinin"><canvas></canvas></div><div class="dalga"><canvas class="cv"></canvas></div><div class="kay" title="Kaydırma çubuğu"><div class="th"></div></div><i class="rz rzr" data-d="r"></i><i class="rz rzl" data-d="l"></i><i class="rz rzb" data-d="b"></i><i class="rz rzbr" data-d="rb"></i><i class="rz rzbl" data-d="lb"></i><div class="zb">' + zbHtml() + '<span class="sure"></span></div>';
     alan.appendChild(el); p.el = el; p.cv = $('.cv', el); p.ovc = $('.ov canvas', el); p.kay = $('.kay', el); p.th = $('.th', el);
     var w = alan.clientWidth, h = alan.clientHeight, n = S.pen.length;
-    var MG = 110, yuk = Math.max(240, Math.floor((h - 32) / 3) + 85), satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
+    var MG = 110, yuk = 340, satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
     el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 8 + ((n - satir) % 6 + 1) * 28) + 'px';
     S.pen.push(p); kenarlar(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
     baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle();
@@ -82,7 +82,7 @@
   function baglaPencere(p) {
     var el = p.el;
     el.addEventListener('mousedown', function () { if (S.aktif !== p.id) odak(p); }, true);
-    $('.x', el).onclick = function () { kapat(p); };
+    $('.x', el).onclick = function () { kapatSor(p); };
     // taşıma
     $('.bas', el).addEventListener('mousedown', function (e) {
       if (e.target.tagName === 'BUTTON') return; var x0 = e.clientX, y0 = e.clientY, l0 = el.offsetLeft, t0 = el.offsetTop; e.preventDefault();
@@ -123,20 +123,20 @@
   var ADIM = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
   function zamanFmt(t) { var m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + (s % 1 ? s.toFixed(s < 1 ? 3 : (t < 10 ? 2 : 1)) : s.toFixed(0)); }
   function kanalCiz(g, dizi, p, y0, h, W, d, no, rh) {
-    g.fillStyle = '#4a4aa8'; g.fillRect(0, y0, W, h);
+    g.fillStyle = '#ffffff'; g.fillRect(0, y0, W, h);
     var mid = y0 + h / 2, k = h * 0.47 * p.vz;
-    if (p.sec) { var a = Math.max(0, (p.sec[0] - p.bas) / p.spp * d), b = Math.min(W, (p.sec[1] - p.bas) / p.spp * d); if (b > a) { g.fillStyle = '#9d9df0'; g.fillRect(a, y0, b - a, h); } }
+    if (p.sec) { var a = Math.max(0, (p.sec[0] - p.bas) / p.spp * d), b = Math.min(W, (p.sec[1] - p.bas) / p.spp * d); if (b > a) { g.fillStyle = '#000000'; g.fillRect(a, y0, b - a, h); } }
     if (dizi.length) {
       var piks = Math.max(1, Math.floor(W / d)), bas = Math.max(0, Math.floor(p.bas)), son = Math.min(dizi.length, Math.floor(p.bas + piks * p.spp));
       if (son > bas) {
         var alt = dizi.subarray(bas, son), adet = Math.min(piks, Math.ceil(alt.length / Math.max(1, p.spp))), pk = Motor.tepeler(alt, Math.max(1, adet)), gen = (alt.length / p.spp) / adet * d;
         for (var i = 0; i < adet; i++) {
           var y1 = Math.max(y0, mid - pk[2 * i + 1] * k), y2 = Math.min(y0 + h, mid - pk[2 * i] * k), x = i * gen, sel = p.sec && (bas + i * p.spp) >= p.sec[0] && (bas + i * p.spp) <= p.sec[1];
-          g.fillStyle = sel ? '#07073c' : '#0b0b6b'; g.fillRect(x, y1, Math.max(1, gen), Math.max(1, y2 - y1));
+          g.fillStyle = sel ? '#3d8bff' : (p.kayitta ? '#1f5fd6' : '#101418'); g.fillRect(x, y1, Math.max(1, gen), Math.max(1, y2 - y1));
         }
       }
     }
-    g.fillStyle = '#e9e36a'; g.fillRect(0, mid, W, Math.max(1, d)); g.fillStyle = '#2a2a80'; g.fillRect(0, y0 + h - 1, W, 1);
+    g.fillStyle = '#9aa4b2'; g.fillRect(0, mid, W, Math.max(1, d)); g.fillStyle = '#c3c9d1'; g.fillRect(0, y0 + h - 1, W, 1);
     g.fillStyle = '#3a3acb'; g.strokeStyle = '#fff'; var bx = 5 * d, by = y0 + 5 * d, bw = 17 * d, bh = 14 * d; g.fillRect(bx, by, bw, bh); g.fillStyle = '#fff'; g.font = (11 * d) + 'px Barlow,sans-serif'; g.textBaseline = 'middle'; g.fillText(String(no), bx + 5 * d, by + bh / 2);
   }
   function ciz(p) {
@@ -150,9 +150,9 @@
     g.font = (10.5 * d) + 'px Barlow,sans-serif'; g.textBaseline = 'middle';
     var pxs = SR / p.spp / d, adim = ADIM[ADIM.length - 1]; for (var q = 0; q < ADIM.length; q++) if (ADIM[q] * pxs >= 80) { adim = ADIM[q]; break; }
     var t0 = p.bas / SR, tS = (p.bas + gW(p) * p.spp) / SR;
-    for (var t = Math.ceil(t0 / adim) * adim; t <= tS; t += adim) { var x = (t * SR - p.bas) / p.spp * d; g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x, RH, 1, dz); g.fillStyle = '#555'; g.fillRect(x, RH - 7 * d, 1, 7 * d); g.fillStyle = '#222'; g.fillText(zamanFmt(t), x + 3 * d, RH / 2 - 1); }
+    for (var t = Math.ceil(t0 / adim) * adim; t <= tS; t += adim) { var x = (t * SR - p.bas) / p.spp * d; g.fillStyle = 'rgba(128,138,152,.28)'; g.fillRect(x, RH, 1, dz); g.fillStyle = '#555'; g.fillRect(x, RH - 7 * d, 1, 7 * d); g.fillStyle = '#222'; g.fillText(zamanFmt(t), x + 3 * d, RH / 2 - 1); }
     // imleç
-    var im = (S.calP === p && S.cal) ? S.imlecCal : p.imlec, x2 = (im - p.bas) / p.spp * d; if (x2 >= 0 && x2 <= W) { g.fillStyle = S.calP === p ? '#ffe14a' : '#ffffff'; g.fillRect(x2, RH, Math.max(1, d), dz); if (S.calP !== p) { g.fillStyle = '#e8d300'; g.beginPath(); g.moveTo(x2 - 5 * d, RH); g.lineTo(x2 + 5 * d, RH); g.lineTo(x2, RH + 7 * d); g.fill(); } }
+    var im = (S.calP === p && S.cal) ? S.imlecCal : p.imlec, x2 = (im - p.bas) / p.spp * d; if (x2 >= 0 && x2 <= W) { g.fillStyle = S.calP === p ? '#ff8a2a' : '#e0452f'; g.fillRect(x2, RH, Math.max(1, d), dz); if (S.calP !== p) { g.fillStyle = '#e0452f'; g.beginPath(); g.moveTo(x2 - 5 * d, RH); g.lineTo(x2 + 5 * d, RH); g.lineTo(x2, RH + 7 * d); g.fill(); } }
     ovCiz(p); kaydirCiz(p);
     $('.bas small', p.el).textContent = sn(p.L.length / SR) + (p.R !== p.L ? ' · stereo' : ' · mono');
     $('.sure', p.el).textContent = (p.sec ? 'Seçim ' + sn(p.sec[0] / SR) + ' – ' + sn(p.sec[1] / SR) + ' (' + ((p.sec[1] - p.sec[0]) / SR).toFixed(2) + ' sn)' : 'İmleç ' + sn(p.imlec / SR)) + ' · Seviye ' + p.vz.toFixed(1) + '×';
@@ -177,6 +177,7 @@
       if (sc && s2 > sc[0] + tol && s2 < sc[1] - tol && sc[1] - sc[0] > 100) { mod = 'tasi'; tasi = { x: e.clientX, y: e.clientY, dolu: false }; }
       else if (sc && Math.abs(s2 - sc[0]) <= tol) { mod = 'kenar'; sabit = sc[1]; }
       else if (sc && Math.abs(s2 - sc[1]) <= tol) { mod = 'kenar'; sabit = sc[0]; }
+      else if (e.shiftKey && (sc || p.imlec != null)) { mod = 'kenar'; sabit = sc ? (s2 < sc[0] ? sc[1] : sc[0]) : p.imlec; p.sec = [Math.min(s2, sabit), Math.max(s2, sabit)]; }
       else { mod = 'yeni'; sabit = s2; p.imlec = s2; p.sec = null; }
       surukle = true; guncelle(); e.preventDefault();
     });
@@ -248,13 +249,15 @@
   async function kayitBasla() {
     if (kayit) return kayitDur();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast('Bu tarayıcı kaydı desteklemiyor. Chrome veya Edge kullanın.');
+    var p = akt(), ad = 'Kayıt ' + (++kayitNo), yeniAcildi = false, eskiBos = false;
+    durdur(); if (S.tab !== 'manuel') sekme('manuel');
+    if (p && p.bos) { eskiBos = true; p.bos = false; p.ad = ad; $('.bas b', p.el).textContent = ad; } else { p = pencereAc(ad, new Float32Array(0), null, 'ses'); yeniAcildi = true; }
+    var bekleK = { bekle: true, bitir: function () {} }; kayit = bekleK; p.L = p.R = new Float32Array(0); p.ovC = null; p.kayitta = true; p.spp = Math.max(1, SR * 8 / gW(p)); p.bas = 0; odak(p); ciz(p);
+    (function (g, c2, d) { g.save(); g.font = 'bold ' + (14 * d) + 'px sans-serif'; g.fillStyle = '#1d2430'; g.fillText('Mikrofon açılıyor… Tarayıcı izin isterse “İzin ver”e basın', 30 * d, 40 * d); g.restore(); })(p.cv.getContext('2d'), p.cv, p.cv.width / (p.cv.clientWidth || p.cv.width));
     try {
-      durdur();
       var c = ac(), stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: mikId ? { exact: mikId } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
       var src = c.createMediaStreamSource(stream), an = c.createAnalyser(); an.fftSize = 1024; src.connect(an);
       var sp = c.createScriptProcessor(4096, 1, 1), sifir = c.createGain(); sifir.gain.value = 0; src.connect(sp); sp.connect(sifir); sifir.connect(c.destination);
-      var p = akt(), ad = 'Kayıt ' + (++kayitNo);
-      if (p && p.bos) { p.bos = false; p.ad = ad; $('.bas b', p.el).textContent = ad; } else p = pencereAc(ad, new Float32Array(0), null, 'ses');
       var buf = new Float32Array(SR * 60), n = 0, alive = true, seviye = -90, tepe = -90, tepeT = 0;
       p.L = p.R = buf.subarray(0, 0); p.undo = []; p.redo = []; p.sec = null; p.imlec = 0; p.ovC = null; p.kayitta = true; p.spp = Math.max(1, SR * 8 / gW(p)); p.bas = 0; odak(p);
       var K = { p: p, duraklat: false };
@@ -275,14 +278,17 @@
         $('#metre i').style.width = '0'; $('#kayitBtn').classList.remove('kayitta'); $('#kayitBtn').title = 'Mikrofonla kayıt  (Ctrl+R)'; $('#otoKayit').textContent = '● Mikrofonla kayıt al'; oynatIk(0);
         p.kayitta = false; kayit = null;
         if (n < SR * 0.1) { toast('Kayıt çok kısa, alınmadı'); if (p.el.isConnected) { p.L = p.R = new Float32Array(SR * 2); p.bos = true; p.ovC = null; tumuGoster(p); } guncelle(); return; }
-        p.L = p.R = buf.slice(0, n); p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (S.tab === 'oto' && S.aktif) $('#otoSes').value = 'p' + S.aktif; guncelle();
+        p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (S.tab === 'oto' && S.aktif) $('#otoSes').value = 'p' + S.aktif; guncelle();
       };
       kayit = K; $('#kayitBtn').classList.add('kayitta'); $('#kayitBtn').title = 'Kaydı bitir'; $('#otoKayit').textContent = '■ Kaydı bitir'; oynatIk(1);
       if (S.tab !== 'manuel' && S.tab !== 'oto') sekme('manuel');
-    } catch (e) { toast(e.name === 'NotAllowedError' ? 'Mikrofon izni verilmedi. Tarayıcı adres çubuğundan izin verin.' : 'Mikrofon açılamadı: ' + e.message); }
+    } catch (e) {
+      kayit = null; p.kayitta = false; if (yeniAcildi) kapat(p); else if (eskiBos) { p.bos = true; p.L = p.R = new Float32Array(SR * 2); p.ovC = null; tumuGoster(p); ciz(p); } kayitNo--;
+      toast(e.name === 'NotAllowedError' ? 'Mikrofon izni verilmedi. Adres çubuğundaki kilit simgesinden mikrofona izin verin.' : e.name === 'NotFoundError' ? 'Mikrofon bulunamadı. Mikrofonu takıp tekrar deneyin.' : 'Mikrofon açılamadı: ' + e.message);
+    }
   }
   function kayitDur() { if (kayit) kayit.bitir(); }
-  function kayitDuraklat() { if (!kayit) return; kayit.duraklat = !kayit.duraklat; oynatIk(kayit.duraklat ? 0 : 1); }
+  function kayitDuraklat() { if (!kayit || kayit.bekle) return; kayit.duraklat = !kayit.duraklat; oynatIk(kayit.duraklat ? 0 : 1); }
   function kayitUst(p, sev, tepe, dur) {
     var c = p.cv, g = c.getContext('2d'), d = c.width / (c.clientWidth || c.width), W = c.width;
     g.save(); g.font = 'bold ' + (13 * d) + 'px sans-serif'; g.textBaseline = 'middle';
@@ -296,7 +302,7 @@
 
   /* ---------- Düzenleme çekirdeği ---------- */
   function degistir(p, L, R) {
-    p.bos = false; p.undo.push({ L: p.L, R: p.R }); if (p.undo.length > 20) p.undo.shift(); p.redo = [];
+    p.bos = false; p.kirli = true; p.undo.push({ L: p.L, R: p.R }); if (p.undo.length > 20) p.undo.shift(); p.redo = [];
     p.L = L; p.R = R || L; p.sec = null; p.imlec = Math.min(p.imlec, p.L.length);
     var mx = Math.max(0, p.L.length - gW(p) * p.spp); if (p.bas > mx) p.bas = mx; guncelle();
   }
@@ -344,8 +350,8 @@
     sessizlikEkle: function () { var p = aktifVar(); if (!p) return; sayiDlg('Sessizlik ekle', 'Süre', 0.1, 10, 0.1, 0.5, ' sn', function (v) { var pos = p.sec ? p.sec[0] : p.imlec, n = Math.round(v * SR); kanalIs(p, function (x) { return Motor.sessizlikEkle(x, pos, n); }); }); },
     dip: function () { dipTemizle(); },
     disa: function () { disaDlg(); },
-    kapat: function () { kapat(akt()); },
-    hepsiniKapat: function () { S.pen.slice().forEach(kapat); },
+    kapat: function () { kapatSor(akt()); },
+    hepsiniKapat: function () { hepsiniKapatSor(); },
     yeni: function () { var x = new Float32Array(SR * 2); var p = pencereAc('Adsız ' + (S.sayac + 1), x, x, 'ses'); p.bos = true; otoListeleri(); }
   };
 
@@ -426,25 +432,90 @@
   }
   /* Efektler */
   function eqDlg() {
-    var p = aktifVar(); if (!p) return; var d0 = { bantlar: JSON.parse(JSON.stringify(Motor.TON.radyo.bantlar)), onayar: 'radyo' };
-    function isle(sL, sR) { return kanalDo(sL, sR, function (x) { return d0.bantlar.length ? Motor.eq(x, SR, d0.bantlar) : x; }); }
-    var q = diyalog('Ses rengi (EQ)', [], d0, {
-      not: 'Tok, parlak, sıcak gibi ton ayarı. Hazır ayar seçin, isterseniz bantları elle değiştirin.',
-      ekHtml: '<div id="bantlar" style="display:grid;gap:.3rem"></div><button class="btn kucuk" id="bantEkle" style="justify-self:start">Bant ekle</button>',
-      onayarlar: Object.keys(Motor.TON).map(function (k) { return [k, Motor.TON[k].ad]; }), onayarSec: 'radyo',
-      onayUygula: function (k, d) { d0.onayar = k; d0.bantlar = JSON.parse(JSON.stringify(Motor.TON[k].bantlar)); bantCiz(); },
-      onizle: function () { var z = onizParca(p); return tepeyeAyarla(isle(z.L, z.R)); },
-      tamam: function () { calis('Ses rengi uygulanıyor', function () { bolgeUygula(p, isle); }); }
-    });
-    function bantCiz() {
-      var k = $('#bantlar', q), tipler = [['hp', 'Alçak kes'], ['lp', 'Yüksek kes'], ['lowshelf', 'Bas rafı'], ['peak', 'Çan'], ['highshelf', 'Tiz rafı']];
-      k.innerHTML = '<div class="bant" style="font-size:12px;color:var(--sol)"><span>Tür</span><span>Frekans (Hz)</span><span>Kazanç (dB)</span><span>Genişlik (okt.)</span><span></span></div>' + d0.bantlar.map(function (b, i) {
-        return '<div class="bant" data-i="' + i + '"><select>' + tipler.map(function (t) { return '<option value="' + t[0] + '"' + (t[0] === b.t ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select><input type="number" value="' + b.f + '" min="20" max="20000"><input type="number" value="' + (b.g || 0) + '" min="-24" max="24" step="0.5"><input type="number" value="' + (b.bw || 1) + '" min="0.1" max="4" step="0.1"><button class="btn kucuk" title="Sil">✕</button></div>';
-      }).join('');
+    var p = aktifVar(); if (!p) return;
+    var ON = {
+      duz: ['Düz (hiç ses rengi yok)', { hp: [0, 80], lp: [0, 16000], b: [[1, 120, 0, .7], [1, 400, 0, 1], [1, 2500, 0, 1], [1, 9000, 0, .7]] }],
+      radyo: ['Radyo spikeri', { hp: [1, 80], lp: [0, 16000], b: [[1, 130, 2.5, .7], [1, 300, -2, 1], [1, 3000, 2.5, 1], [1, 10000, 3, .7]] }],
+      sicak: ['Sıcak ve dolgun', { hp: [1, 70], lp: [0, 16000], b: [[1, 150, 3, .7], [1, 400, 1, 1], [1, 3500, -1, 1], [1, 9000, -1.5, .7]] }],
+      parlak: ['Parlak ve net', { hp: [1, 90], lp: [0, 16000], b: [[1, 150, 0, .7], [1, 400, -2, 1], [1, 4000, 3, 1], [1, 11000, 4, .7]] }],
+      telefon: ['Telefon', { hp: [1, 400], lp: [1, 3400], b: [[0, 120, 0, .7], [1, 800, 2, 1], [1, 1800, 3, 1], [0, 9000, 0, .7]] }],
+      temiz: ['Boğukluğu al', { hp: [1, 110], lp: [0, 16000], b: [[1, 160, -2, .7], [1, 280, -3, 1.2], [1, 2800, 1.5, 1], [1, 9000, 1, .7]] }]
+    };
+    function yukle(k) { var o = ON[k][1], d = { hp: { on: o.hp[0], f: o.hp[1] }, lp: { on: o.lp[0], f: o.lp[1] }, b: o.b.map(function (x) { return { on: x[0], f: x[1], g: x[2], q: x[3] }; }) }; return d; }
+    var d0 = yukle('radyo'), TIP = ['lowshelf', 'peak', 'peak', 'highshelf'], AD = ['Bas', 'Alt orta', 'Üst orta', 'Tiz'];
+    function bantlar(d) {
+      var L = []; if (d.hp.on) L.push({ t: 'hp', f: d.hp.f, q: 0.7071 });
+      d.b.forEach(function (b, i) { if (b.on && Math.abs(b.g) > 0.01) L.push({ t: TIP[i], f: b.f, g: b.g, q: b.q }); });
+      if (d.lp.on) L.push({ t: 'lp', f: d.lp.f, q: 0.7071 }); return L;
     }
-    bantCiz();
-    q.addEventListener('input', function (e) { var r = e.target.closest('.bant[data-i]'); if (!r) return; var b = d0.bantlar[+r.dataset.i], el = r.querySelectorAll('select,input'); b.t = el[0].value; b.f = +el[1].value || 1000; b.g = +el[2].value || 0; b.bw = +el[3].value || 1; });
-    q.addEventListener('click', function (e) { if (e.target.id === 'bantEkle') { d0.bantlar.push({ t: 'peak', f: 1000, g: 0, bw: 1 }); bantCiz(); } else if (e.target.title === 'Sil') { d0.bantlar.splice(+e.target.closest('.bant').dataset.i, 1); bantCiz(); } });
+    function isle(sL, sR) { var bl = bantlar(d0); return kanalDo(sL, sR, function (x) { return bl.length ? Motor.eq(x, SR, bl) : x; }); }
+    var q = diyalog('Equalizer', [], d0, {
+      not: 'Düğmeleri yukarı aşağı sürükleyin (ya da fare tekerleği). Çift tıklama düğmeyi ilk değerine döndürür. Önce bir hazır ayar seçebilirsiniz.',
+      ekHtml: '<canvas id="eqCv" width="1000" height="150"></canvas><div id="eqMod"></div>',
+      onayarlar: Object.keys(ON).map(function (k) { return [k, ON[k][0]]; }), onayarSec: 'radyo',
+      onayUygula: function (k) { d0 = yukle(k); kur(); },
+      onizle: function () { var z = onizParca(p); return tepeyeAyarla(isle(z.L, z.R)); },
+      tamam: function () { calis('Equalizer uygulanıyor', function () { bolgeUygula(p, isle); }); }
+    });
+    $('.pencere', q).style.width = 'min(1060px,100%)'; $('.pencere', q).classList.add('eqPen');
+    var cv = $('#eqCv', q);
+    function egri() {
+      var c = cv.getContext('2d'), W = cv.width, H = cv.height; c.clearRect(0, 0, W, H); c.fillStyle = '#10161d'; c.fillRect(0, 0, W, H);
+      function X(f) { return Math.log(f / 20) / Math.log(1000) * W; } function Y(db) { return H / 2 - db / 24 * (H / 2 - 8); }
+      c.strokeStyle = '#26323f'; c.lineWidth = 1; c.fillStyle = '#6b7b8c'; c.font = '11px sans-serif';
+      [-18, -12, -6, 0, 6, 12, 18].forEach(function (db) { c.strokeStyle = db === 0 ? '#3d4d5e' : '#1e2833'; c.beginPath(); c.moveTo(0, Y(db)); c.lineTo(W, Y(db)); c.stroke(); c.fillText(db + ' dB', 4, Y(db) - 2); });
+      [50, 100, 200, 500, 1000, 2000, 5000, 10000].forEach(function (f) { c.strokeStyle = '#1e2833'; c.beginPath(); c.moveTo(X(f), 0); c.lineTo(X(f), H); c.stroke(); c.fillText(f >= 1000 ? (f / 1000) + 'k' : f, X(f) + 3, H - 4); });
+      var bl = bantlar(d0).map(function (b) { return Motor.biquadKatsayi(b.t, SR, b.f, b.q, b.g || 0); });
+      c.beginPath(); for (var i = 0; i <= W; i += 2) {
+        var f = 20 * Math.pow(1000, i / W), w = 2 * Math.PI * f / SR, cw = Math.cos(w), sw = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w), db = 0;
+        bl.forEach(function (k) { var nr = k.b0 + k.b1 * cw + k.b2 * c2, ni = -(k.b1 * sw + k.b2 * s2), dr = 1 + k.a1 * cw + k.a2 * c2, di = -(k.a1 * sw + k.a2 * s2); db += 10 * Math.log10((nr * nr + ni * ni) / (dr * dr + di * di + 1e-12) + 1e-12); });
+        db = Math.max(-24, Math.min(24, db)); if (i) c.lineTo(i, Y(db)); else c.moveTo(i, Y(db));
+      }
+      c.strokeStyle = '#ff8a2a'; c.lineWidth = 2.5; c.stroke(); c.lineTo(W, Y(0)); c.lineTo(0, Y(0)); c.fillStyle = 'rgba(255,138,42,.18)'; c.fill();
+    }
+    var bicim = {
+      f: function (v) { return v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 1 : 2).replace('.', ',') + ' kHz' : Math.round(v) + ' Hz'; },
+      g: function (v) { return (v > 0 ? '+' : '') + v.toFixed(1).replace('.', ',') + ' dB'; },
+      q: function (v) { return 'Q ' + v.toFixed(2).replace('.', ','); }
+    };
+    function knob(mod, alan, ad, min, max, log, ilk) {
+      var k = document.createElement('div'); k.className = 'knobK'; k.innerHTML = '<div class="knob"><svg viewBox="0 0 60 60"><path class="iz" d="" /><path class="ark" d=""/><g class="ibre"><circle cx="30" cy="30" r="17" class="gov"/><rect x="28.3" y="14" width="3.4" height="11" rx="1.7" class="cb"/></g></svg></div><b></b><small>' + ad + '</small>';
+      var sv = $('svg', k), ibre = $('.ibre', k), ark = $('.ark', k), iz = $('.iz', k), yz = $('b', k), tip = alan === 'g' ? 'g' : alan === 'q' ? 'q' : 'f';
+      function yayPath(a0, a1) { function P(a) { var r = a * Math.PI / 180; return [30 + 25 * Math.sin(r), 30 - 25 * Math.cos(r)]; } var s = P(a0), e = P(a1); return 'M' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) + 'A25 25 0 ' + (Math.abs(a1 - a0) > 180 ? 1 : 0) + ' ' + (a1 > a0 ? 1 : 0) + ' ' + e[0].toFixed(2) + ' ' + e[1].toFixed(2); }
+      iz.setAttribute('d', yayPath(-135, 135));
+      function oran(v) { return log ? Math.log(v / min) / Math.log(max / min) : (v - min) / (max - min); }
+      function deger(o) { return log ? min * Math.pow(max / min, o) : min + o * (max - min); }
+      function ciz() {
+        var v = mod[alan], o = Math.max(0, Math.min(1, oran(v))), a = -135 + 270 * o; ibre.setAttribute('transform', 'rotate(' + a + ' 30 30)');
+        var a0 = alan === 'g' ? 0 : -135; ark.setAttribute('d', Math.abs(a - a0) < 0.5 ? '' : yayPath(Math.min(a0, a), Math.max(a0, a))); yz.textContent = bicim[tip](v);
+        k.classList.toggle('kapali', mod.on === 0 || mod.on === false);
+      }
+      function koy(v) { v = Math.max(min, Math.min(max, v)); if (alan === 'g') v = Math.round(v * 2) / 2; else if (alan === 'q') v = Math.round(v * 20) / 20; else v = Math.round(v); mod[alan] = v; ciz(); egri(); }
+      var y0, o0, bas = false;
+      sv.addEventListener('pointerdown', function (e) { bas = true; y0 = e.clientY; o0 = oran(mod[alan]); try { sv.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+      sv.addEventListener('pointermove', function (e) { if (!bas) return; var inc = e.shiftKey ? 700 : 180; koy(deger(Math.max(0, Math.min(1, o0 + (y0 - e.clientY) / inc)))); });
+      sv.addEventListener('pointerup', function () { bas = false; }); sv.addEventListener('pointercancel', function () { bas = false; });
+      sv.addEventListener('dblclick', function () { koy(ilk); });
+      sv.addEventListener('wheel', function (e) { e.preventDefault(); koy(deger(Math.max(0, Math.min(1, oran(mod[alan]) - Math.sign(e.deltaY) * 0.02)))); }, { passive: false });
+      k._ciz = ciz; ciz(); return k;
+    }
+    function modul(baslik, mod, knoblar) {
+      var m = document.createElement('div'); m.className = 'eqModul'; m.innerHTML = '<div class="eqBas"><button class="eqOn" title="Bandı aç / kapat"></button><b>' + baslik + '</b></div><div class="eqKnoblar"></div>';
+      var on = $('.eqOn', m), kn = $('.eqKnoblar', m), liste = [];
+      knoblar.forEach(function (a) { var k = knob(mod, a[0], a[1], a[2], a[3], a[4], a[5]); kn.appendChild(k); liste.push(k); });
+      function yenile() { on.classList.toggle('acik', !!mod.on); m.classList.toggle('kapali', !mod.on); liste.forEach(function (k) { k._ciz(); }); }
+      on.onclick = function () { mod.on = mod.on ? 0 : 1; yenile(); egri(); }; yenile(); return m;
+    }
+    function kur() {
+      var kap = $('#eqMod', q); kap.innerHTML = '';
+      kap.appendChild(modul('Alçak kes', d0.hp, [['f', 'Frekans', 20, 400, true, 80]]));
+      d0.b.forEach(function (b, i) {
+        var f0 = [[40, 400], [100, 1500], [800, 6000], [3000, 16000]][i], fv = [120, 400, 2500, 9000][i];
+        kap.appendChild(modul(AD[i], b, [['g', 'Kazanç', -18, 18, false, 0], ['f', 'Frekans', f0[0], f0[1], true, fv], ['q', 'Genişlik', 0.3, 4, true, i % 3 === 0 ? 0.7 : 1]]));
+      });
+      kap.appendChild(modul('Yüksek kes', d0.lp, [['f', 'Frekans', 2000, 20000, true, 16000]])); egri();
+    }
+    kur();
   }
   function hammerDlg() {
     var p = aktifVar(); if (!p) return; var d0 = Object.assign({ tavan: -1.5 }, Motor.KUVVET.radyo); delete d0.ad;
@@ -552,6 +623,63 @@
     });
     return q;
   }
+  /* ---------- Kaydet, çalışma alanı, kapatırken sorma ---------- */
+  function uc(baslik, metin, cb) {
+    var p = document.createElement('div'); p.className = 'perde';
+    p.innerHTML = '<div class="pencere" role="dialog" aria-modal="true" style="width:min(460px,100%)"><h3>' + esc(baslik) + '</h3><div class="govde"><p>' + metin + '</p></div><div class="alt"><button class="btn ana" data-c="evet">Evet</button><button class="btn" data-c="hayir">Hayır</button><button class="btn" data-c="iptal">İptal</button></div></div>';
+    document.body.appendChild(p);
+    function bit(c) { p.remove(); document.removeEventListener('keydown', kd, true); cb(c); }
+    function kd(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); bit('iptal'); } }
+    document.addEventListener('keydown', kd, true);
+    $$('button', p).forEach(function (b) { b.onclick = function () { bit(b.dataset.c); }; }); $('[data-c=evet]', p).focus();
+  }
+  function kapatSor(p, sonra) {
+    if (!p) return; if (!p.kirli || p.kayitta) { kapat(p); if (sonra) sonra(true); return; }
+    odak(p);
+    uc('Kaydetmek istiyor musunuz?', '“' + esc(p.ad) + '” penceresinde kaydedilmemiş değişiklikler var.', function (c) {
+      if (c === 'evet') calismayaKaydet(p).then(function () { kapat(p); if (sonra) sonra(true); }).catch(hata);
+      else if (c === 'hayir') { kapat(p); if (sonra) sonra(true); }
+      else if (sonra) sonra(false);
+    });
+  }
+  function hepsiniKapatSor() { var l = S.pen.slice(); (function ilk() { var p = l.shift(); if (!p) return; kapatSor(p, function (devam) { if (devam) ilk(); }); })(); }
+  function idb() {
+    return new Promise(function (res, rej) {
+      var r = indexedDB.open('spotstudyo', 1); r.onupgradeneeded = function () { r.result.createObjectStore('calisma', { keyPath: 'ad' }); };
+      r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); };
+    });
+  }
+  function idbIs(mod, fn) { return idb().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction('calisma', mod), st = tx.objectStore('calisma'), o = fn(st); tx.oncomplete = function () { res(o && o.result); }; tx.onerror = function () { rej(tx.error); }; }); }); }
+  function calismayaKaydet(p) {
+    if (!p) return Promise.resolve();
+    return idbIs('readwrite', function (st) { return st.put({ ad: p.ad, L: p.L, R: p.R === p.L ? null : p.R, t: Date.now() }); }).then(function () { p.kirli = false; toast('Çalışma alanına kaydedildi: ' + p.ad); });
+  }
+  function kaydetAkt() { var p = aktifVar(); if (p) calismayaKaydet(p).catch(hata); }
+  function tumunuKaydet() { if (!S.pen.length) return toast('Kaydedilecek pencere yok'); Promise.all(S.pen.map(calismayaKaydet)).then(function () { toast(S.pen.length + ' pencere çalışma alanına kaydedildi'); }).catch(hata); }
+  function farkliKaydet() {
+    var p = aktifVar(); if (!p) return;
+    diyalog('Farklı kaydet', [{ k: 'ad', ad: 'Dosya adı', tur: 'metin' }], { ad: p.ad }, {
+      not: 'Pencere bu adla WAV dosyası olarak bilgisayarınıza iner ve çalışma alanına da kaydedilir. MP3 ve santral çıkışı için “Dışa aktar” kullanın.',
+      tamam: function (d) {
+        var ad = (d.ad || p.ad).trim() || p.ad, dos = ad.replace(/[^\wÇĞİÖŞÜçğıöşü\- ]+/g, '').replace(/\s+/g, '_') || 'Ses';
+        p.ad = ad; $('.bas b', p.el).textContent = ad;
+        indirDosya(new Blob([Motor.wav16([p.L, p.R], SR)], { type: 'audio/wav' }), dos + '.wav'); calismayaKaydet(p).catch(hata); guncelle();
+      }
+    });
+  }
+  async function calismaAlani() {
+    var l = []; try { l = await idbIs('readonly', function (st) { return st.getAll(); }) || []; } catch (e) { return hata(e); }
+    l.sort(function (a, b) { return b.t - a.t; });
+    var p = document.createElement('div'); p.className = 'perde';
+    p.innerHTML = '<div class="pencere" role="dialog" aria-modal="true"><h3>Çalışma alanı</h3><div class="govde"><p class="not">Kaydettiğiniz çalışmalar bu tarayıcıda durur. Açmak için “Aç”a basın.</p><div id="caList">' + (l.length ? l.map(function (z, i) { return '<div class="caSatir"><b>' + esc(z.ad) + '</b><small>' + new Date(z.t).toLocaleString('tr-TR') + ' · ' + sn(z.L.length / SR) + ' sn</small><button class="btn kucuk ana" data-a="' + i + '">Aç</button><button class="btn kucuk" data-s="' + i + '">Sil</button></div>'; }).join('') : '<span class="sol">Henüz kaydedilmiş çalışma yok. Dosya menüsünden Kaydet deyin.</span>') + '</div></div><div class="alt"><button class="btn ana" id="caKapat">Kapat</button></div></div>';
+    document.body.appendChild(p); $('#caKapat', p).onclick = function () { p.remove(); };
+    p.addEventListener('click', function (e) {
+      var a = e.target.dataset.a, s = e.target.dataset.s;
+      if (a != null) { var z = l[+a]; var q = pencereAc(z.ad, z.L, z.R || z.L, 'ses'); q.kirli = false; sekme('manuel'); p.remove(); }
+      else if (s != null) { var z2 = l[+s]; idbIs('readwrite', function (st) { return st.delete(z2.ad); }).then(function () { p.remove(); calismaAlani(); }); }
+    });
+  }
+
   /* Dışa aktar */
   function indirDosya(blob, ad) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = ad; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
   function santralWav(L, R) {
@@ -606,7 +734,7 @@
       var e = p.el;
       if (tip === 'alt') { var yh = Math.max(170, Math.floor((h - 8 - (n - 1) * 6) / n)); e.style.left = '110px'; e.style.width = (w - 220) + 'px'; e.style.top = (4 + i * (yh + 6)) + 'px'; e.style.height = yh + 'px'; }
       else if (tip === 'yan') { var gw = Math.floor((w - 8) / n); e.style.left = (4 + i * gw) + 'px'; e.style.width = (gw - 4) + 'px'; e.style.top = '4px'; e.style.height = (h - 8) + 'px'; }
-      else { e.style.left = (110 + (i % 6) * 28) + 'px'; e.style.top = (8 + (i % 6) * 28) + 'px'; e.style.width = Math.max(420, w - 220 - 28 * 5) + 'px'; e.style.height = Math.max(240, Math.floor((h - 32) / 3) + 85) + 'px'; }
+      else { e.style.left = (110 + (i % 6) * 28) + 'px'; e.style.top = (8 + (i % 6) * 28) + 'px'; e.style.width = Math.max(420, w - 220 - 28 * 5) + 'px'; e.style.height = 340 + 'px'; }
       ciz(p);
     });
   }
@@ -653,10 +781,45 @@
     try { S.kut.sesler = await Veri.liste('sesler'); } catch (e) { S.kut.sesler = []; }
     otoListeleri();
   }
+  var BZ = { ses: null, muzik: null, filtre: '' };
   function bankaCiz() {
-    $('#muzikListe').innerHTML = S.kut.muzikler.length ? S.kut.muzikler.map(function (m, i) { return '<div class="satir"><b>' + esc(m.ad) + (m.tur ? ' <small>· ' + esc(m.tur) + '</small>' : '') + '</b><button class="btn kucuk" data-b="cal" data-t="muzikler" data-i="' + i + '">▶ Dinle</button><button class="btn kucuk" data-b="ac" data-i="' + i + '">Manuel stüdyoda aç</button><button class="btn kucuk ana" data-b="oto" data-i="' + i + '">Otomatikte kullan</button></div>'; }).join('') : '<div class="satir"><b class="sol">Henüz müzik eklenmemiş. Yönetim panelinden ekleyin.</b></div>';
-    $('#sesListe').innerHTML = S.kut.sesler.length ? S.kut.sesler.map(function (m, i) { return '<div class="satir"><b>' + esc(m.ad) + (m.tur ? ' <small>· ' + esc(m.tur) + '</small>' : '') + '</b><button class="btn kucuk" data-b="cal" data-t="sesler" data-i="' + i + '">▶ Dinle</button><button class="btn kucuk" disabled title="Çok yakında">Bize gönder (yakında)</button></div>'; }).join('') : '<div class="satir"><b class="sol">Henüz ses eklenmemiş.</b></div>';
+    var ara = (($('#mAra') || {}).value || '').toLowerCase(), fl = BZ.filtre, turler = [];
+    S.kut.muzikler.forEach(function (m) { var t = m.etiket || m.tur || 'Diğer'; if (turler.indexOf(t) < 0) turler.push(t); });
+    $('#mFiltre').innerHTML = ['Tümü'].concat(turler).map(function (t) { return '<button class="chip' + ((fl || 'Tümü') === t ? ' acik' : '') + '" data-b="mflt" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('');
+    var ml = S.kut.muzikler.map(function (m, i) { return { m: m, i: i }; }).filter(function (z) { var t = z.m.etiket || z.m.tur || 'Diğer'; return (!fl || fl === 'Tümü' || t === fl) && (!ara || z.m.ad.toLowerCase().indexOf(ara) > -1); });
+    $('#muzikListe').innerHTML = ml.length ? ml.map(function (z) { var s = BZ.muzik === z.i; return '<div class="spRow' + (s ? ' sec' : '') + '"><button class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="Dinle">▶</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(z.m.etiket || z.m.tur || '') + '</small></div><button class="btn kucuk' + (s ? ' ana' : '') + '" data-b="mekle" data-i="' + z.i + '">' + (s ? '✓ Seçildi' : '+ Ekle') + '</button></div>'; }).join('') : '<div class="bosNot">' + (S.kut.muzikler.length ? 'Aramaya uyan müzik yok.' : 'Henüz müzik eklenmemiş. Yönetim panelinden ekleyin.') + '</div>';
+    $('#sesListe').innerHTML = S.kut.sesler.length ? S.kut.sesler.map(function (m, i) { var s = BZ.ses === i; return '<div class="spRow' + (s ? ' sec' : '') + '"><button class="spPlay" data-b="cal" data-t="sesler" data-i="' + i + '" title="Dinle">▶</button><div class="spAd"><b>' + esc(m.ad) + '</b><small>' + esc(m.aciklama || m.tur || '') + (m.fiyat_tl ? ' · ' + m.fiyat_tl + ' TL' : '') + '</small></div><button class="btn kucuk' + (s ? ' ana' : '') + '" data-b="bsec" data-i="' + i + '">' + (s ? '✓ Seçildi' : 'Seç') + '</button></div>'; }).join('') : '<div class="bosNot">Henüz seslendirmen eklenmemiş.</div>';
+    var sm = S.kut.sesler[BZ.ses], mm = S.kut.muzikler[BZ.muzik];
+    $('#bSes').textContent = sm ? sm.ad : 'Seçilmedi'; $('#bMuz').textContent = mm ? mm.ad : 'Seçilmedi';
+    $('#bSes').parentNode.classList.toggle('dolu', !!sm); $('#bMuz').parentNode.classList.toggle('dolu', !!mm);
   }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-b]') : null; if (!b) return; var v = b.dataset.b;
+    if (v === 'bsec') { BZ.ses = BZ.ses === +b.dataset.i ? null : +b.dataset.i; bankaCiz(); }
+    else if (v === 'mekle') { BZ.muzik = BZ.muzik === +b.dataset.i ? null : +b.dataset.i; bankaCiz(); }
+    else if (v === 'mflt') { BZ.filtre = b.dataset.v; bankaCiz(); }
+  });
+  $('#mAra').addEventListener('input', bankaCiz);
+  $('#bizeGonder').onclick = async function () {
+    var metin = $('#bizeMetin').value.trim(), ad = $('#bAd').value.trim(), tel = $('#bTel').value.trim(), em = $('#bMail').value.trim(), kut = $('#bizeSonuc');
+    if (metin.length < 10) return toast('Önce spot metnini yazın');
+    if (!ad) return toast('Adınızı yazın'); if (!tel && !em) return toast('Telefon ya da e-posta yazın');
+    var sm = S.kut.sesler[BZ.ses], mm = S.kut.muzikler[BZ.muzik];
+    var sip = { metin: metin, ses_adi: sm ? sm.ad : '', muzik_adi: mm ? mm.ad : '', tur: $('#bTur').value, ad: ad, telefon: tel, eposta: em, notu: $('#bNot').value.trim() };
+    var btn = $('#bizeGonder'); btn.disabled = true; btn.textContent = 'Gönderiliyor…';
+    try {
+      var kayit = await Veri.siparisVer(sip), eposta = false;
+      try {
+        var r = await fetch('https://formsubmit.co/ajax/sesefektimedya@gmail.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ _subject: 'Yeni spot siparişi: ' + ad, _template: 'table', Ad: ad, Telefon: tel, Eposta: em, Seslendirmen: sip.ses_adi || '(seçilmedi)', Muzik: sip.muzik_adi || '(seçilmedi)', Cikis_turu: sip.tur, Metin: metin, Not: sip.notu, Siparis_no: kayit && kayit.id || '' }) });
+        eposta = r.ok;
+      } catch (x) {}
+      var wa = 'Merhaba, yeni spot siparişi.\nAd: ' + ad + '\nTelefon: ' + tel + '\nSeslendirmen: ' + (sip.ses_adi || '-') + '\nMüzik: ' + (sip.muzik_adi || '-') + '\nÇıkış: ' + sip.tur + '\nMetin: ' + metin;
+      kut.style.display = 'block';
+      kut.innerHTML = '<b>Siparişiniz alındı.</b> Hazır dosyayı <a href="panel.html">Panelim</a> sayfasında “Siparişlerim” bölümünden indirebilirsiniz.' + (eposta ? '' : '<div class="sol">E-posta bildirimi şu an gönderilemedi, siparişiniz sistemde kayıtlı.</div>') + '<div style="margin-top:.6rem"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/905331509890?text=' + encodeURIComponent(wa) + '">WhatsApp’tan da haber ver</a></div>';
+      toast('Sipariş gönderildi');
+    } catch (er) { hata(er); }
+    btn.disabled = false; btn.textContent = 'Siparişi gönder';
+  };
   document.addEventListener('click', async function (e) {
     var b = e.target.closest ? e.target.closest('[data-b]') : null; if (!b) return; var i = +b.dataset.i, v = b.dataset.b;
     try {
@@ -742,15 +905,20 @@
   function ac2(f) { return f; }
   var M = [
     ['Dosya', [
-      ['Yeni pencere', '', I.yeni, 'Boş pencere açar. Kayıt alınca ya da dosya yükleyince bu pencereye gelir'],
-      ['Dosya yükle…', 'Ctrl+O', function () { $('#dosyaSes').click(); }, 'Bilgisayarından bir ses ya da müzik dosyasını pencerede aç'],
+      ['Yeni dosya', '', I.yeni, 'Boş bir pencere açar. Kayıt alınca ya da dosya açınca bu pencereye gelir'],
+      ['Aç…', 'Ctrl+O', function () { $('#dosyaSes').click(); }, 'Bilgisayarınızdaki klasörden bir ses ya da müzik dosyası seçip pencerede açar'],
       ['Mikrofonla kayıt', 'Ctrl+R', function () { kayitBasla(); }, 'Başlat / bitir. Kayıt yeni pencerede açılır'],
       ['Seçimi yeni pencerede aç', '', I.secimPencere, 'Seçili bölümü kopyalayıp ayrı bir pencereye koyar'],
       '-',
-      ['Pencereyi kapat', '', I.kapat, 'Seçili pencereyi kapatır (sağ üstteki ✕ ile aynı)'],
-      ['Tüm pencereleri kapat', '', I.hepsiniKapat, 'Çalışma alanını boşaltır'],
+      ['Kapat', '', I.kapat, 'Seçili pencereyi kapatır. Değişiklik varsa kaydetmek isteyip istemediğinizi sorar'],
+      ['Tüm pencereleri kapat', '', I.hepsiniKapat, 'Çalışma alanını boşaltır. Değişiklik olan pencereler için sorar'],
       '-',
-      ['Dışa aktar…', 'Ctrl+E', I.disa, 'MP3, WAV ya da santral dosyası olarak kaydet (indirme hakkından düşer)'],
+      ['Çalışma alanı…', '', calismaAlani, 'Daha önce kaydettiğiniz çalışmaları listeler; açabilir ya da silebilirsiniz'],
+      ['Kaydet', 'Ctrl+S', kaydetAkt, 'Seçili pencereyi çalışma alanına kaydeder (bu tarayıcıda durur, indirme hakkından düşmez)'],
+      ['Farklı kaydet…', 'Ctrl+Shift+S', farkliKaydet, 'Pencereyi yeni bir adla WAV dosyası olarak bilgisayarınıza indirir'],
+      ['Tümünü kaydet', '', tumunuKaydet, 'Açık bütün pencereleri çalışma alanına kaydeder'],
+      '-',
+      ['Dışa aktar…', 'Ctrl+E', I.disa, 'MP3, WAV ya da santral dosyası olarak hazırlar (MP3 ve santral indirme hakkından düşer)'],
       '-',
       ['Panelime dön', '', function () { location.href = 'panel.html'; }, '']]],
     ['Düzen', [
@@ -959,7 +1127,7 @@
   /* [ikon, komut adı, (ek: id | açık-kapalı anahtarı)] ; '|' ayırıcı */
   var ARAC = [
     [
-      [['yeni', 'Yeni pencere', 'yeniBtn'], ['ac', 'Dosya yükle…', 'sesAc'], ['disa', 'Dışa aktar…']],
+      [['yeni', 'Yeni dosya', 'yeniBtn'], ['ac', 'Aç…', 'sesAc'], ['disa', 'Dışa aktar…']],
       [['kes', 'Kes'], ['kopyala', 'Kopyala'], ['yapistir', 'Yapıştır'], ['ustune', 'Üzerine yapıştır'], ['karistir', 'Karıştırarak yapıştır…']],
       [['geri', 'Geri al'], ['yinele', 'Yinele']],
       [['tumu', 'Hepsini seç'], ['kirp', 'Seçimi tut, gerisini at'], ['sil', 'Seçimi sil'], ['sessiz', 'Seçimi sessiz yap'], ['sessizEkle', 'Sessizlik ekle (imlece)…']],
@@ -1022,10 +1190,19 @@
     else if (c && k === 'z') { e.preventDefault(); I.geri(); } else if (c && k === 'y') { e.preventDefault(); I.yinele(); }
     else if (c && k === 'x') { e.preventDefault(); I.kes(); } else if (c && k === 'c') { e.preventDefault(); I.kopyala(); } else if (c && k === 'v') { e.preventDefault(); I.yapistir(); }
     else if (c && k === 'm') { e.preventDefault(); I.karistir(); } else if (c && k === 'a') { e.preventDefault(); I.tumu(); } else if (c && k === 't') { e.preventDefault(); I.kirp(); }
-    else if (c && k === 'm' && false) {} else if (c && k === 'o') { e.preventDefault(); $('#dosyaSes').click(); } else if (c && k === 'r') { e.preventDefault(); kayitBasla(); } else if (c && k === 'e') { e.preventDefault(); I.disa(); }
+    else if (c && k === 'm' && false) {} else if (c && k === 'o') { e.preventDefault(); $('#dosyaSes').click(); } else if (c && k === 'r') { e.preventDefault(); kayitBasla(); } else if (c && k === 'e') { e.preventDefault(); I.disa(); } else if (c && k === 's') { e.preventDefault(); if (e.shiftKey) farkliKaydet(); else kaydetAkt(); }
     else if (k === 'delete' || k === 'backspace') { e.preventDefault(); I.sil(); }
   });
   window.__studyo = { S: S, Motor: Motor, I: I, pencereAc: pencereAc, dosyadanAc: dosyadanAc, oto: oto, diz: diz, ciz: ciz, kapat: kapat, karistirDlg: karistirDlg, gurultuDlg: gurultuDlg, disaDlg: disaDlg, sekme: sekme, bolgeUygula: bolgeUygula, dipTemizle: dipTemizle };
+
+  /* Bize gönder: kısayol, giriş yapan üyenin bilgileri, üst çubuktaki Dışa aktar */
+  $('#bizeGit').onclick = function () { sekme('bize'); };
+  Veri.oturum().then(function (o) { if (!o) return; if (!$('#bAd').value) $('#bAd').value = o.ad || ''; if (!$('#bMail').value) $('#bMail').value = o.email || ''; }).catch(function () {});
+  document.addEventListener('click', function (e) {
+    if (!(e.target.closest && e.target.closest('#ustDisa'))) return;
+    if (S.tab === 'oto' && S.sonuc) disaDlg('sonuc'); else if (S.tab === 'bize') toast('Dışa aktarmak için Manuel stüdyoda ya da Otomatik sekmesinde bir ses hazırlayın'); else disaDlg();
+  });
+  window.addEventListener('beforeunload', function (e) { if (S.pen.some(function (p) { return p.kirli; })) { e.preventDefault(); e.returnValue = ''; } });
 
   hedefUygula(); otoListeleri(); guncelle(); bankaYukle();
 })();

@@ -1,0 +1,31 @@
+YAPAY ZEKA KURULUMU (yaklaşık 15-20 dakika)
+
+A) ANAHTAR AL
+1. console.anthropic.com adresine girin, hesap açın (Claude.ai aboneliğinden ayrıdır).
+2. Billing bölümünden kart ekleyip az bir bakiye yükleyin (örn. 5 dolar yeter; bitince durur, sürpriz fatura olmaz).
+3. API Keys > Create Key. Çıkan "sk-ant-..." anahtarını bir yere kopyalayın. Bir daha gösterilmez.
+   Bu anahtarı kimseyle paylaşmayın, sohbete de yazmayın.
+
+B) SQL ÇALIŞTIR (bir kez)
+1. Supabase projesi > SQL Editor > New query.
+2. yz-kurulum.txt içindekini yapıştırın > Run. "Success" yazmalı.
+
+C) ANAHTARI SUPABASE'E KOY
+1. Supabase > Edge Functions > Secrets (ya da Project Settings > Edge Functions > Secrets).
+2. Add new secret: Name = ANTHROPIC_API_KEY, Value = sk-ant-... anahtarınız > Save.
+
+D) FONKSİYONU OLUŞTUR
+1. Edge Functions > Deploy a new function > Via Editor.
+2. Fonksiyon adı: yz-sohbet  (tam olarak böyle)
+3. Editördeki hazır kodu silin, yz-sohbet-fonksiyonu.txt içindekinin hepsini yapıştırın.
+4. Deploy function. "Verify JWT" açık kalsın (varsayılan).
+
+E) DENE
+1. Siteye ücretli (premium) bir hesapla ya da admin olarak girin.
+2. Stüdyo > Yapay zeka modu > "30 saniyelik spot yaz" > Gönder.
+   Cevapta "(Örnek metin" yazmıyorsa gerçek yapay zeka çalışıyor demektir.
+
+NOT
+- Günlük sınır: kişi başı 40 mesaj (admin sınırsız). Değiştirmek için fonksiyondaki GUNLUK_LIMIT satırı.
+- Hata verirse: Edge Functions > yz-sohbet > Logs sayfasındaki hatayı bana yazın.
+- Anahtarı yanlışlıkla paylaştıysanız Anthropic Console'dan silin, yenisini oluşturun.

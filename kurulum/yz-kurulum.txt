@@ -1,0 +1,14 @@
+-- YAPAY ZEKA: günlük kullanım sayacı. Supabase > SQL Editor'a yapıştırıp Run'a basın (bir kez).
+create table if not exists public.yz_kullanim (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  gun date not null,
+  adet int not null default 0,
+  primary key (user_id, gun)
+);
+alter table public.yz_kullanim enable row level security;
+drop policy if exists yz_kendi_oku on public.yz_kullanim;
+drop policy if exists yz_kendi_yaz on public.yz_kullanim;
+drop policy if exists yz_kendi_guncelle on public.yz_kullanim;
+create policy yz_kendi_oku on public.yz_kullanim for select using (auth.uid() = user_id);
+create policy yz_kendi_yaz on public.yz_kullanim for insert with check (auth.uid() = user_id);
+create policy yz_kendi_guncelle on public.yz_kullanim for update using (auth.uid() = user_id) with check (auth.uid() = user_id);

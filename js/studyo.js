@@ -154,6 +154,7 @@
     for (var t = Math.ceil(t0 / adim) * adim; t <= tS; t += adim) { var x = (t * SR - p.bas) / p.spp * d; g.fillStyle = 'rgba(128,138,152,.28)'; g.fillRect(x, RH, 1, dz); g.fillStyle = '#555'; g.fillRect(x, RH - 7 * d, 1, 7 * d); g.fillStyle = '#222'; g.fillText(zamanFmt(t), x + 3 * d, RH / 2 - 1); }
     // imleç
     var im = (S.calP === p && S.cal) ? S.imlecCal : p.imlec, x2 = (im - p.bas) / p.spp * d; if (x2 >= 0 && x2 <= W) { g.fillStyle = S.calP === p ? '#ff8a2a' : '#e0452f'; g.fillRect(x2, RH, Math.max(1, d), dz); if (S.calP !== p) { g.fillStyle = '#e0452f'; g.beginPath(); g.moveTo(x2 - 5 * d, RH); g.lineTo(x2 + 5 * d, RH); g.lineTo(x2, RH + 7 * d); g.fill(); } }
+    if (p.durYer != null && !(S.calP === p && S.cal)) { if (p.durAnahtar !== p.imlec + '|' + (p.sec ? p.sec.join() : '')) p.durYer = null; else { var xd = (p.durYer - p.bas) / p.spp * d; if (xd >= 0 && xd <= W) { g.fillStyle = '#ff8a2a'; for (var yy = RH; yy < RH + dz; yy += 8 * d) g.fillRect(xd, yy, Math.max(1, d), 5 * d); g.beginPath(); g.moveTo(xd - 5 * d, RH); g.lineTo(xd + 5 * d, RH); g.lineTo(xd, RH + 7 * d); g.fill(); g.font = 'bold ' + (10.5 * d) + 'px Barlow,sans-serif'; g.fillStyle = '#c2510c'; g.fillText('Durdu ' + sn(p.durYer / SR), xd + 7 * d, RH + 14 * d); } } }
     ovCiz(p); kaydirCiz(p);
     $('.bas small', p.el).textContent = sn(p.L.length / SR) + (p.R !== p.L ? ' · stereo' : ' · mono');
     $('.sure', p.el).textContent = (p.sec ? 'Seçim ' + sn(p.sec[0] / SR) + ' – ' + sn(p.sec[1] / SR) + ' (' + ((p.sec[1] - p.sec[0]) / SR).toFixed(2) + ' sn)' : 'İmleç ' + sn(p.imlec / SR)) + ' · Seviye ' + p.vz.toFixed(1) + '×';
@@ -222,14 +223,14 @@
   window.addEventListener('resize', function () { S.pen.forEach(function (p) { var mx = Math.max(0, p.L.length - gW(p) * p.spp); if (p.bas > mx) p.bas = mx; ciz(p); }); });
 
   /* ---------- Çalma ---------- */
-  function durdur() { if (S.cal) { try { S.cal.onended = null; S.cal.stop(); } catch (e) {} S.cal = null; } var pp = S.calP; S.calP = null; oynatIk(0); if (pp && pp.el.isConnected) ciz(pp); guncelle(); }
+  function durdur() { if (S.cal && S.calP) { var q = S.calP; q.durYer = S.imlecCal; q.durAnahtar = q.imlec + '|' + (q.sec ? q.sec.join() : ''); } if (S.cal) { try { S.cal.onended = null; S.cal.stop(); } catch (e) {} S.cal = null; } var pp = S.calP; S.calP = null; oynatIk(0); if (pp && pp.el.isConnected) ciz(pp); guncelle(); }
   function calDizi(L, R, p, bas, onBitti) {
     if (kayit) return toast('Kayıt sürüyor. Önce durdurun');
-    durdur(); if (!L.length) return; var c = ac(), n = L.length - bas; if (n < 100) { bas = 0; n = L.length; }
+    durdur(); if (p) p.durYer = null; if (!L.length) return; var c = ac(), n = L.length - bas; if (n < 100) { bas = 0; n = L.length; }
     var b = c.createBuffer(2, n, SR); b.getChannelData(0).set(L.subarray(bas)); b.getChannelData(1).set((R || L).subarray(bas));
     var s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); var t0 = c.currentTime + 0.03; s.start(t0);
     S.cal = s; S.calP = p || null; S.imlecCal = bas; oynatIk(1);
-    s.onended = function () { if (S.cal === s) { S.cal = null; var pp = S.calP; S.calP = null; oynatIk(0); if (pp) ciz(pp); guncelle(); if (onBitti) onBitti(); } };
+    s.onended = function () { if (S.cal === s) { S.cal = null; var pp = S.calP; if (pp) { pp.durYer = S.imlecCal; pp.durAnahtar = pp.imlec + '|' + (pp.sec ? pp.sec.join() : ''); } S.calP = null; oynatIk(0); if (pp) ciz(pp); guncelle(); if (onBitti) onBitti(); } };
     (function raf() { if (S.cal !== s) return; S.imlecCal = bas + Math.max(0, c.currentTime - t0) * SR; if (p) { if (S.takip !== false && S.imlecCal > p.bas + gW(p) * p.spp) { p.bas = Math.min(Math.max(0, p.L.length - gW(p) * p.spp), S.imlecCal - 20 * p.spp); } ciz(p); } $('#sBas').textContent = p && p.sec ? sn(p.sec[0] / SR) : '—'; $('#sSon').textContent = p && p.sec ? sn(p.sec[1] / SR) : '—';
     $('#zaman').textContent = sn(S.imlecCal / SR); requestAnimationFrame(raf); })();
   }

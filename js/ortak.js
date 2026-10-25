@@ -26,6 +26,28 @@
       } catch (e) { b.disabled = false; b.textContent = 'Gönder'; toast(e.message || 'Gönderilemedi'); }
     };
   };
+
+  /* Telefona kurulum: yalnızca dar ekranda ve uygulama olarak açılmamışsa görünür */
+  (function () {
+    try { if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
+    var kurulu = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
+    var dar = window.matchMedia && window.matchMedia('(max-width:820px)').matches;
+    if (kurulu || !dar) return;
+    var kapali = false; try { kapali = localStorage.getItem('kurulumKapali') === '1'; } catch (e) {}
+    if (kapali) return;
+    var olay = null, ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
+    function bandCiz(mesaj, dugme) {
+      if ($('#kurBand')) return;
+      var b = document.createElement('div'); b.id = 'kurBand';
+      b.innerHTML = '<span>' + mesaj + '</span>' + (dugme ? '<button class="btn ana kucuk" id="kurEvet">Yükle</button>' : '') + '<button class="btn kucuk" id="kurKapat" aria-label="Kapat">✕</button>';
+      document.body.appendChild(b);
+      $('#kurKapat').onclick = function () { b.remove(); try { localStorage.setItem('kurulumKapali', '1'); } catch (e) {} };
+      if (dugme) $('#kurEvet').onclick = async function () { if (olay) { olay.prompt(); try { await olay.userChoice; } catch (e) {} } b.remove(); };
+    }
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); olay = e; bandCiz('Ses Efekti’ni telefonuna uygulama gibi ekle', true); });
+    if (ios) setTimeout(function () { bandCiz('iPhone’da: Safari’de <b>Paylaş</b> düğmesine, sonra <b>Ana Ekrana Ekle</b>’ye bas.', false); }, 2500);
+  })();
+
   window.ustCubuk = async function (aktif, oturum) {
     try { await Veri.ayarlar(); } catch (e) {}
     if (!Veri.isPro) Veri.isPro = function (p) { return !!p && p !== 'ucretsiz'; };

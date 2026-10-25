@@ -34,3 +34,11 @@
   .izgara.g4{grid-template-columns:1fr 1fr}
   .pkGrid{grid-template-columns:1fr!important}
 }
+
+/* Ana ekrana eklenmiş (uygulama gibi) açılış: çentik/güvenli alan */
+@media (display-mode: standalone){
+  .ust,body.st .ust,body.acikSayfa .ust{padding-top:calc(env(safe-area-inset-top,0px) + .5rem)!important}
+  body{padding-bottom:env(safe-area-inset-bottom,0)}
+}
+#kurBand{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:3500;background:#1d2430;color:#fff;border-radius:14px;padding:.7rem .8rem .7rem 1rem;display:flex;align-items:center;gap:.6rem;font-size:13.5px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+#kurBand span{flex:1;line-height:1.35}#kurBand .btn{min-height:36px}

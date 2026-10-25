@@ -1227,6 +1227,7 @@
   $('#oynatBtn').onclick = oynatToggle;
   $('#basaBtn').onclick = function () { var p = akt(); durdur(); if (p) { p.imlec = 0; p.sec = null; p.bas = 0; guncelle(); } };
   $('#kayitBtn').onclick = kayitBasla; $('#otoKayit').onclick = function () { kayitBasla(); };
+  $('#otoMikSec').onclick = function () { mikSec(); };
   $('#otoSesAc').onclick = function () { $('#dosyaSes').click(); }; $('#otoMuzikAc').onclick = function () { $('#dosyaMuzik').click(); };
   var sonAcilan = '';
   $('#dosyaSes').onchange = async function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) { var p = await dosyadanAc(f, 'ses'); if (p && S.tab !== 'oto') sekme('manuel'); else if (p) { $('#otoSes').value = 'p' + p.id; } } };

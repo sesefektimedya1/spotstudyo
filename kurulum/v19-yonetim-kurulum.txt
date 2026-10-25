@@ -1,0 +1,42 @@
+-- Ses Efekti Spot Stüdyo — v20 yönetim paneli kurulumu (ödeme durumu, toplam indirme)
+-- Supabase > SQL Editor > New query > hepsini yapıştırın > RUN.
+-- Güvenle tekrar çalıştırılabilir. v18 SQL'i daha önce çalıştırılmış olmalı.
+
+alter table public.profiles add column if not exists odendi boolean not null default false;
+alter table public.profiles add column if not exists odeme_tarihi date;
+
+-- Başvuru onaylanınca ödeme de "Ödendi" olarak işaretlenir
+create or replace function public.basvuru_karar(p_id uuid, p_onay boolean) returns void
+language plpgsql security definer set search_path=public as $$
+declare b public.paket_basvurulari; mevcut date; baz date;
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  select * into b from public.paket_basvurulari where id=p_id and durum='beklemede';
+  if not found then raise exception 'Başvuru bulunamadı ya da işlenmiş'; end if;
+  if p_onay then
+    select plan_bitis into mevcut from public.profiles where id=b.user_id and plan<>'ucretsiz';
+    baz := greatest(current_date, coalesce(mevcut, current_date));
+    update public.profiles set plan=b.paket, odendi=true, odeme_tarihi=current_date,
+      plan_bitis = (case when b.paket='pro_yillik' then baz + interval '1 year' else baz + interval '1 month' end)::date
+    where id=b.user_id;
+  end if;
+  update public.paket_basvurulari set durum = case when p_onay then 'onaylandi' else 'reddedildi' end, islem_tarihi=now() where id=p_id;
+end $$;
+
+-- Yönetici üye listesi: ödeme durumu ve toplam indirme dahil
+create or replace function public.uye_listesi(p_ara text, p_plan text, p_sayfa int, p_adet int) returns json
+language plpgsql security definer set search_path=public as $$
+declare toplam int; satirlar json;
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  select count(*) into toplam from public.profiles p
+    where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%' or p.telefon ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan);
+  select coalesce(json_agg(t),'[]'::json) into satirlar from (
+    select p.id,p.email,p.ad,p.telefon,p.role,p.plan,p.plan_bitis,p.odendi,p.odeme_tarihi,p.created_at,
+      (select count(*) from public.indirmeler i where i.user_id=p.id and i.created_at >= date_trunc('month', now())) as bu_ay_indirme,
+      (select count(*) from public.indirmeler i where i.user_id=p.id) as toplam_indirme
+    from public.profiles p
+    where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%' or p.telefon ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan)
+    order by p.created_at desc limit p_adet offset p_sayfa*p_adet) t;
+  return json_build_object('toplam',toplam,'satirlar',satirlar);
+end $$;

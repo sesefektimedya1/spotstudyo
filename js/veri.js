@@ -37,7 +37,7 @@
     kayit: async function (email, sifre, ad, telefon) {
       var l = LS.oku('uyeler', []);
       if (l.some(function (x) { return x.email === email; })) throw new Error('Bu e-posta ile zaten kayıt var.');
-      var u = { id: uid(), email: email, ad: ad || email.split('@')[0], telefon: telefon || '', role: l.length ? 'uye' : 'admin', plan: 'ucretsiz', plan_bitis: null, sifre: sifre, created_at: new Date().toISOString() };
+      var u = { id: uid(), email: email, ad: ad || email.split('@')[0], telefon: telefon || '', role: l.length ? 'uye' : 'admin', plan: 'ucretsiz', plan_bitis: null, odendi: false, odeme_tarihi: null, sifre: sifre, created_at: new Date().toISOString() };
       l.push(u); LS.yaz('uyeler', l); LS.yaz('aktif', u.id); return demo.oturum();
     },
     giris: async function (email, sifre) {
@@ -72,7 +72,7 @@
     basvuruTum: async function () { return LS.oku('basvurular', []).slice().reverse(); },
     basvuruKarar: async function (id, onay) {
       var l = LS.oku('basvurular', []), b = l.find(function (x) { return x.id === id && x.durum === 'beklemede'; }); if (!b) throw new Error('Başvuru bulunamadı ya da işlenmiş.');
-      if (onay) { var us = LS.oku('uyeler', []), u = us.find(function (x) { return x.id === b.user_id; }); if (u) { u.plan_bitis = bitisHesapla(b.paket, planKey(u.plan) !== 'ucretsiz' ? u.plan_bitis : null); u.plan = b.paket; LS.yaz('uyeler', us); } }
+      if (onay) { var us = LS.oku('uyeler', []), u = us.find(function (x) { return x.id === b.user_id; }); if (u) { u.plan_bitis = bitisHesapla(b.paket, planKey(u.plan) !== 'ucretsiz' ? u.plan_bitis : null); u.plan = b.paket; u.odendi = true; u.odeme_tarihi = tarihYaz(new Date()); LS.yaz('uyeler', us); } }
       b.durum = onay ? 'onaylandi' : 'reddedildi'; b.islem_tarihi = new Date().toISOString(); LS.yaz('basvurular', l);
     },
     geriBildirim: async function (g) { var o = await demo.oturum(), l = LS.oku('geribildirimler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, eposta: o && o.email, created_at: new Date().toISOString() }, g); l.push(k); LS.yaz('geribildirimler', l); return k; },
@@ -92,7 +92,7 @@
       var l = LS.oku('uyeler', []), ind = LS.oku('indirmeler', []), q = (o.ara || '').toLowerCase();
       var r = l.filter(function (u) { return (!q || u.email.toLowerCase().indexOf(q) > -1 || (u.ad || '').toLowerCase().indexOf(q) > -1 || (u.telefon || '').indexOf(q) > -1) && (!o.plan || u.plan === o.plan); });
       var top = r.length, bas = (o.sayfa || 0) * o.adet;
-      return { toplam: top, satirlar: r.slice(bas, bas + o.adet).map(function (u) { return { id: u.id, email: u.email, ad: u.ad, telefon: u.telefon || '', role: u.role, plan: planKey(u.plan), plan_bitis: u.plan_bitis, created_at: u.created_at, bu_ay_indirme: ind.filter(function (x) { return x.user_id === u.id && x.t >= ayBasi(); }).length }; }) };
+      return { toplam: top, satirlar: r.slice(bas, bas + o.adet).map(function (u) { return { id: u.id, email: u.email, ad: u.ad, telefon: u.telefon || '', role: u.role, plan: planKey(u.plan), plan_bitis: u.plan_bitis, odendi: !!u.odendi, odeme_tarihi: u.odeme_tarihi || null, created_at: u.created_at, bu_ay_indirme: ind.filter(function (x) { return x.user_id === u.id && x.t >= ayBasi(); }).length, toplam_indirme: ind.filter(function (x) { return x.user_id === u.id; }).length }; }) };
     },
     uyeGuncelle: async function (id, d) { var l = LS.oku('uyeler', []); var u = l.find(function (x) { return x.id === id; }); if (u) Object.assign(u, d); LS.yaz('uyeler', l); },
     ozet: async function () {
@@ -158,7 +158,7 @@
       if (r && r.dosya_yolu) await sb.storage.from(t).remove([r.dosya_yolu]);
       hata(await sb.from(t).delete().eq('id', id));
     },
-    url: async function (k, t) { var r = await sb.storage.from(t).createSignedUrl(k.dosya_yolu, 3600); if (r.error) throw new Error(r.error.message); return r.data.signedUrl; },
+    url: async function (k, t) { var r = await sb.storage.from(t).createSignedUrl(k.dosya_yolu, 120); if (r.error) throw new Error(r.error.message); return r.data.signedUrl; },
     uyeler: async function (o) {
       var r = hata(await sb.rpc('uye_listesi', { p_ara: o.ara || '', p_plan: o.plan || '', p_sayfa: o.sayfa || 0, p_adet: o.adet }));
       return r;

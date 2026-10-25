@@ -2,7 +2,7 @@
   var o = await korumali('yonetim', true); if (!o) return;
   var ic = $('#icerik'), SAYFA = 25, durum = { sayfa: 0, ara: '', plan: '' };
   $$('#sekme button').forEach(function (b) { b.onclick = function () { $$('#sekme button').forEach(function (x) { x.classList.remove('acik'); }); b.classList.add('acik'); ac(b.dataset.s); }; });
-  function ac(s) { ({ ozet: ozet, basvuru: basvuru, siparis: siparis, geri: geri, uyeler: uyeler, sesler: kutuphane.bind(null, 'sesler'), muzikler: kutuphane.bind(null, 'muzikler'), ayar: ayar })[s](); }
+  function ac(s) { ({ ozet: ozet, basvuru: basvuru, siparis: siparis, geri: geri, uyeler: uyeler, kutup: kutupSayfa, ayar: ayar })[s](); }
 
   function tl(n) { return Number(n || 0).toLocaleString('tr-TR') + ' TL'; }
   async function rozet() { try { var z = await Veri.ozet(); var r = $('#bkRozet'); if (r) r.innerHTML = z.bekleyen > 0 ? '<span class="etiket p">' + z.bekleyen + '</span>' : ''; return z; } catch (e) { return null; } }
@@ -53,27 +53,42 @@
     $('#pf').onchange = function () { durum.plan = $('#pf').value; durum.sayfa = 0; yukle(); };
     yukle();
   }
+  function kalan(b) { if (!b) return ''; var g = Math.ceil((new Date(b + 'T23:59:59') - new Date()) / 86400000); return g < 0 ? '<span style="color:#ff8f7e">Süresi bitti</span>' : g + ' gün'; }
   async function yukle() {
     var r = await Veri.uyeler({ ara: durum.ara, plan: durum.plan, sayfa: durum.sayfa, adet: SAYFA }), top = Math.max(1, Math.ceil(r.toplam / SAYFA));
-    $('#tab').innerHTML = '<div style="overflow-x:auto"><table><tr><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Kayıt tarihi</th><th>Paket</th><th>Bitiş</th><th>Bu ay</th><th>Rol</th></tr>' + r.satirlar.map(function (u) {
-      return '<tr data-id="' + u.id + '"><td>' + esc(u.ad) + '</td><td>' + esc(u.email) + '</td><td>' + esc(u.telefon || '') + '</td><td>' + new Date(u.created_at).toLocaleDateString('tr-TR') + '</td>' +
-        '<td><select class="pl"><option value="ucretsiz">Ücretsiz</option><option value="pro_aylik">Pro Aylık</option><option value="pro_yillik">Pro Yıllık</option></select></td><td><input type="date" class="bt" value="' + (u.plan_bitis || '') + '" style="width:140px"></td><td>' + u.bu_ay_indirme + '</td><td><select class="rol"><option value="uye">Üye</option><option value="seslendirmen">Seslendirmen</option><option value="admin">Yönetici</option></select></td></tr>';
+    $('#tab').innerHTML = '<div style="overflow-x:auto"><table><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th><th>Üyelik tarihi</th><th>Paket</th><th>Ödeme</th><th>Bitiş tarihi</th><th>Kalan</th><th>Bu ay</th><th>Toplam indirme</th><th>Rol</th></tr>' + r.satirlar.map(function (u) {
+      return '<tr data-id="' + u.id + '"><td>' + esc(u.ad) + '</td><td>' + esc(u.telefon || '—') + '</td><td>' + esc(u.email) + '</td><td>' + new Date(u.created_at).toLocaleDateString('tr-TR') + '</td>' +
+        '<td><select class="pl"><option value="ucretsiz">Ücretsiz</option><option value="pro_aylik">Pro Aylık</option><option value="pro_yillik">Pro Yıllık</option></select></td>' +
+        '<td class="odc"><label style="display:flex;gap:.35rem;align-items:center;margin:0;white-space:nowrap"><input type="checkbox" class="od" ' + (u.odendi ? 'checked' : '') + ' style="width:auto"><span class="odm">' + (u.odendi ? 'Ödendi' : 'Bekliyor') + '</span></label></td>' +
+        '<td><input type="date" class="bt" value="' + (u.plan_bitis || '') + '" style="width:140px"></td><td class="kl">' + kalan(u.plan === 'ucretsiz' ? '' : u.plan_bitis) + '</td><td>' + u.bu_ay_indirme + '</td><td>' + (u.toplam_indirme || 0) + '</td>' +
+        '<td><select class="rol"><option value="uye">Üye</option><option value="seslendirmen">Seslendirmen</option><option value="admin">Yönetici</option></select></td></tr>';
     }).join('') + '</table></div><div style="display:flex;gap:.8rem;align-items:center;margin-top:1rem"><button class="btn kucuk" id="on" ' + (durum.sayfa === 0 ? 'disabled' : '') + '>Önceki</button><span class="sol">' + r.toplam + ' üye · sayfa ' + (durum.sayfa + 1) + ' / ' + top + '</span><button class="btn kucuk" id="sn" ' + (durum.sayfa + 1 >= top ? 'disabled' : '') + '>Sonraki</button></div>';
     $$('#tab tr[data-id]').forEach(function (tr, i) {
       var u = r.satirlar[i]; tr.querySelector('.rol').value = u.role; tr.querySelector('.pl').value = (u.plan === 'premium' ? 'pro_aylik' : u.plan);
-      async function kaydet() { try { await Veri.uyeGuncelle(u.id, { role: tr.querySelector('.rol').value, plan: tr.querySelector('.pl').value, plan_bitis: tr.querySelector('.bt').value || null }); toast('Kaydedildi'); } catch (e) { toast(e.message); } }
+      async function kaydet() {
+        var od = tr.querySelector('.od').checked;
+        try {
+          await Veri.uyeGuncelle(u.id, { role: tr.querySelector('.rol').value, plan: tr.querySelector('.pl').value, plan_bitis: tr.querySelector('.bt').value || null, odendi: od, odeme_tarihi: od ? (u.odeme_tarihi || new Date().toISOString().slice(0, 10)) : null });
+          tr.querySelector('.odm').textContent = od ? 'Ödendi' : 'Bekliyor'; tr.querySelector('.kl').innerHTML = kalan(tr.querySelector('.pl').value === 'ucretsiz' ? '' : tr.querySelector('.bt').value); toast('Kaydedildi');
+        } catch (e) { toast(e.message); }
+      }
       $$('select,input', tr).forEach(function (x) { x.onchange = kaydet; });
     });
     $('#on').onclick = function () { durum.sayfa--; yukle(); }; $('#sn').onclick = function () { durum.sayfa++; yukle(); };
   }
 
+  async function kutupSayfa(t) {
+    t = t || 'sesler'; await kutuphane(t);
+    ic.insertAdjacentHTML('afterbegin', '<div style="display:flex;gap:.6rem;margin-bottom:1rem"><button class="btn kucuk' + (t === 'sesler' ? ' ana' : '') + '" data-kt="sesler">Seslendirmen örnekleri</button><button class="btn kucuk' + (t === 'muzikler' ? ' ana' : '') + '" data-kt="muzikler">Müzikler</button></div>');
+    $$('[data-kt]', ic).forEach(function (b) { b.onclick = function () { kutupSayfa(b.dataset.kt); }; });
+  }
   async function kutuphane(t) {
     var ses = t === 'sesler', L = await Veri.hepsi(t);
     ic.innerHTML = '<div class="kart" style="margin-bottom:1rem"><h3 style="font-size:1.3rem;margin-bottom:.7rem">' + (ses ? 'Yeni seslendirmen örneği' : 'Yeni müzik') + '</h3><div class="izgara g3"><div><label>Ad</label><input type="text" id="k-ad" placeholder="' + (ses ? 'Seslendirmen adı' : 'Müzik adı') + '"></div><div><label>' + (ses ? 'Açıklama (ör. sıcak erkek sesi)' : 'Tür (ör. enerjik, sakin)') + '</label><input type="text" id="k-ac"></div>' + (ses ? '<div><label>Fiyat (TL, isteğe bağlı)</label><input type="number" id="k-fy" min="0"></div>' : '') + '<div><label>Ses dosyası</label><input type="file" id="k-dosya" accept="audio/*"></div></div><div style="margin-top:.8rem"><button class="btn ana" id="k-yukle">Yükle</button> <span class="sol" id="k-dur"></span></div></div><div class="kart"><div id="k-liste"></div></div>';
     var tu = $('#k-liste');
     async function ciz() {
       L = await Veri.hepsi(t); var h = '';
-      for (var i = 0; i < L.length; i++) { var u = await Veri.url(L[i], t); h += '<div style="display:flex;gap:1rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--cizgi);flex-wrap:wrap"><div style="min-width:180px"><b>' + esc(L[i].ad) + '</b><div class="sol" style="font-size:13px">' + esc(L[i].aciklama || L[i].etiket || '') + '</div></div><audio controls preload="none" src="' + esc(u) + '" style="height:34px"></audio><label style="margin:0"><input type="checkbox" data-a="' + L[i].id + '" ' + (L[i].aktif ? 'checked' : '') + '> Yayında</label><button class="btn kucuk" data-sil="' + L[i].id + '">Sil</button></div>'; }
+      for (var i = 0; i < L.length; i++) { var u = await Veri.url(L[i], t); h += '<div style="display:flex;gap:1rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--cizgi);flex-wrap:wrap"><div style="min-width:180px"><b>' + esc(L[i].ad) + '</b><div class="sol" style="font-size:13px">' + esc(L[i].aciklama || L[i].etiket || '') + '</div></div><audio controls controlsList="nodownload noplaybackrate" preload="none" src="' + esc(u) + '" style="height:34px"></audio><label style="margin:0"><input type="checkbox" data-a="' + L[i].id + '" ' + (L[i].aktif ? 'checked' : '') + '> Yayında</label><button class="btn kucuk" data-sil="' + L[i].id + '">Sil</button></div>'; }
       tu.innerHTML = h || '<span class="sol">Henüz kayıt yok.</span>';
       $$('[data-a]', tu).forEach(function (c) { c.onchange = async function () { await Veri.guncelle(t, c.dataset.a, { aktif: c.checked }); toast('Kaydedildi'); }; });
       $$('[data-sil]', tu).forEach(function (b) { b.onclick = async function () { if (confirm('Silinsin mi?')) { await Veri.sil(t, b.dataset.sil); ciz(); } }; });

@@ -115,3 +115,16 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
 .yzEtiket{color:#5d6673;font-size:11px}
 .menu .otoSekme{margin:0 34px 0 auto;align-self:center;background:linear-gradient(180deg,#f0594a,#d8372a);color:#fff;border:1px solid #b9301d;border-radius:6px;padding:.36rem .8rem;font-weight:700;font-size:12.5px;line-height:1;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.15)}
 .menu .otoSekme:hover{filter:brightness(1.08)}.menu .otoSekme:active{transform:translateY(1px)}
+
+/* Yapay zeka sayfası: masaüstünde tam sayfa */
+@media (min-width:821px){
+  #p-yz{background:#eef0f3}
+  .yzSayfa{max-width:none;width:100%;padding:18px 28px 22px}
+  .yzSohbet{height:100%;min-height:0;border-radius:14px;box-shadow:0 2px 14px rgba(15,23,42,.08)}
+  .yzUst{padding:1.1rem 2rem}.yzUst h2{font-size:1.7rem}
+  .yzTurler,.yzOneri{padding-left:2rem;padding-right:2rem}
+  .yzMesajlar{padding:1.4rem 2rem;gap:1rem}
+  .yzM{max-width:62%}.yzBalon{font-size:16px;padding:.8rem 1.1rem}
+  .yzGiris{padding:1rem 2rem 1.3rem}.yzGiris textarea{font-size:16px;padding:.8rem 1rem;min-height:64px}
+  .yzGiris .btn{min-width:110px;font-size:16px}
+}

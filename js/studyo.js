@@ -113,16 +113,19 @@
     });
     /* Telefon: başlığı parmakla sürükleyip başka pencerenin üstüne bırakınca iki pencerenin yeri değişir */
     (function () {
-      var bs = $('.bas', el), gh = null, ts = null;
-      bs.addEventListener('touchstart', function (e) { if (e.target.closest('button') || e.touches.length !== 1) return; ts = e.touches[0]; odak(p); }, { passive: true });
+      var bs = $('.bas', el), ts = null, y0 = 0, hedefEl = null, surukleniyor = false;
+      function altinda(y) { var r = null; $$('.pen').forEach(function (q) { if (q === el) return; var b = q.getBoundingClientRect(); if (y >= b.top && y <= b.bottom) r = q; }); return r; }
+      function isaret(q) { $$('.pen').forEach(function (z) { z.classList.remove('tasiHedef'); }); if (q) q.classList.add('tasiHedef'); }
+      bs.addEventListener('touchstart', function (e) { if (e.target.closest('button') || e.touches.length !== 1) return; ts = e.touches[0]; y0 = ts.clientY; surukleniyor = false; odak(p); }, { passive: true });
       bs.addEventListener('touchmove', function (e) {
         if (!ts) return; var t = e.touches[0]; e.preventDefault();
-        if (!gh) { gh = document.createElement('div'); gh.className = 'tasiGhost'; gh.textContent = 'Yerini değiştirmek için başka pencerenin üstüne bırakın'; document.body.appendChild(gh); }
-        gh.style.left = '10px'; gh.style.top = (t.clientY + 14) + 'px';
+        if (!surukleniyor && Math.abs(t.clientY - y0) < 6) return; surukleniyor = true;
+        el.classList.add('tasiniyor'); el.style.transform = 'translateY(' + (t.clientY - y0) + 'px)';
+        hedefEl = altinda(t.clientY); isaret(hedefEl);
       }, { passive: false });
       function bitis(e) {
-        if (!ts) return; var t = (e.changedTouches && e.changedTouches[0]) || ts; ts = null; if (gh) { gh.remove(); gh = null; }
-        var hedef = document.elementFromPoint(t.clientX, t.clientY), pe = hedef && hedef.closest ? hedef.closest('.pen') : null;
+        if (!ts) return; ts = null; el.classList.remove('tasiniyor'); el.style.transform = ''; isaret(null);
+        var pe = surukleniyor ? hedefEl : null; hedefEl = null; surukleniyor = false;
         if (pe && pe !== el) { var a = el.style.top, h1 = el.style.height; el.style.top = pe.style.top; el.style.height = pe.style.height; pe.style.top = a; pe.style.height = h1; S.pen.forEach(ciz); }
       }
       bs.addEventListener('touchend', bitis); bs.addEventListener('touchcancel', bitis);
@@ -145,6 +148,23 @@
       function up() { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); }
       window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
     });
+    (function () {
+      var x0, b0, drag = false;
+      function gor() { return gW(p) * p.spp; }
+      p.kay.addEventListener('touchstart', function (e) {
+        if (e.touches.length !== 1) return; e.preventDefault(); e.stopPropagation(); var t = e.touches[0], r = p.kay.getBoundingClientRect(), n = p.L.length, g = gor();
+        if (e.target !== p.th) p.bas = Math.max(0, Math.min(Math.max(0, n - g), (t.clientX - r.left) / r.width * n - g / 2));
+        x0 = t.clientX; b0 = p.bas; drag = true; ciz(p);
+      }, { passive: false });
+      p.kay.addEventListener('touchmove', function (e) {
+        if (!drag) return; e.preventDefault(); var t = e.touches[0], n = p.L.length, W = p.kay.clientWidth || 1;
+        p.bas = Math.max(0, Math.min(Math.max(0, n - gor()), b0 + (t.clientX - x0) / W * n)); ciz(p);
+      }, { passive: false });
+      p.kay.addEventListener('touchend', function () { drag = false; }); p.kay.addEventListener('touchcancel', function () { drag = false; });
+      var ov = $('.ov', el);
+      function ovT(e) { if (e.touches.length !== 1) return; e.preventDefault(); ovGit(e.touches[0]); }
+      ov.addEventListener('touchstart', ovT, { passive: false }); ov.addEventListener('touchmove', ovT, { passive: false });
+    })();
     p.kay.addEventListener('mousedown', function (e) { if (e.target !== p.kay) return; var r = p.kay.getBoundingClientRect(), n = p.L.length, goruntu = gW(p) * p.spp; p.bas = Math.max(0, Math.min(Math.max(0, n - goruntu), (e.clientX - r.left) / r.width * n - goruntu / 2)); ciz(p); });
   }
 
@@ -205,7 +225,7 @@
     var a = p.bas / n * W, b = Math.min(n, p.bas + gW(p) * p.spp) / n * W; g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = Math.max(1, d); g.strokeRect(a + .5, .5, Math.max(2, b - a) - 1, H - 1);
     if (p.sec) { g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(p.sec[0] / n * W, 0, Math.max(1, (p.sec[1] - p.sec[0]) / n * W), H); }
   }
-  function kaydirCiz(p) { var n = Math.max(1, p.L.length), W = p.kay.clientWidth || 1, goruntu = gW(p) * p.spp; p.th.style.left = (p.bas / n * W) + 'px'; p.th.style.width = Math.max(24, Math.min(W, goruntu / n * W)) + 'px'; }
+  function kaydirCiz(p) { var n = Math.max(1, p.L.length), W = p.kay.clientWidth || 1, goruntu = gW(p) * p.spp; p.th.style.left = (p.bas / n * W) + 'px'; p.th.style.width = Math.max(telefonMu() ? 56 : 24, Math.min(W, goruntu / n * W)) + 'px'; }
 
   /* ---------- Seçim ---------- */
   function x2s(p, ev) { var r = p.cv.getBoundingClientRect(); return Math.max(0, Math.min(p.L.length, Math.round(p.bas + (ev.clientX - r.left) * p.spp))); }
@@ -303,7 +323,7 @@
     (function (g, c2, d) { g.save(); g.font = 'bold ' + (14 * d) + 'px sans-serif'; g.fillStyle = '#1d2430'; g.fillText('Mikrofon açılıyor… Tarayıcı izin isterse “İzin ver”e basın', 30 * d, 40 * d); g.restore(); })(p.cv.getContext('2d'), p.cv, p.cv.width / (p.cv.clientWidth || p.cv.width));
     try {
       var c = ac(), stream;
-      try { stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: mikId ? { exact: mikId } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: telefonMu() ? { deviceId: mikId ? { exact: mikId } : undefined, channelCount: 1 } : { deviceId: mikId ? { exact: mikId } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
       catch (e1) { if (e1 && (e1.name === 'OverconstrainedError' || e1.name === 'NotReadableError' || e1.name === 'TypeError')) { mikId = null; stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } else throw e1; }
       if (c.state === 'suspended') { try { await c.resume(); } catch (e2) {} }
       var src = c.createMediaStreamSource(stream), an = c.createAnalyser(); an.fftSize = 1024; src.connect(an);
@@ -470,7 +490,26 @@
   }
   function dipTemizle() {
     var p = aktifVar(); if (!p) return; var zm0 = Motor.istatistik(mono(p.L, p.R), SR).zeminDb, T = Motor.TEMIZLE[zm0 > -34 ? 'cokguclu' : 'guclu'];
-    calis('Dip ses temizleniyor', function () { bolgeUygula(p, function (sL, sR) { return gurultuIsle(sL, sR, { db: T.g.db, bias: T.g.bias, hiz: T.g.hiz, kapi: true, konum: T.k.konum, aralik: T.k.aralik }); }); toast('Dip ses temizlendi. Beğenmezseniz Ctrl+Z'); });
+    var tel = telefonMu(); if (tel) T = Motor.TEMIZLE.cokguclu;
+    calis('Dip ses temizleniyor', function () { bolgeUygula(p, function (sL, sR) { var o = gurultuIsle(sL, sR, { db: T.g.db, bias: T.g.bias, hiz: T.g.hiz, kapi: true, konum: T.k.konum, aralik: T.k.aralik }); return tel ? sessizlikSifirla(o) : o; }); toast('Dip ses temizlendi. Beğenmezseniz Ctrl+Z'); });
+  }
+  /* Yalnız telefon/tablet: ikinci sıkı kapı + baştaki ve sondaki dip sesi tam sessizliğe (−∞ dB) indirir */
+  function sessizlikSifirla(o) {
+    function bir(x) {
+      var y = Motor.kapi(x, SR, { esik: null, konum: 0.55, aralik: 100, bekle: 10, ac: 5, kapa: 25 });
+      var F = Math.round(SR * 0.01), nf = Math.floor(y.length / F), i, j; if (nf < 20) return y;
+      var e = new Float64Array(nf); for (i = 0; i < nf; i++) { var m = 0; for (j = 0; j < F; j++) { var v = Math.abs(y[i * F + j]); if (v > m) m = v; } e[i] = 20 * Math.log10(m + 1e-9); }
+      var sr = Array.prototype.slice.call(e).sort(function (a, b) { return a - b; }), ref = sr[Math.floor(nf * 0.95)], T = ref - 28;
+      var a = 0, b = nf - 1; while (a < nf && e[a] < T) a++; while (b > a && e[b] < T) b--;
+      if (a >= nf) return y;
+      var z = Float32Array.from(y), s0 = Math.max(0, (a - 5) * F), s1 = Math.min(z.length, (b + 1 + 12) * F);
+      for (i = 0; i < s0; i++) z[i] = 0;
+      for (i = s1; i < z.length; i++) z[i] = 0;
+      var fd = Math.min(Math.round(SR * 0.012), s0); for (i = 0; i < fd; i++) z[s0 + i] *= i / fd; /* baştaki yumuşak giriş */
+      var fo = Math.min(Math.round(SR * 0.12), z.length - s1 > 0 ? s1 : 0); for (i = 0; i < fo; i++) z[s1 - 1 - i] *= i / fo; /* sondaki yumuşak çıkış */
+      return z;
+    }
+    if (!o || !o.L) return o; var l = bir(o.L); return { L: l, R: o.R === o.L ? l : bir(o.R) };
   }
   function kapiDlg() {
     var p = aktifVar(); if (!p) return; var d0 = { konum: 0.45, aralik: 70, bekle: 20, ac: 8, kapa: 40 };
@@ -876,6 +915,7 @@
       hedefUygula(); $('#tarzAd').textContent = T.ad + (S.tarzNo >= Motor.TARZ.length ? ' (ince ayar)' : '');
       S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb;
       if (S.sonuc.zeminSonra > -62 && tm !== 'cokguclu') { /* dip ses hâlâ duyulur: daha güçlü ikinci tur */ S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: 'cokguclu' })); S.z.gurultu.iz = S.iz || iz || null; if (bt) S.z.muzik.bitis = bt; hedefUygula(); S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb; }
+      if (telefonMu() && S.sonuc) { try { var sz = sessizlikSifirla({ L: S.sonuc.L, R: S.sonuc.R }); if (sz) { S.sonuc.L = sz.L; S.sonuc.R = sz.R; } } catch (ez) {} } /* telefon: baştaki ve sondaki dip ses tam sessizlik */
       sonucCiz(); calDizi(S.sonuc.L, S.sonuc.R, null, 0);
       if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) { var sk = $('#cSonuc'); if (sk && sk.scrollIntoView) sk.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     } catch (e) { hata(e); }
@@ -1405,14 +1445,14 @@
   }
   function yzCiz() {
     $$('#yzTurler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.yzt === YZ.tur); });
-    $('#yzOneri').innerHTML = (YZ.tur !== 'jingle' ? '<button class="chip yzVurgu" data-yz="jingleSon">Bu metni jingle’a çevir</button>' : '') + '<button class="chip yzVurgu" data-yz="jingleYapSon">Bu metinle bana jingle yap</button>' + YZ_ONERI[YZ.tur].map(function (t) { return '<button class="chip" data-yz="oneri">' + esc(t) + '</button>'; }).join('');
+    $('#yzOneri').innerHTML = (YZ.tur !== 'jingle' ? '<button class="chip yzVurgu" data-yz="jingleSon">Jingle sözüne çevir</button>' : '') + '<button class="chip yzVurgu" data-yz="jingleYapSon">Jingle siparişi ver</button>' + YZ_ONERI[YZ.tur].map(function (t) { return '<button class="chip" data-yz="oneri">' + esc(t) + '</button>'; }).join('');
     var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Üstten türü seçin, aşağıya isteğinizi yazın. Yazdığım reklam metnini tek tuşla jingle’a çevirebilirim; jingle’ı siz seslendirtmeden “Bana jingle yap” diyerek bize sipariş edebilirsiniz.</span></div>'; return; }
     k.innerHTML = YZ.mesajlar.map(function (m, i) {
       var ek = '';
       if (m.r === 'ai' && !m.hata) {
         ek = '<div class="yzEylem"><button class="btn kucuk" data-yz="kopya" data-i="' + i + '">Kopyala</button>';
         if (m.tur !== 'jingle') ek += '<button class="btn kucuk yzVurgu" data-yz="jingleCevir" data-i="' + i + '">Jingle’a çevir</button>';
-        ek += '<button class="btn kucuk" data-yz="jingleYap" data-i="' + i + '">Bu metinle bana jingle yap</button><button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bize gönder’e aktar</button></div>';
+        ek += '<button class="btn kucuk" data-yz="jingleYap" data-i="' + i + '">Jingle siparişi ver</button><button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bize gönder’e aktar</button></div>';
       }
       return '<div class="yzM ' + m.r + '">' + (m.tur && m.r === 'ben' ? '<small class="yzEtiket">' + esc(YZ_AD[m.tur]) + '</small>' : '') + '<div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + ek + '</div>';
     }).join('');

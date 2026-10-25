@@ -51,7 +51,7 @@
     el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 8 + ((n - satir) % 6 + 1) * 28) + 'px';
     if (gizli && pn && S.tab !== 'manuel') pn.classList.remove('acik');
     S.pen.push(p); kenarlar(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
-    baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle();
+    baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle(); mobDiz();
     if (window.ResizeObserver) new ResizeObserver(function () { if (p.el.isConnected) ciz(p); }).observe(p.el);
     return p;
   }
@@ -93,10 +93,12 @@
     return pencereAc(ad, L, R, tur);
   }
   function odak(p) { S.aktif = p ? p.id : null; S.pen.forEach(function (q) { q.el.classList.toggle('aktif', q === p); }); if (p) p.el.style.zIndex = ++S.z0; guncelle(); }
+  function telefonMu() { return !!(window.matchMedia && window.matchMedia('(max-width:820px)').matches); }
+  function mobDiz() { if (telefonMu() && S.pen.some(function (q) { return !q.kucuk && !q.maks; })) { diz('alt'); S.pen.forEach(function (q) { if (!q.kucuk) ciz(q); }); } }
   function kapat(p) {
     if (!p) return; if (S.calP === p) durdur(); p.el.remove(); if (p.chip) p.chip.remove(); S.pen = S.pen.filter(function (q) { return q !== p; });
     if (S.aktif === p.id) { S.aktif = null; var son = S.pen[S.pen.length - 1]; if (son) odak(son); }
-    if (!S.pen.length) $('#bosAlan').style.display = 'flex'; guncelle(); otoListeleri();
+    if (!S.pen.length) $('#bosAlan').style.display = 'flex'; guncelle(); otoListeleri(); mobDiz();
   }
   function baglaPencere(p) {
     var el = p.el;
@@ -195,6 +197,7 @@
     var c = p.cv, surukle = false, mod = 'yeni', sabit = 0, tasi = null;
     c.addEventListener('mousedown', function (e) {
       if (e.button !== 0) return; odak(p); var s2 = x2s(p, e), tol = 6 * p.spp, sc = p.sec;
+      if (e.__dokunma) tol = 20 * p.spp;
       if (sc && s2 > sc[0] + tol && s2 < sc[1] - tol && sc[1] - sc[0] > 100) { mod = 'tasi'; tasi = { x: e.clientX, y: e.clientY, dolu: false }; }
       else if (sc && Math.abs(s2 - sc[0]) <= tol) { mod = 'kenar'; sabit = sc[1]; }
       else if (sc && Math.abs(s2 - sc[1]) <= tol) { mod = 'kenar'; sabit = sc[0]; }
@@ -223,6 +226,13 @@
         tasi = null; guncelle();
       }
     });
+    /* Parmakla seçim: dokunma hareketini fare olaylarına çevirir (yalnızca tek parmak) */
+    function fareGonder(tip, t, hedef) { var ev = new MouseEvent(tip, { clientX: t.clientX, clientY: t.clientY, button: 0, bubbles: true, cancelable: true }); ev.__dokunma = true; hedef.dispatchEvent(ev); }
+    var sonT = null, dokunSure = 0;
+    c.addEventListener('touchstart', function (e) { if (e.touches.length !== 1) return; e.preventDefault(); sonT = e.touches[0]; var simdi = Date.now(); if (simdi - dokunSure < 320) { p.sec = [0, p.L.length]; guncelle(); sonT = null; dokunSure = 0; return; } dokunSure = simdi; fareGonder('mousedown', sonT, c); }, { passive: false });
+    c.addEventListener('touchmove', function (e) { if (e.touches.length !== 1 || !surukle) return; e.preventDefault(); sonT = e.touches[0]; fareGonder('mousemove', sonT, window); }, { passive: false });
+    c.addEventListener('touchend', function (e) { if (!sonT) return; e.preventDefault(); fareGonder('mouseup', sonT, window); sonT = null; }, { passive: false });
+    c.addEventListener('touchcancel', function () { if (sonT) { fareGonder('mouseup', sonT, window); sonT = null; } });
     c.addEventListener('dblclick', function () { p.sec = [0, p.L.length]; guncelle(); });
     c.addEventListener('wheel', function (e) {
       e.preventDefault();
@@ -815,7 +825,7 @@
     var pl = S.pen.filter(function (q) { return !q.kucuk; }), n = pl.length; if (!n) return; var w = alan.clientWidth, h = alan.clientHeight;
     pl.forEach(function (p, i) {
       var e = p.el;
-      if (tip === 'alt') { var yh = Math.max(170, Math.floor((h - 8 - (n - 1) * 6) / n)); e.style.left = '110px'; e.style.width = (w - 220) + 'px'; e.style.top = (4 + i * (yh + 6)) + 'px'; e.style.height = yh + 'px'; }
+      if (tip === 'alt') { var yh = Math.max(170, Math.floor((h - 8 - (n - 1) * 6) / n)); if (telefonMu()) yh = Math.min(yh, Math.max(170, Math.floor((h - 14) / 2))); e.style.left = '110px'; e.style.width = (w - 220) + 'px'; e.style.top = (4 + i * (yh + 6)) + 'px'; e.style.height = yh + 'px'; }
       else if (tip === 'yan') { var gw = Math.floor((w - 8) / n); e.style.left = (4 + i * gw) + 'px'; e.style.width = (gw - 4) + 'px'; e.style.top = '4px'; e.style.height = (h - 8) + 'px'; }
       else { e.style.left = (110 + (i % 6) * 28) + 'px'; e.style.top = (8 + (i % 6) * 28) + 'px'; e.style.width = Math.max(420, w - 220 - 28 * 5) + 'px'; e.style.height = 340 + 'px'; }
       ciz(p);
@@ -1291,11 +1301,12 @@
   }
   (function () {
     var sr = document.createElement('div'); sr.id = 'mobSerit';
-    sr.innerHTML = '<button class="mKayit" data-m="kayit">● Kayıt</button><button data-m="oynat">▶ Oynat</button><button data-m="dur">■ Durdur</button><button data-m="efekt">Ses efekti</button><button data-m="dip">Dip sesi temizle</button><button class="mOto" data-m="oto">Otomatiğe gönder</button>';
+    sr.innerHTML = '<button class="mKayit" data-m="kayit">● Kayıt</button><button data-m="oynat">▶ Oynat</button><button data-m="dur">■ Durdur</button><button class="mSil" data-m="sil">✕ Sil</button><button data-m="kirp">Kırp</button><button data-m="geri">↶ Geri al</button><button data-m="efekt">Ses efekti</button><button data-m="dip">Dip sesi temizle</button><button class="mOto" data-m="oto">Otomatiğe gönder</button>';
     $('#menu').insertAdjacentElement('afterend', sr);
     sr.addEventListener('click', function (e) {
       var b = e.target.closest('[data-m]'); if (!b) return; var m = b.dataset.m;
       if (m === 'kayit') kayitBasla(); else if (m === 'oynat') oynatToggle(); else if (m === 'dur') durdur();
+      else if (m === 'sil') { var ps = akt(); if (ps && !ps.sec) return toast('Önce parmağınızla silinecek bölümü seçin (dalga üzerinde sürükleyin)'); I.sil(); } else if (m === 'kirp') { var pk = akt(); if (pk && !pk.sec) return toast('Önce tutulacak bölümü parmağınızla seçin'); I.kirp(); } else if (m === 'geri') I.geri();
       else if (m === 'efekt') efektDegistir(); else if (m === 'dip') dipTemizle(); else if (m === 'oto') otoyaGonder();
     });
     setInterval(function () { var k = sr.querySelector('.mKayit'); if (k) { var kk = !!kayit; k.textContent = kk ? '■ Kaydı bitir' : '● Kayıt'; k.classList.toggle('kayitta', kk); } }, 400);

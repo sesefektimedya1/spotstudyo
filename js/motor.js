@@ -447,10 +447,10 @@
   var TEMIZLE = {
     yok: { ad: 'Temizlik yok', g: { aktif: false }, k: { aktif: false } },
     hafif: { ad: 'Hafif (6 dB)', g: { aktif: true, db: 6, bias: 0, hiz: 50 }, k: { aktif: false } },
-    standart: { ad: 'Standart (12 dB)', g: { aktif: true, db: 12, bias: 0, hiz: 50 }, k: { aktif: true, esik: null, aralik: 20, bekle: 60, ac: 15, kapa: 120 } },
-    guclu: { ad: 'Güçlü (18 dB)', g: { aktif: true, db: 18, bias: 0, hiz: 50 }, k: { aktif: true, esik: null, aralik: 30, bekle: 60, ac: 15, kapa: 120 } },
-    cokguclu: { ad: 'Çok kirli oda (24 dB)', g: { aktif: true, db: 24, bias: 3, hiz: 50 }, k: { aktif: true, esik: null, aralik: 40, bekle: 60, ac: 12, kapa: 100 } },
-    kapi: { ad: 'Yalnız kapı', g: { aktif: false }, k: { aktif: true, esik: null, aralik: 30, bekle: 60, ac: 15, kapa: 120 } }
+    standart: { ad: 'Standart (18 dB + kapı)', g: { aktif: true, db: 18, bias: 0, hiz: 50 }, k: { aktif: true, esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 } },
+    guclu: { ad: 'Güçlü (24 dB + sıkı kapı)', g: { aktif: true, db: 24, bias: 2, hiz: 50 }, k: { aktif: true, esik: null, aralik: 60, bekle: 20, ac: 8, kapa: 50 } },
+    cokguclu: { ad: 'Çok kirli oda (30 dB)', g: { aktif: true, db: 30, bias: 3, hiz: 50 }, k: { aktif: true, esik: null, aralik: 70, bekle: 10, ac: 6, kapa: 40 } },
+    kapi: { ad: 'Yalnız kapı', g: { aktif: false }, k: { aktif: true, esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 } }
   };
   var EFEKT = {
     yok: { ad: 'Yok', tur: 'yok', p: {} },
@@ -477,8 +477,8 @@
 
   function varsayilanZincir() {
     return {
-      gurultu: { aktif: true, db: 12, bias: 0, hiz: 50, iz: null },
-      kapi: { aktif: false, esik: null, aralik: 30, bekle: 60, ac: 15, kapa: 120 },
+      gurultu: { aktif: true, db: 18, bias: 0, hiz: 50, iz: null },
+      kapi: { aktif: true, esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 },
       ton: { onayar: 'duz', bantlar: [] },
       kuvvet: { aktif: true, esik: -8.1, oran: 4, atak: 40, birak: 80, makyaj: 2, diz: 6 },
       efekt: { tur: 'yok', onayar: 'yok', p: {} },
@@ -503,7 +503,7 @@
     if (z.gurultu && z.gurultu.aktif) y = gurultuAzalt(y, sr, z.gurultu, z.gurultu.iz);
     if (z.kapi && z.kapi.aktif) y = kapi(y, sr, z.kapi);
     if (z.ton && z.ton.bantlar && z.ton.bantlar.length) y = eq(y, sr, z.ton.bantlar);
-    if (z.kuvvet && z.kuvvet.aktif) y = kompresor(y, sr, z.kuvvet);
+    if (z.kuvvet && z.kuvvet.aktif) { y = kompresor(y, sr, z.kuvvet); if (z.kapi && z.kapi.aktif) y = kapi(y, sr, z.kapi); }
     return y;
   }
   function uret(x, sr, muzik, z) {

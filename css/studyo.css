@@ -45,3 +45,6 @@ body.st{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 .bant{display:grid;grid-template-columns:110px 1fr 1fr 1fr 28px;gap:.3rem;align-items:center}
 .bant input,.bant select{padding:.25rem .35rem;font-size:13px}
 @media(max-width:700px){.serit{grid-template-columns:60px 1fr}.sat{grid-template-columns:1fr 1fr 60px}}
+.serit.aktif{border-color:var(--pirinc);box-shadow:0 0 0 1px var(--pirinc)}
+.arac2{gap:.35rem}
+.serit .et .btn{margin-top:auto;align-self:flex-start}

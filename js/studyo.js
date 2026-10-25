@@ -7,7 +7,7 @@
 
   var S = {
     ses: null, undo: [], redo: [], muzik: null, muzikAd: '', z: Motor.varsayilanZincir(), sonuc: null, kirli: true,
-    sec: null, imlec: 0, bas: 0, spp: 100, tarzNo: -1, oynuyor: null, oynBas: 0, oynKaynak: '', mesgul: false
+    sec: null, msec: null, aktif: 'ses', imlec: 0, bas: 0, spp: 100, tarzNo: -1, oynuyor: null, oynBas: 0, oynKaynak: '', mesgul: false
   };
   var cv = { ses: $('#cSes'), muzik: $('#cMuzik'), sonuc: $('#cSonuc') };
 
@@ -39,7 +39,10 @@
   function setSes(x, not) {
     S.ses = x; S.undo = []; S.redo = []; S.sec = null; S.imlec = 0; S.bas = 0; S.kirli = true; S.sonuc = null; tumuGoster(); guncelle(); if (not) toast(not);
   }
-  function degistir(y) { S.undo.push(S.ses); if (S.undo.length > 20) S.undo.shift(); S.redo = []; S.ses = y; S.kirli = true; S.sonuc = null; guncelle(); }
+  function mevcut(k) { return k === 'ses' ? S.ses : S.muzik; }
+  function yaz(k, v) { if (k === 'ses') { S.ses = v; S.sec = null; } else { S.muzik = v; S.msec = null; if (!v) { S.muzikAd = ''; var o = $('#ozelMuzik'); if (o) o.remove(); $('#muzikSec').value = ''; } } S.kirli = true; S.sonuc = null; }
+  function degistirK(k, yeni) { S.undo.push({ k: k, v: mevcut(k) }); if (S.undo.length > 30) S.undo.shift(); S.redo = []; yaz(k, yeni); guncelle(); }
+  function degistir(y) { degistirK('ses', y); }
 
   /* ---------- Görünüm ---------- */
   function tumuGoster() {
@@ -66,8 +69,9 @@
     var sonucL = S.sonuc ? S.sonuc.L : null, im = S.oynuyor ? S.imlecCal : S.imlec;
     ciz(cv.ses, S.ses, '#c8a24c', S.sec, S.oynKaynak === 'ses' || !S.oynuyor ? im : null);
     var mono = S.muzik ? S.muzik.L : null;
-    ciz(cv.muzik, mono, '#4f9aa0', null, null);
+    ciz(cv.muzik, mono, '#4f9aa0', S.msec, null);
     ciz(cv.sonuc, sonucL, '#e9e4d8', null, S.oynKaynak === 'sonuc' ? im : null);
+    $$('.serit').forEach(function (e) { e.classList.remove('aktif'); }); var ak = $('.serit.' + S.aktif); if (ak) ak.classList.add('aktif');
     $('#bosSes').style.display = S.ses ? 'none' : 'flex';
     $('#bosMuzik').style.display = S.muzik ? 'none' : 'flex';
     $('#bosSonuc').style.display = S.sonuc ? 'none' : 'flex';
@@ -79,22 +83,46 @@
     $('#sonucBilgi').innerHTML = S.sonuc ? sn(S.sonuc.sure) + '<br>' + S.sonuc.lufs.toFixed(1) + ' LUFS' : (S.kirli ? 'Hazırlanmadı' : '');
     $('#dSes').textContent = st ? sn(st.sure) + ' · zemin ' + st.zeminDb.toFixed(0) + ' dB · konuşma ' + st.konusmaDb.toFixed(0) + ' dB' : '—';
     $('#dSonuc').textContent = S.sonuc ? S.sonuc.lufs.toFixed(1) + ' LUFS · tepe ' + S.sonuc.tepeDb.toFixed(1) + ' dB' : '—';
-    $('#dSecim').textContent = S.sec ? sn(S.sec[0] / SR) + ' – ' + sn(S.sec[1] / SR) + ' (' + ((S.sec[1] - S.sec[0]) / SR).toFixed(2) + ' sn)' : 'yok';
+    var sc = aktifSec(); $('#dSecim').textContent = (S.aktif === 'muzik' ? 'Müzik: ' : 'Ses: ') + (sc ? sn(sc[0] / SR) + ' – ' + sn(sc[1] / SR) + ' (' + ((sc[1] - sc[0]) / SR).toFixed(2) + ' sn)' : 'yok');
     $('#zaman').textContent = sn((S.oynuyor ? S.imlecCal : S.imlec) / SR);
     yenile();
   }
 
   /* ---------- Seçim / imleç ---------- */
   function x2s(c, ev) { var r = c.getBoundingClientRect(); return Math.max(0, Math.round(S.bas + (ev.clientX - r.left) * S.spp)); }
-  (function () {
-    var surukle = false, bas0 = 0;
-    cv.ses.addEventListener('mousedown', function (e) { if (!S.ses) return; surukle = true; bas0 = Math.min(x2s(cv.ses, e), S.ses.length); S.imlec = bas0; S.sec = null; guncelle(); });
-    window.addEventListener('mousemove', function (e) { if (!surukle) return; var s = Math.min(x2s(cv.ses, e), S.ses.length); if (Math.abs(s - bas0) > S.spp * 3) { S.sec = [Math.min(s, bas0), Math.max(s, bas0)]; guncelle(); } });
+  function aktifSec() { return S.aktif === 'muzik' ? S.msec : S.sec; }
+  function aktifDizi() { return S.aktif === 'muzik' ? (S.muzik && S.muzik.L) : S.ses; }
+  function seritBagla(ad) {
+    var c = cv[ad], surukle = false, mod = 'yeni', sabit = 0;
+    function dizi() { return ad === 'ses' ? S.ses : (S.muzik && S.muzik.L); }
+    function getSec() { return ad === 'ses' ? S.sec : S.msec; }
+    function setSec(v) { if (ad === 'ses') S.sec = v; else S.msec = v; }
+    c.addEventListener('mousedown', function (e) {
+      var d = dizi(); S.aktif = ad; if (!d) { guncelle(); return; }
+      var s2 = Math.min(x2s(c, e), d.length), sc = getSec(), tol = 6 * S.spp;
+      if (sc && Math.abs(s2 - sc[0]) <= tol) { mod = 'kenar'; sabit = sc[1]; }
+      else if (sc && Math.abs(s2 - sc[1]) <= tol) { mod = 'kenar'; sabit = sc[0]; }
+      else { mod = 'yeni'; sabit = s2; if (ad === 'ses') S.imlec = s2; setSec(null); }
+      surukle = true; guncelle();
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!surukle || S.aktif !== ad) return; var d = dizi(); if (!d) return; var s2 = Math.min(x2s(c, e), d.length);
+      if (mod === 'kenar' || Math.abs(s2 - sabit) > S.spp * 3) { setSec([Math.min(s2, sabit), Math.max(s2, sabit)]); guncelle(); }
+    });
     window.addEventListener('mouseup', function () { surukle = false; });
-    cv.sonuc.addEventListener('mousedown', function (e) { if (S.sonuc) { S.sonImlec = Math.min(x2s(cv.sonuc, e), S.sonuc.L.length); } });
-    cv.ses.addEventListener('wheel', function (e) { if (!e.ctrlKey && !e.shiftKey) return; e.preventDefault(); zoom(e.deltaY < 0 ? 0.8 : 1.25, x2s(cv.ses, e)); }, { passive: false });
-    window.addEventListener('resize', function () { guncelle(); });
-  })();
+    tekerBagla(c);
+  }
+  function tekerBagla(c) {
+    c.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { S.bas = Math.max(0, S.bas + (e.deltaX || e.deltaY) * S.spp); guncelle(); }
+      else zoom(e.deltaY < 0 ? 0.8 : 1.25, x2s(c, e));
+    }, { passive: false });
+  }
+  seritBagla('ses'); seritBagla('muzik');
+  cv.sonuc.addEventListener('mousedown', function () { S.aktif = 'sonuc'; guncelle(); });
+  tekerBagla(cv.sonuc);
+  window.addEventListener('resize', function () { guncelle(); });
   function zoom(k, odak) {
     var n = (S.ses && S.ses.length) || (S.sonuc && S.sonuc.L.length) || SR * 10, w = cv.ses.clientWidth || 800;
     odak = odak == null ? S.bas + w * S.spp / 2 : odak; var yeni = Math.max(0.05, Math.min(n / w * 1.05, S.spp * k));
@@ -120,6 +148,7 @@
   async function oynatSonuc() {
     var ok = await uret(); if (!ok) return; cal(S.sonuc.L, S.sonuc.R, 0, 0, 'sonuc');
   }
+  function oynatMuzik() { if (!S.muzik) return toast('Müzik seçilmedi'); var sc = S.msec; cal(S.muzik.L, S.muzik.R, sc ? sc[0] : 0, sc ? sc[1] : 0, 'muzik'); }
   function oynatToggle() { if (S.oynuyor) return durdur(); if (S.sonuc && !S.kirli && S.sonImlec != null && false) return; (S.sonuc && !S.kirli) ? cal(S.sonuc.L, S.sonuc.R, 0, 0, 'sonuc') : oynatSes(); }
   $('#oynatBtn').onclick = oynatToggle;
   $('#basaBtn').onclick = function () { durdur(); S.imlec = 0; S.sec = null; S.bas = 0; guncelle(); };
@@ -326,30 +355,55 @@
   }
 
   /* ---------- Düzenleme ---------- */
-  function secimVar() { if (!S.ses) { toast('Önce bir ses yükleyin'); return false; } if (!S.sec) { toast('Önce ses şeridinde bir bölüm seçin'); return false; } return true; }
+  var AD = { ses: 'ses', muzik: 'müzik' };
+  function sonucKilit() { if (S.aktif === 'sonuc') { toast('Sonuç şeridi düzenlenemez. SES ya da MÜZİK şeridini seçin'); return true; } return false; }
+  function dizideMi() { if (sonucKilit()) return false; if (!aktifDizi()) { toast(S.aktif === 'muzik' ? 'Önce bir müzik seçin' : 'Önce bir ses kaydedin ya da yükleyin'); return false; } return true; }
+  function secimVar() { if (!dizideMi()) return false; if (!aktifSec()) { toast('Önce ' + AD[S.aktif] + ' şeridinde fareyle bir bölüm seçin'); return false; } return true; }
+  function uygula(fn) {
+    var k = S.aktif, d = aktifDizi(), sc = aktifSec(), a = sc ? sc[0] : 0, b = sc ? sc[1] : d.length;
+    if (k === 'ses') degistirK('ses', fn(S.ses, a, b)); else degistirK('muzik', { L: fn(S.muzik.L, a, b), R: fn(S.muzik.R, a, b) });
+  }
+  function seciliUygula(fn) { if (!secimVar()) return; uygula(fn); }
   var islem = {
-    kirp: function () { if (!secimVar()) return; degistir(Motor.kirp(S.ses, S.sec[0], S.sec[1])); S.sec = null; S.imlec = 0; tumuGoster(); guncelle(); },
-    sil: function () { if (!secimVar()) return; var a = S.sec[0]; degistir(Motor.sil(S.ses, S.sec[0], S.sec[1])); S.sec = null; S.imlec = a; guncelle(); },
-    sessiz: function () { if (!secimVar()) return; degistir(Motor.sessizYap(S.ses, S.sec[0], S.sec[1])); guncelle(); },
-    giris: function () { if (!secimVar()) return; degistir(Motor.fade(S.ses, S.sec[0], S.sec[1], 'giris')); },
-    cikis: function () { if (!secimVar()) return; degistir(Motor.fade(S.ses, S.sec[0], S.sec[1], 'cikis')); },
-    sessizlikEkle: function () { if (!S.ses) return toast('Önce bir ses yükleyin'); sayiDlg('Sessizlik ekle', 'Süre', 0.1, 5, 0.1, 0.5, ' sn', function (v) { degistir(Motor.sessizlikEkle(S.ses, S.sec ? S.sec[0] : S.imlec, Math.round(v * SR))); }); },
-    kazanc: function () { if (!S.ses) return toast('Önce bir ses yükleyin'); sayiDlg('Kazanç', 'Seviye', -24, 24, 0.5, 0, ' dB', function (v) { degistir(Motor.kazan(S.ses, S.sec ? S.sec[0] : 0, S.sec ? S.sec[1] : S.ses.length, v)); }); },
-    normal: function () { if (!S.ses) return toast('Önce bir ses yükleyin'); degistir(Motor.normallestir(S.ses, -1)); toast('Tepe −1 dB’e getirildi'); },
-    dc: function () { if (!S.ses) return toast('Önce bir ses yükleyin'); degistir(Motor.dcSil(S.ses)); },
-    tumu: function () { if (!S.ses) return; S.sec = [0, S.ses.length]; guncelle(); },
-    geri: function () { if (!S.undo.length) return; S.redo.push(S.ses); S.ses = S.undo.pop(); S.kirli = true; S.sonuc = null; guncelle(); },
-    yinele: function () { if (!S.redo.length) return; S.undo.push(S.ses); S.ses = S.redo.pop(); S.kirli = true; S.sonuc = null; guncelle(); }
+    kirp: function () { if (!secimVar()) return; uygula(function (x, a, b) { return Motor.kirp(x, a, b); }); S.imlec = 0; tumuGoster(); guncelle(); },
+    sil: function () { if (!secimVar()) return; var a = aktifSec()[0]; uygula(function (x, a2, b) { return Motor.sil(x, a2, b); }); if (S.aktif === 'ses') S.imlec = a; guncelle(); },
+    sessiz: function () { seciliUygula(function (x, a, b) { return Motor.sessizYap(x, a, b); }); },
+    giris: function () { seciliUygula(function (x, a, b) { return Motor.fade(x, a, b, 'giris'); }); },
+    cikis: function () { seciliUygula(function (x, a, b) { return Motor.fade(x, a, b, 'cikis'); }); },
+    sessizlikEkle: function () {
+      if (!dizideMi()) return;
+      sayiDlg('Sessizlik ekle', 'Süre', 0.1, 5, 0.1, 0.5, ' sn', function (v) {
+        var sc = aktifSec(), pos = sc ? sc[0] : (S.aktif === 'ses' ? S.imlec : 0), n = Math.round(v * SR);
+        uygula(function (x) { return Motor.sessizlikEkle(x, pos, n); });
+      });
+    },
+    kazanc: function () { if (!dizideMi()) return; sayiDlg('Kazanç (seçim yoksa tümü)', 'Seviye', -24, 24, 0.5, 0, ' dB', function (v) { uygula(function (x, a, b) { return Motor.kazan(x, a, b, v); }); }); },
+    kazancHizli: function (db) { if (!dizideMi()) return; uygula(function (x, a, b) { return Motor.kazan(x, a, b, db); }); toast((db > 0 ? '+' : '') + db + ' dB'); },
+    normal: function () { if (!dizideMi()) return; uygula(function (x) { return Motor.normallestir(x, -1); }); toast('Tepe −1 dB’e getirildi'); },
+    dc: function () { if (!dizideMi()) return; uygula(function (x) { return Motor.dcSil(x); }); },
+    tumu: function () { if (!dizideMi()) return; var n = aktifDizi().length; if (S.aktif === 'ses') S.sec = [0, n]; else S.msec = [0, n]; guncelle(); },
+    kaldir: function () {
+      if (sonucKilit()) return;
+      if (!aktifDizi()) return toast('Kaldırılacak ' + AD[S.aktif] + ' yok');
+      durdur(); var k = S.aktif; degistirK(k, null); if (k === 'ses') { S.imlec = 0; tumuGoster(); } guncelle(); toast(AD[k][0].toUpperCase() + AD[k].slice(1) + ' kaldırıldı. Geri almak için Ctrl+Z');
+    },
+    geri: function () { if (!S.undo.length) return; var e = S.undo.pop(); S.redo.push({ k: e.k, v: mevcut(e.k) }); yaz(e.k, e.v); if (e.k === 'muzik' && e.v) { ozelSec(S.muzikAd || 'Müzik'); $('#muzikSec').value = 'ozel'; } guncelle(); },
+    yinele: function () { if (!S.redo.length) return; var e = S.redo.pop(); S.undo.push({ k: e.k, v: mevcut(e.k) }); yaz(e.k, e.v); guncelle(); }
   };
+  function aracDugmeleri() {
+    $$('[data-i]').forEach(function (b) { b.onclick = function () { islem[b.dataset.i](); }; });
+    $$('[data-kaldir]').forEach(function (b) { b.onclick = function () { S.aktif = b.dataset.kaldir; islem.kaldir(); }; });
+    $$('[data-db]').forEach(function (b) { b.onclick = function () { islem.kazancHizli(+b.dataset.db); }; });
+  }
 
   /* ---------- Menüler ---------- */
   var M = [
-    ['Dosya', [['Ses aç…', 'Ctrl+O', function () { $('#dosyaSes').click(); }], ['Müzik aç…', '', function () { $('#dosyaMuzik').click(); }], '-', ['MP3 indir', 'Ctrl+S', function () { indir('mp3'); }], ['WAV indir', '', function () { indir('wav'); }], ['Santral WAV indir (8 kHz)', '', function () { indir('santral'); }], '-', ['Panelime dön', '', function () { location.href = 'panel.html'; }]]],
-    ['Düzen', [['Geri al', 'Ctrl+Z', islem.geri], ['Yinele', 'Ctrl+Y', islem.yinele], '-', ['Tümünü seç', 'Ctrl+A', islem.tumu], ['Seçimi sil', 'Delete', islem.sil], ['Yalnız seçimi tut (kırp)', 'Ctrl+T', islem.kirp], ['Sessizlik ekle…', '', islem.sessizlikEkle]]],
-    ['Görünüm', [['Yakınlaştır', '', function () { zoom(0.6); }], ['Uzaklaştır', '', function () { zoom(1.6); }], ['Tümünü göster', '', function () { tumuGoster(); guncelle(); }]]],
+    ['Dosya', [['Ses aç…', 'Ctrl+O', function () { $('#dosyaSes').click(); }], ['Müzik aç…', '', function () { $('#dosyaMuzik').click(); }], '-', ['MP3 indir', 'Ctrl+S', function () { indir('mp3'); }], ['WAV indir', '', function () { indir('wav'); }], ['Santral WAV indir (8 kHz)', '', function () { indir('santral'); }], '-', ['Sesi kaldır (seçili şerit)', 'Ctrl+K', islem.kaldir], '-', ['Panelime dön', '', function () { location.href = 'panel.html'; }]]],
+    ['Düzen', [['Geri al', 'Ctrl+Z', islem.geri], ['Yinele', 'Ctrl+Y', islem.yinele], '-', ['Tümünü seç', 'Ctrl+A', islem.tumu], ['Seçimi sil', 'Delete / Backspace', islem.sil], ['Yalnız seçimi tut (kırp)', 'Ctrl+T', islem.kirp], ['Sessizlik ekle…', '', islem.sessizlikEkle]]],
+    ['Görünüm', [['Yakınlaştır (fare tekerleği)', '', function () { zoom(0.6); }], ['Uzaklaştır', '', function () { zoom(1.6); }], ['Tümünü göster', '', function () { tumuGoster(); guncelle(); }]]],
     ['Ekle', [['Seçimi sessiz yap', '', islem.sessiz], ['Sessizlik ekle…', '', islem.sessizlikEkle]]],
-    ['Aktarım', [['Oynat / Durdur', 'Boşluk', oynatToggle], ['Sesi dinle', '', oynatSes], ['Sonucu dinle', '', oynatSonuc], ['Başa dön', '', function () { $('#basaBtn').click(); }], '-', ['Kayıt başlat / bitir', 'Ctrl+R', kayitBasla]]],
-    ['İşlem', [['Kazanç…', '', islem.kazanc], ['Normalleştir (tepe −1 dB)', '', islem.normal], ['Sesin girişine yumuşat (fade in)', '', islem.giris], ['Sesin sonunu yumuşat (fade out)', '', islem.cikis], ['DC kaymasını kaldır', '', islem.dc]]],
+    ['Aktarım', [['Oynat / Durdur', 'Boşluk', oynatToggle], ['Sesi dinle', '', oynatSes], ['Müziği dinle', '', oynatMuzik], ['Sonucu dinle', '', oynatSonuc], ['Başa dön', '', function () { $('#basaBtn').click(); }], '-', ['Kayıt başlat / bitir', 'Ctrl+R', kayitBasla]]],
+    ['İşlem', [['Kazanç…', '', islem.kazanc], ['Kazanç +1 dB', '', function () { islem.kazancHizli(1); }], ['Kazanç −1 dB', '', function () { islem.kazancHizli(-1); }], ['Seçimi sessiz yap', '', islem.sessiz], ['Yumuşak giriş (fade in)', '', islem.giris], ['Yumuşak çıkış (fade out)', '', islem.cikis], ['Normalleştir (tepe −1 dB)', '', islem.normal], ['DC kaymasını kaldır', '', islem.dc]]],
     ['Efektler', [['Gürültü azaltma…', '', gurultuDlg], ['Kapı…', '', kapiDlg], ['Ton (EQ)…', '', tonDlg], ['Kuvvet (kompresör)…', '', kuvvetDlg], ['Efekt (yankı, telefon, robot)…', '', efektDlg]]],
     ['Araçlar', [['Müzik karışımı…', '', muzikDlg], ['Seviye (radyo / TV / santral)…', '', seviyeDlg], ['Sonucu hazırla', '', function () { uret(); }]]],
     ['Seçenekler', [['Mikrofon seç…', '', mikSec]]],
@@ -388,10 +442,11 @@
     else if (c && k === 't') { e.preventDefault(); islem.kirp(); }
     else if (c && k === 'o') { e.preventDefault(); $('#dosyaSes').click(); }
     else if (c && k === 'r') { e.preventDefault(); kayitBasla(); }
+    else if (c && k === 'k') { e.preventDefault(); islem.kaldir(); }
     else if (c && k === 's') { e.preventDefault(); indir($('#hedef').value === 'santral' ? 'santral' : 'mp3'); }
-    else if (k === 'delete') islem.sil();
+    else if (k === 'delete' || k === 'backspace') { e.preventDefault(); islem.sil(); }
   });
   window.__studyo = { S: S, Motor: Motor, sesYukle: sesYukle, setSes: setSes, setMuzik: setMuzik, oto: oto, uret: uret, indir: indir, islem: islem };
 
-  hedefUygula(); tumuGoster(); guncelle();
+  aracDugmeleri(); hedefUygula(); tumuGoster(); guncelle();
 })();

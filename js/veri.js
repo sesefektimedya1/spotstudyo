@@ -85,7 +85,7 @@
       var son = (mesajlar[mesajlar.length - 1] || {}).content || '', n = '(Örnek metin: yapay zeka bağlanınca burada sizin konunuza göre yazılır.)\n\n';
       if (tur === 'jingle') return n + 'Nakarat:\nSes Efekti, Ses Efekti,\nSesin gücü sende, yayında hemen şimdi!\n\nKıta:\nSpotun hazır, radyon açık,\nHer evde bir melodi, her kalpte bir ses.';
       if (tur === 'santral') return n + 'Merhaba, firmamızı aradığınız için teşekkür ederiz. Yetkili arkadaşlarımız şu anda diğer görüşmelerde. Lütfen hatta kalın, en kısa sürede size dönüş yapacağız.';
-      return n + 'Bu bayram fırsatını kaçırmayın! Seçili ürünlerde yüzde yirmiye varan indirim, sadece bu hafta sonu. Detaylar için mağazamızı ziyaret edin ya da bizi arayın. Sesinizi duyuran marka: Ses Efekti.';
+      return n + 'Fırsatı kaçırmayın! Seçili ürünlerde yüzde yirmiye varan indirim, sadece bu hafta sonu. Detaylar için mağazamızı ziyaret edin ya da bizi arayın. Sesinizi duyuran marka: Ses Efekti.';
     },
     siparisVer: async function (s) { var o = await demo.oturum(), l = LS.oku('siparisler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, durum: 'yeni', sonuc_url: '', created_at: new Date().toISOString() }, s); l.push(k); LS.yaz('siparisler', l); return k; },
     siparislerim: async function () { var o = await demo.oturum(); return LS.oku('siparisler', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },

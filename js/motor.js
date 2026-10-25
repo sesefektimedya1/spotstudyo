@@ -164,7 +164,8 @@
     var sirali = Array.prototype.slice.call(edb).sort(function (a, b) { return a - b; });
     var m = Math.max(5, Math.floor(0.08 * n)), dip = 0;
     for (i = 0; i < m; i++) dip += sirali[i]; dip /= m;
-    var esik = (p.esik == null) ? dip + 12 : p.esik;
+    var konus = sirali[Math.floor(sirali.length * 0.9)], konum = (p.konum == null) ? 0.45 : p.konum;
+    var esik = (p.esik == null) ? Math.max(dip + 12, dip + (konus - dip) * konum) : p.esik;
     var bekle = Math.max(0, Math.round((p.bekle == null ? 60 : p.bekle) / 10));
     var ac = new Uint8Array(n), say = 0;
     for (i = 0; i < n; i++) {
@@ -446,11 +447,11 @@
   };
   var TEMIZLE = {
     yok: { ad: 'Temizlik yok', g: { aktif: false }, k: { aktif: false } },
-    hafif: { ad: 'Hafif (6 dB)', g: { aktif: true, db: 6, bias: 0, hiz: 50 }, k: { aktif: false } },
-    standart: { ad: 'Standart (18 dB + kapı)', g: { aktif: true, db: 18, bias: 0, hiz: 50 }, k: { aktif: true, esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 } },
-    guclu: { ad: 'Güçlü (24 dB + sıkı kapı)', g: { aktif: true, db: 24, bias: 2, hiz: 50 }, k: { aktif: true, esik: null, aralik: 60, bekle: 20, ac: 8, kapa: 50 } },
-    cokguclu: { ad: 'Çok kirli oda (30 dB)', g: { aktif: true, db: 30, bias: 3, hiz: 50 }, k: { aktif: true, esik: null, aralik: 70, bekle: 10, ac: 6, kapa: 40 } },
-    kapi: { ad: 'Yalnız kapı', g: { aktif: false }, k: { aktif: true, esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 } }
+    hafif: { ad: 'Hafif (12 dB, yumuşak kapı)', g: { aktif: true, db: 12, bias: 0, hiz: 50 }, k: { aktif: true, esik: null, konum: 0.35, aralik: 40, bekle: 40, ac: 12, kapa: 80 } },
+    standart: { ad: 'Standart (18 dB + kapı)', g: { aktif: true, db: 18, bias: 0, hiz: 50 }, k: { aktif: true, esik: null, konum: 0.45, aralik: 70, bekle: 20, ac: 8, kapa: 40 } },
+    guclu: { ad: 'Güçlü (24 dB + sıkı kapı)', g: { aktif: true, db: 24, bias: 2, hiz: 50 }, k: { aktif: true, esik: null, konum: 0.5, aralik: 80, bekle: 15, ac: 8, kapa: 35 } },
+    cokguclu: { ad: 'Çok kirli oda (30 dB)', g: { aktif: true, db: 30, bias: 3, hiz: 50 }, k: { aktif: true, esik: null, konum: 0.55, aralik: 90, bekle: 10, ac: 6, kapa: 30 } },
+    kapi: { ad: 'Yalnız kapı', g: { aktif: false }, k: { aktif: true, esik: null, konum: 0.45, aralik: 70, bekle: 20, ac: 8, kapa: 40 } }
   };
   var EFEKT = {
     yok: { ad: 'Yok', tur: 'yok', p: {} },
@@ -478,7 +479,7 @@
   function varsayilanZincir() {
     return {
       gurultu: { aktif: true, db: 18, bias: 0, hiz: 50, iz: null },
-      kapi: { aktif: true, esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 },
+      kapi: { aktif: true, esik: null, konum: 0.45, aralik: 70, bekle: 20, ac: 8, kapa: 40 },
       ton: { onayar: 'duz', bantlar: [] },
       kuvvet: { aktif: true, esik: -8.1, oran: 4, atak: 40, birak: 80, makyaj: 2, diz: 6 },
       efekt: { tur: 'yok', onayar: 'yok', p: {} },

@@ -299,7 +299,7 @@
   }
   function kapiDlg() {
     var v = Object.assign({}, S.z.kapi); v.otoEsik = v.esik == null; if (v.esik == null) v.esik = -50;
-    diyalog('Kapı (sessizlikte sesi kıs)', [{ k: 'aktif', ad: 'Uygula', tur: 'onay' }, { k: 'otoEsik', ad: 'Eşiği kendisi bulsun', tur: 'onay' }, { k: 'esik', ad: 'Eşik', tur: 'slider', min: -80, max: -20, step: 1, birim: ' dB' }, { k: 'aralik', ad: 'Kısma miktarı', tur: 'slider', min: 6, max: 60, step: 1, birim: ' dB' }, { k: 'bekle', ad: 'Bekleme', tur: 'slider', min: 0, max: 300, step: 10, birim: ' ms' }, { k: 'ac', ad: 'Açılma', tur: 'slider', min: 2, max: 60, step: 1, birim: ' ms' }, { k: 'kapa', ad: 'Kapanma', tur: 'slider', min: 20, max: 400, step: 10, birim: ' ms' }], v, {
+    diyalog('Kapı (sessizlikte sesi kıs)', [{ k: 'aktif', ad: 'Uygula', tur: 'onay' }, { k: 'otoEsik', ad: 'Eşiği kendisi bulsun', tur: 'onay' }, { k: 'konum', ad: 'Duyarlılık (yüksek = daha çok kıs)', tur: 'slider', min: 0.2, max: 0.8, step: 0.05, birim: '' }, { k: 'esik', ad: 'Elle eşik', tur: 'slider', min: -80, max: -20, step: 1, birim: ' dB' }, { k: 'aralik', ad: 'Kısma miktarı', tur: 'slider', min: 6, max: 90, step: 1, birim: ' dB' }, { k: 'bekle', ad: 'Bekleme', tur: 'slider', min: 0, max: 300, step: 10, birim: ' ms' }, { k: 'ac', ad: 'Açılma', tur: 'slider', min: 2, max: 60, step: 1, birim: ' ms' }, { k: 'kapa', ad: 'Kapanma', tur: 'slider', min: 20, max: 400, step: 10, birim: ' ms' }], v, {
       onizleZ: function (d) { var z = kopyaZ(); z.gurultu.aktif = false; z.kapi = Object.assign({}, d, { esik: d.otoEsik ? null : d.esik }); z.ton = { bantlar: [] }; z.kuvvet.aktif = false; z.efekt = { tur: 'yok' }; return z; },
       tamam: function (d) { d.esik = d.otoEsik ? null : d.esik; delete d.otoEsik; S.z.kapi = d; degisti(); }
     });
@@ -362,7 +362,7 @@
     if (S.mesgul) return; S.mesgul = true; mesaj('Dip ses temizleniyor…'); await bekle();
     try {
       var y = Motor.gurultuAzalt(S.ses, SR, { db: 18, bias: 0, hiz: 50 }, S.z.gurultu.iz || null);
-      y = Motor.kapi(y, SR, { esik: null, aralik: 50, bekle: 30, ac: 10, kapa: 70 });
+      y = Motor.kapi(y, SR, { esik: null, konum: 0.45, aralik: 70, bekle: 20, ac: 8, kapa: 40 });
       degistirK('ses', y); toast('Dip ses temizlendi. Beğenmezseniz Ctrl+Z');
     } catch (e) { hata(e); }
     S.mesgul = false; mesaj('');

@@ -26,12 +26,17 @@
     el.innerHTML = '<div class="bas"><i class="tur"></i><b></b><small></small><button class="x" title="Pencereyi kapat">✕</button></div><div class="ov" title="Genel görünüm: tıklayıp sürükleyerek gezinin"><canvas></canvas></div><div class="dalga"><canvas class="cv"></canvas></div><div class="kay" title="Kaydırma çubuğu"><div class="th"></div></div><div class="zb"><span>Zaman</span><button class="btn kucuk" data-z="-" title="Uzaklaştır">−</button><button class="btn kucuk" data-z="+" title="Yakınlaştır">+</button><button class="btn kucuk" data-z="t" title="Tamamını göster">Tümü</button><i class="ay"></i><span>Seviye</span><button class="btn kucuk" data-v="-" title="Dalgayı küçült">−</button><button class="btn kucuk" data-v="+" title="Dalgayı büyüt">+</button><button class="btn kucuk" data-v="1" title="Seviye ölçeğini sıfırla">1×</button><span class="sure"></span></div>';
     alan.appendChild(el); p.el = el; p.cv = $('.cv', el); p.ovc = $('.ov canvas', el); p.kay = $('.kay', el); p.th = $('.th', el);
     var w = alan.clientWidth, h = alan.clientHeight, n = S.pen.length;
-    var gen = Math.max(420, w - 40 - 28 * 5), yuk = Math.max(260, h - 30 - 28 * 5);
-    el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = (14 + (n % 6) * 28) + 'px'; el.style.top = (10 + (n % 6) * 28) + 'px';
+    var gen = Math.max(460, Math.min(w - 28, Math.round(w * 0.62))), yuk = Math.max(260, Math.min(330, Math.round(h * 0.42))), satir = Math.max(1, Math.floor((h - 10) / (yuk + 8)));
+    el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = (n < satir ? 14 : 14 + ((n - satir) % 6 + 1) * 28) + 'px'; el.style.top = (n < satir ? 10 + n * (yuk + 8) : 10 + ((n - satir) % 6 + 1) * 28) + 'px';
     S.pen.push(p); $('.tur', el).style.background = RENK[p.tur]; $('.bas b', el).textContent = ad;
     baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle();
     if (window.ResizeObserver) new ResizeObserver(function () { if (p.el.isConnected) ciz(p); }).observe(p.el);
     return p;
+  }
+  function yeniVeyaBos(ad, L, R, tur) {
+    var p = akt();
+    if (p && p.bos) { p.bos = false; p.ad = ad; p.tur = tur; p.L = L; p.R = R || L; p.undo = []; p.redo = []; p.sec = null; p.imlec = 0; p.ovC = null; $('.bas b', p.el).textContent = ad; $('.tur', p.el).style.background = RENK[tur]; tumuGoster(p); odak(p); guncelle(); return p; }
+    return pencereAc(ad, L, R, tur);
   }
   function odak(p) { S.aktif = p ? p.id : null; S.pen.forEach(function (q) { q.el.classList.toggle('aktif', q === p); }); if (p) p.el.style.zIndex = ++S.z0; guncelle(); }
   function kapat(p) {
@@ -189,7 +194,7 @@
   /* ---------- Dosya ve kayıt ---------- */
   function ad2(f) { return String(f).replace(/\.[^.]+$/, ''); }
   async function dosyadanAc(file, tur) {
-    try { mesaj('Okunuyor…'); var b = await coz(await file.arrayBuffer()), s = stereoAl(b); var p = pencereAc(ad2(file.name), s.L, tur === 'muzik' ? s.R : s.L, tur); mesaj(''); otoListeleri(); return p; }
+    try { mesaj('Okunuyor…'); var b = await coz(await file.arrayBuffer()), s = stereoAl(b); var p = yeniVeyaBos(ad2(file.name), s.L, tur === 'muzik' ? s.R : s.L, tur); mesaj(''); otoListeleri(); return p; }
     catch (e) { hata(new Error('Bu dosya okunamadı. MP3, WAV veya M4A deneyin.')); }
   }
   var kayit = null, mikId = '', kayitNo = 0;
@@ -203,18 +208,18 @@
       var buf = new Float32Array(1024), alive = true;
       (function olc() { if (!alive) return; an.getFloatTimeDomainData(buf); var m = 0; for (var i = 0; i < buf.length; i++) m = Math.max(m, Math.abs(buf[i])); $('#metre i').style.width = Math.max(0, Math.min(100, (Motor.toDb(m) + 60) / 60 * 100)) + '%'; requestAnimationFrame(olc); })();
       rec.onstop = async function () {
-        alive = false; $('#metre i').style.width = '0'; stream.getTracks().forEach(function (t) { t.stop(); }); $('#kayitBtn').classList.remove('kayitta'); $('#kayitBtn').textContent = '● Kayıt';
-        try { var b = await coz(await new Blob(parca).arrayBuffer()), x = tekKanal(b); pencereAc('Kayıt ' + (++kayitNo), x, x, 'ses'); otoListeleri(); } catch (e) { hata(new Error('Kayıt çözülemedi.')); }
+        alive = false; $('#metre i').style.width = '0'; stream.getTracks().forEach(function (t) { t.stop(); }); $('#kayitBtn').classList.remove('kayitta'); $('#kayitBtn').title = 'Kayıt: mikrofonla kayıt başlatır (Ctrl+R)';
+        try { var b = await coz(await new Blob(parca).arrayBuffer()), x = tekKanal(b); yeniVeyaBos('Kayıt ' + (++kayitNo), x, x, 'ses'); otoListeleri(); } catch (e) { hata(new Error('Kayıt çözülemedi.')); }
         kayit = null;
       };
-      rec.start(); kayit = rec; $('#kayitBtn').classList.add('kayitta'); $('#kayitBtn').textContent = '■ Kaydı bitir';
+      rec.start(); kayit = rec; $('#kayitBtn').classList.add('kayitta'); $('#kayitBtn').title = 'Kaydı bitir'; toast('Kayıt başladı. Bitirmek için kırmızı düğmeye tekrar basın');
     } catch (e) { toast(e.name === 'NotAllowedError' ? 'Mikrofon izni verilmedi. Tarayıcı adres çubuğundan izin verin.' : 'Mikrofon açılamadı: ' + e.message); }
   }
   function kayitDur() { if (kayit && kayit.state !== 'inactive') kayit.stop(); }
 
   /* ---------- Düzenleme çekirdeği ---------- */
   function degistir(p, L, R) {
-    p.undo.push({ L: p.L, R: p.R }); if (p.undo.length > 20) p.undo.shift(); p.redo = [];
+    p.bos = false; p.undo.push({ L: p.L, R: p.R }); if (p.undo.length > 20) p.undo.shift(); p.redo = [];
     p.L = L; p.R = R || L; p.sec = null; p.imlec = Math.min(p.imlec, p.L.length);
     var mx = Math.max(0, p.L.length - gW(p) * p.spp); if (p.bas > mx) p.bas = mx; guncelle();
   }
@@ -235,7 +240,7 @@
     try { await fn(); } catch (e) { hata(e); }
     S.mesgul = false; mesaj('');
   }
-  function aktifVar() { var p = akt(); if (!p) { toast('Önce bir pencere açın ya da pencereye tıklayın'); return null; } return p; }
+  function aktifVar() { var p = akt(); if (!p) { toast('Önce bir pencere açın (Yeni pencere) ya da pencereye tıklayın'); return null; } return p; }
   function secimVar() { var p = aktifVar(); if (!p) return null; if (!p.sec) { toast('Önce pencerede fareyle bir bölüm seçin'); return null; } return p; }
   function panoAl(p) { var r = aralik(p); return { L: p.L.slice(r[0], r[1]), R: p.R === p.L ? null : p.R.slice(r[0], r[1]), ad: p.ad }; }
   function ekle(p, pos, mid) { var L = A.birles(p.L, pos, pos, mid.L), R = (p.R === p.L && (mid.R === mid.L || !mid.R)) ? L : A.birles(p.R, pos, pos, mid.R || mid.L); degistir(p, L, R); }
@@ -264,7 +269,7 @@
     disa: function () { disaDlg(); },
     kapat: function () { kapat(akt()); },
     hepsiniKapat: function () { S.pen.slice().forEach(kapat); },
-    yeni: function () { var x = new Float32Array(SR); pencereAc('Yeni ' + (S.sayac + 1), x, x, 'ses'); otoListeleri(); }
+    yeni: function () { var x = new Float32Array(SR * 2); var p = pencereAc('Adsız ' + (S.sayac + 1), x, x, 'ses'); p.bos = true; otoListeleri(); }
   };
 
   /* ---------- Diyaloglar ---------- */
@@ -286,7 +291,7 @@
       else h += '<div class="sat"><label style="margin:0">' + esc(a.ad) + '</label><input type="range" data-k="' + a.k + '" min="' + a.min + '" max="' + a.max + '" step="' + a.step + '"><output></output></div>';
     });
     if (o.ekHtml) h += o.ekHtml;
-    h += '</div><div class="alt">' + (o.iz ? '<button class="btn sol-b" id="dg-iz">Gürültü izi al (seçimden)</button>' : '') + (o.onizle ? '<button class="btn" id="dg-on-izle">Önizleme</button>' : '') + '<button class="btn" id="dg-iptal">İptal</button><button class="btn ana" id="dg-tamam">Tamam</button></div></div>';
+    h += '</div><div class="alt">' + (o.iz ? '<button class="btn sol-b" id="dg-iz">Gürültü izi al (seçimden)</button>' : '') + (o.onizle ? '<button class="btn" id="dg-on-izle">' + (o.onizleAd || 'Önizleme') + '</button>' : '') + '<button class="btn" id="dg-iptal">İptal</button><button class="btn ana" id="dg-tamam">Tamam</button></div></div>';
     p.innerHTML = h; document.body.appendChild(p);
     function oku() { $$('[data-k]', p).forEach(function (el) { var k = el.dataset.k; d[k] = el.type === 'checkbox' ? el.checked : (el.type === 'range' ? +el.value : el.value); }); }
     function yaz() {
@@ -433,6 +438,25 @@
       if (kes) { bas = Math.max(0, pz - SR); var son = Math.min(p.L.length, pz + Math.min(sL.length, SR * 10) + SR); dL = p.L.slice(bas, son); dR = p.R === p.L ? dL : p.R.slice(bas, son); sL = sL.slice(0, Math.min(sL.length, SR * 10)); sR = kaynak.R === kaynak.L ? sL : sR.slice(0, sL.length); }
       return { sonuc: A.karistir(dL, dR, sL, sR, pz - bas, dd, kd, +d.fi, +d.fo, !!d.uzat, SR), kd: kd };
     }
+    var canli = null;
+    function canliAyar(d) { if (!canli || S.cal !== canli.h) return; var t = ac().currentTime; canli.gD.gain.setTargetAtTime(A.dB(+d.hDb), t, 0.03); canli.gS.gain.setTargetAtTime(A.dB(kaynakDb(d, canli.pz)), t, 0.03); }
+    function canliBasla(d) {
+      durdur(); var c = ac(), pz = pozisyon(d), uz = Math.min(kaynak.L.length, SR * 12), bas = Math.max(0, pz - SR * 2), son = Math.min(p.L.length, pz + uz + SR * 2), dn = Math.max(SR, Math.max(son - bas, pz - bas + uz));
+      var db = c.createBuffer(2, dn, SR), sb = c.createBuffer(2, uz, SR), i, kR = kaynak.R || kaynak.L;
+      var dl = db.getChannelData(0), dr = db.getChannelData(1); for (i = 0; i < dn && bas + i < p.L.length; i++) { dl[i] = p.L[bas + i]; dr[i] = p.R[bas + i]; }
+      sb.getChannelData(0).set(kaynak.L.subarray(0, uz)); sb.getChannelData(1).set(kR.subarray(0, uz));
+      var gD = c.createGain(), gS = c.createGain(); gD.connect(c.destination); gS.connect(c.destination); gD.gain.value = A.dB(+d.hDb);
+      var h = { gD: gD, gS: gS, pz: pz, live: true, s: [], onended: null, stop: function () { h.live = false; h.s.forEach(function (x) { try { x.onended = null; x.stop(); } catch (e) {} }); } };
+      canli = h; h.h = h; S.cal = h; S.calP = null; $('#oynatBtn').textContent = '■ Durdur';
+      function tur() {
+        if (!h.live) return; var t0 = c.currentTime + 0.03, kd = A.dB(kaynakDb(dAktif, pz)), fi = (+dAktif.fi || 0) / 1000;
+        gS.gain.cancelScheduledValues(t0); gS.gain.setValueAtTime(fi > 0 ? 0 : kd, t0); if (fi > 0) gS.gain.linearRampToValueAtTime(kd, t0 + fi);
+        var s1 = c.createBufferSource(); s1.buffer = db; s1.connect(gD); s1.start(t0);
+        var s2 = c.createBufferSource(); s2.buffer = sb; s2.connect(gS); s2.start(t0 + (pz - bas) / SR);
+        h.s = [s1, s2]; s1.onended = function () { if (S.cal === h && h.live) tur(); else if (S.cal === h) { S.cal = null; $('#oynatBtn').textContent = '▶ Oynat'; } };
+      }
+      var dAktif = d; h.guncelle = function (x) { dAktif = x; }; tur();
+    }
     var q = diyalog('Karıştırarak yapıştır (Mix Paste)', [
       { k: 'konum', ad: 'Nereye', tur: 'sec', sec: konumSec },
       { k: 'kDb', ad: 'Kaynak (kopyalanan) seviyesi', tur: 'slider', min: -40, max: 20, step: 0.5, birim: ' dB' },
@@ -444,7 +468,9 @@
       { k: 'alt', ad: 'Sesin altında kalacak fark', tur: 'slider', min: 0, max: 30, step: 0.5, birim: ' dB' }
     ], d0, {
       not: 'Kopyalanan bölüm (' + (kaynak.L.length / SR).toFixed(1) + ' sn) bu pencerenin üzerine karıştırılır; mevcut ses silinmez. “Seviyeyi kendisi eşitlesin” açıkken kaynak, ölçülen gürlüğe göre hedefin belirlediğiniz kadar altına yerleşir; müziği sese eşitlemek için bunu kullanın.',
-      onizle: function (d) { var r = karistirHesap(d, true).sonuc; return tepeyeAyarla(r); },
+      onizleAd: '▶ Canlı dinle',
+      onizle: function (d) { canliBasla(d); return null; },
+      degisince: function (d) { if (canli) canli.guncelle(d); canliAyar(d); },
       tamam: function (d) { calis('Karıştırılıyor', function () { var r = karistirHesap(d, false); degistir(p, r.sonuc.L, r.sonuc.R); toast('Karıştırıldı (kaynak ' + (r.kd > 0 ? '+' : '') + r.kd.toFixed(1) + ' dB)'); }); }
     });
     return q;
@@ -511,7 +537,7 @@
   /* ---------- Otomatik sekme ---------- */
   function otoListeleri() {
     var s1 = $('#otoSes'), s2 = $('#otoMuzik'), v1 = s1.value, v2 = s2.value;
-    s1.innerHTML = S.pen.length ? S.pen.map(function (p) { return '<option value="p' + p.id + '">Pencere: ' + esc(p.ad) + '</option>'; }).join('') : '<option value="">(önce ses aç ya da kayıt al)</option>';
+    s1.innerHTML = S.pen.length ? S.pen.map(function (p) { return '<option value="p' + p.id + '">Pencere: ' + esc(p.ad) + '</option>'; }).join('') : '<option value="">(önce ses yükle ya da kayıt al)</option>';
     s2.innerHTML = '<option value="">Müziksiz</option>' + S.kut.muzikler.map(function (m, i) { return '<option value="k' + i + '">Banka: ' + esc(m.ad) + '</option>'; }).join('') + S.pen.map(function (p) { return '<option value="p' + p.id + '">Pencere: ' + esc(p.ad) + '</option>'; }).join('');
     if (v1 && s1.querySelector('[value="' + v1 + '"]')) s1.value = v1; else { var son = S.pen.filter(function (p) { return p.tur === 'ses' || p.tur === 'sonuc'; }).pop(); if (son) s1.value = 'p' + son.id; }
     if (v2 && s2.querySelector('[value="' + v2 + '"]')) s2.value = v2;
@@ -523,7 +549,7 @@
     mesaj('Yükleniyor…'); var u = await Veri.url(k, tur), r = await fetch(u), b = await coz(await r.arrayBuffer()), s = stereoAl(b); mesaj(''); S.cache[key] = s; return s;
   }
   async function oto(yeniden) {
-    var pv = $('#otoSes').value, p = S.pen.filter(function (z) { return 'p' + z.id === pv; })[0]; if (!p) return toast('Önce bir ses açın, kaydedin ya da listeden seçin');
+    var pv = $('#otoSes').value, p = S.pen.filter(function (z) { return 'p' + z.id === pv; })[0]; if (!p) return toast('Önce bir ses yükleyin, kaydedin ya da listeden seçin');
     if (S.mesgul) return; S.mesgul = true; mesaj('Hazırlanıyor…'); await bekle();
     try {
       var muzik = null, mv = $('#otoMuzik').value;
@@ -574,9 +600,9 @@
   function A1(f) { return f; }
   var M = [
     ['Dosya', [
-      ['Ses aç…', 'Ctrl+O', function () { $('#dosyaSes').click(); }, 'Bilgisayarından bir konuşma kaydını yeni pencerede aç'],
-      ['Müzik aç…', '', function () { $('#dosyaMuzik').click(); }, 'Kendi müziğini yeni pencerede aç'],
-      ['Yeni boş pencere', '', I.yeni, 'Boş bir pencere aç, içine yapıştır ya da ekle'],
+      ['Dosya yükle…', 'Ctrl+O', function () { $('#dosyaSes').click(); }, 'Bilgisayarından bir ses dosyasını pencerede aç'],
+      ['Müzik yükle…', '', function () { $('#dosyaMuzik').click(); }, 'Kendi müziğini pencerede aç'],
+      ['Yeni pencere', '', I.yeni, 'Boş pencere açar. Kayıt alınca ya da dosya yükleyince bu pencereye gelir'],
       ['Mikrofonla kayıt', 'Ctrl+R', function () { kayitBasla(); }, 'Başlat / bitir. Kayıt yeni pencerede açılır'],
       ['Mikrofon seç…', '', mikSec, 'Birden fazla mikrofonun varsa hangisiyle kayıt yapılacağı'],
       '-',
@@ -639,7 +665,7 @@
       ['Seviyeyi küçült', '', function () { var p = akt(); if (p) { p.vz = Math.max(0.1, p.vz / 1.6); ciz(p); } }, 'Dalgayı dikeyde küçültür']]],
     ['Yardım', [
       ['Menü rehberi', '', menuRehberi, 'Hangi komut ne işe yarar, hepsi açıklamalı'],
-      ['Kısayollar', '', function () { bilgi('Kısayollar', '<p>Boşluk: oynat / durdur<br>Delete ya da Backspace: seçimi sil<br>Ctrl+Z / Ctrl+Y: geri al / yinele<br>Ctrl+X / C / V: kes / kopyala / yapıştır<br>Ctrl+M: karıştırarak yapıştır<br>Ctrl+A: hepsini seç<br>Ctrl+T: seçimi tut<br>Ctrl+O: ses aç<br>Ctrl+R: kayıt<br>Ctrl+E: dışa aktar<br>Fare tekerleği: yakınlaştır, Shift + tekerlek: kaydır, Alt + tekerlek: seviye<br>Seçimi tutup başka pencereye sürükle: karıştırarak yapıştır</p>'); }, ''],
+      ['Kısayollar', '', function () { bilgi('Kısayollar', '<p>Boşluk: oynat / durdur<br>Delete ya da Backspace: seçimi sil<br>Ctrl+Z / Ctrl+Y: geri al / yinele<br>Ctrl+X / C / V: kes / kopyala / yapıştır<br>Ctrl+M: karıştırarak yapıştır<br>Ctrl+A: hepsini seç<br>Ctrl+T: seçimi tut<br>Ctrl+O: dosya yükle<br>Ctrl+R: kayıt<br>Ctrl+E: dışa aktar<br>Fare tekerleği: yakınlaştır, Shift + tekerlek: kaydır, Alt + tekerlek: seviye<br>Seçimi tutup başka pencereye sürükle: karıştırarak yapıştır</p>'); }, ''],
       ['Nasıl çalışır?', '', function () { bilgi('Nasıl çalışır?', '<p><b>Otomatik:</b> sesi ve müziği seçin, “Otomatik hazırla”ya basın.</p><p><b>Manuel stüdyo:</b> her ses kendi penceresinde açılır. Bir pencerede bölüm seçip kopyalayın, diğerine “Karıştırarak yapıştır” deyin. Müziği ses penceresine sürükleyerek de karıştırabilirsiniz.</p><p><b>Dışa aktar:</b> hazır olunca Dosya menüsünden MP3, WAV ya da santral dosyası olarak kaydedin.</p>'); }, '']]]
   ];
   function menuRehberi() {
@@ -667,7 +693,7 @@
   $('#oynatBtn').onclick = oynatToggle;
   $('#basaBtn').onclick = function () { var p = akt(); durdur(); if (p) { p.imlec = 0; p.sec = null; p.bas = 0; guncelle(); } };
   $('#kayitBtn').onclick = kayitBasla; $('#otoKayit').onclick = function () { sekme('manuel'); kayitBasla(); };
-  $('#sesAc').onclick = $('#otoSesAc').onclick = function () { $('#dosyaSes').click(); }; $('#muzikAc').onclick = $('#otoMuzikAc').onclick = function () { $('#dosyaMuzik').click(); };
+  $('#sesAc').onclick = $('#otoSesAc').onclick = function () { $('#dosyaSes').click(); }; $('#otoMuzikAc').onclick = function () { $('#dosyaMuzik').click(); };
   $('#yeniBtn').onclick = I.yeni;
   var sonAcilan = '';
   $('#dosyaSes').onchange = async function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) { var p = await dosyadanAc(f, 'ses'); if (p && S.tab !== 'oto') sekme('manuel'); else if (p) { $('#otoSes').value = 'p' + p.id; } } };

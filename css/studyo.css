@@ -16,7 +16,7 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .sekmeler button:hover{background:#e3e7ec}
 .sekmeler button.acik{background:#f3f4f6;color:#d83a2c;border-top:3px solid #d83a2c;margin-bottom:-1px;font-weight:600}
 .sekmeler .sagdurum{margin-left:auto;color:#d83a2c;font-size:13px;padding:.35rem}
-.menu{display:flex;background:#f3f4f6;border-bottom:1px solid #cfd4da;padding:0 .4rem;position:relative;z-index:30;flex-wrap:wrap}
+.menu{display:flex;background:#f3f4f6;border-bottom:1px solid #cfd4da;padding:0 .4rem;position:relative;z-index:50;flex-wrap:wrap}
 .menu>div{position:relative}
 .menu>div>button{background:none;border:0;padding:.45rem .85rem;color:#1d2430;cursor:pointer;font-size:14.5px}
 .menu>div:hover>button,.menu>div.ac>button{background:#dbe6f8}
@@ -35,7 +35,7 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 @keyframes nabiz{50%{opacity:.65}}
 #metre{width:90px;height:10px;background:#fff;border:1px solid #c3c9d1;border-radius:5px;overflow:hidden}
 #metre i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--yesil),#e0b84a 70%,var(--kirmizi))}
-.orta{flex:1;min-height:0;position:relative}
+.orta{flex:1;min-height:0;position:relative;z-index:1;isolation:isolate}
 .panel{display:none;position:absolute;inset:0;overflow:auto}
 .panel.acik{display:block}
 .alan{position:absolute;inset:0;overflow:hidden;background:#e4e7ec}
@@ -77,7 +77,7 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .satir{display:flex;gap:.6rem;align-items:center;background:#fff;border:1px solid #cfd4da;border-radius:8px;padding:.55rem .8rem}
 .satir b{flex:1;font-weight:500}
 .satir small{color:#5d6673}
-.perde{position:fixed;inset:0;background:rgba(20,25,35,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:1rem}
+.perde{position:fixed;inset:0;background:rgba(20,25,35,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
 .pencere{background:#fff;color:#1d2430;border:1px solid #bcc3cc;border-radius:8px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .pencere h3{padding:.8rem 1rem;border-bottom:1px solid #dde1e6;font-size:1.3rem;background:#f3f4f6}
 .pencere .govde{padding:1rem;display:grid;gap:.8rem}
@@ -89,5 +89,13 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .sat output{text-align:right;color:#d83a2c;font-weight:500}
 .bant{display:grid;grid-template-columns:110px 1fr 1fr 1fr 28px;gap:.3rem;align-items:center}
 .bant input,.bant select{padding:.25rem .35rem;font-size:13px}
-.tasiGhost{position:fixed;z-index:100;background:#d83a2c;color:#fff;padding:.3rem .7rem;border-radius:6px;font-size:13px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.tasiGhost{position:fixed;z-index:1100;background:#d83a2c;color:#fff;padding:.3rem .7rem;border-radius:6px;font-size:13px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 @media(max-width:700px){.sat{grid-template-columns:1fr 1fr 60px}.pen{min-width:300px}}
+
+.kayitDugme{width:42px;height:42px;border-radius:50%;border:3px solid #fff;background:#d83a2c;box-shadow:0 0 0 2px #9d2a20,0 2px 6px rgba(0,0,0,.35);cursor:pointer;padding:0;position:relative;flex:none}
+.kayitDugme i{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff}
+.kayitDugme:hover{background:#ec4a3a}
+.kayitDugme.kayitta{animation:nabiz 1s infinite}
+.kayitDugme.kayitta i{border-radius:2px}
+
+#toast{z-index:2000!important}

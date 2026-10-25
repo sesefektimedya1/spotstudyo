@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap&subset=latin-ext">
-<link rel="stylesheet" href="css/stil.css?v=3"><link rel="stylesheet" href="css/studyo.css?v=3"><title>Stüdyo — SpotStüdyo</title></head>
+<link rel="stylesheet" href="css/stil.css?v=5"><link rel="stylesheet" href="css/studyo.css?v=5"><title>Stüdyo — SpotStüdyo</title></head>
 <body class="st">
 <div class="sekmeler" id="sekmeler">
  <button data-t="oto">Otomatik</button><button data-t="manuel" class="acik">Manuel stüdyo</button><button data-t="ses">Ses bankası</button><button data-t="muzik">Müzik bankası</button>
@@ -8,15 +8,14 @@
 </div>
 <div id="menu" class="menu"></div>
 <div class="arac" id="arac">
+ <button class="kayitDugme" id="kayitBtn" title="Kayıt: mikrofonla kayıt başlatır, tekrar basınca bitirir (Ctrl+R)"><i></i></button>
+ <button class="btn" id="yeniBtn" title="Yeni boş pencere aç. Sonra kırmızı kayıt düğmesine basın"><svg width="14" height="16" viewBox="0 0 14 16" style="vertical-align:-2px;margin-right:6px"><path d="M1.5 1h7l4 4v10h-11z" fill="#fff" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 1v4h4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>Yeni pencere</button>
+ <button class="btn" id="sesAc" title="Bilgisayarınızdan ses dosyası yükle (Ctrl+O)"><svg width="17" height="14" viewBox="0 0 17 14" style="vertical-align:-2px;margin-right:6px"><path d="M1 2h5l1.5 2H16v9H1z" fill="#f6d36b" stroke="#8a6d12" stroke-width="1.2"/></svg>Dosya yükle…</button>
+ <span class="ayir"></span>
  <button class="btn" id="oynatBtn" title="Oynat / Durdur (Boşluk)">▶ Oynat</button>
  <button class="btn" id="basaBtn" title="Başa dön">⏮</button>
- <button class="btn" id="kayitBtn" title="Mikrofonla kayıt: yeni pencerede açılır (Ctrl+R)">● Kayıt</button>
  <div id="metre" title="Mikrofon seviyesi"><i></i></div>
  <div class="zaman" id="zaman">0:00.0</div>
- <span class="ayir"></span>
- <button class="btn" id="sesAc" title="Ses dosyasını yeni pencerede aç (Ctrl+O)">Ses aç…</button>
- <button class="btn" id="muzikAc" title="Müzik dosyasını yeni pencerede aç">Müzik aç…</button>
- <button class="btn" id="yeniBtn" title="Boş yeni pencere">Yeni pencere</button>
  <span class="ayir"></span>
  <button class="btn kucuk" data-i="geri" title="Geri al (Ctrl+Z)">↶ Geri al</button>
  <button class="btn kucuk" data-i="yinele" title="Yinele (Ctrl+Y)">↷ Yinele</button>
@@ -35,13 +34,13 @@
  <button class="btn ana" data-i="disa" title="MP3, WAV ya da santral dosyası olarak kaydet (Ctrl+E)">Dışa aktar…</button>
 </div>
 <div class="orta" id="orta">
- <section id="p-manuel" class="panel acik"><div id="alan" class="alan"><div id="bosAlan" class="bosalan"><b>Çalışma alanı boş</b><span>Her ses kendi penceresinde açılır. <u>Ses aç…</u> deyin, <u>● Kayıt</u> ile mikrofondan alın ya da bir dosyayı buraya sürükleyin.</span></div></div></section>
+ <section id="p-manuel" class="panel acik"><div id="alan" class="alan"><div id="bosAlan" class="bosalan"><b>Çalışma alanı boş</b><span>Her ses kendi penceresinde açılır. <u>Yeni pencere</u> açın, kırmızı <u>kayıt</u> düğmesiyle mikrofondan alın ya da <u>Dosya yükle…</u> deyin. Dosyayı buraya sürükleyip de bırakabilirsiniz.</span></div></div></section>
  <section id="p-oto" class="panel">
   <div class="otoKutu">
    <h2>Otomatik hazırla</h2>
    <p class="sol">Sesinizi seçin, müziği seçin, bir tuşa basın. Temizlik, ton, müzik karışımı ve ses seviyesi kendiliğinden ayarlanır.</p>
-   <div class="otoSatir"><label>1. Ses</label><select id="otoSes"></select><button class="btn kucuk" id="otoSesAc">Ses aç…</button><button class="btn kucuk" id="otoKayit">● Kayıt</button></div>
-   <div class="otoSatir"><label>2. Müzik</label><select id="otoMuzik"></select><button class="btn kucuk" id="otoMuzikAc">Müzik aç…</button></div>
+   <div class="otoSatir"><label>1. Ses</label><select id="otoSes"></select><button class="btn kucuk" id="otoSesAc">Dosya yükle…</button><button class="btn kucuk" id="otoKayit">● Kayıt</button></div>
+   <div class="otoSatir"><label>2. Müzik</label><select id="otoMuzik"></select><button class="btn kucuk" id="otoMuzikAc">Müzik yükle…</button></div>
    <div class="otoSatir"><label>3. Çıkış</label><select id="hedef"><option value="radyo">Radyo (−11,6 LUFS)</option><option value="tv">Televizyon (−23 LUFS)</option><option value="santral">Santral (8 kHz WAV)</option></select></div>
    <div class="otoSatir"><button class="btn ana" id="otoBtn">Otomatik hazırla</button><button class="btn" id="yenidenBtn">Yeniden dene</button><span class="tarz" id="tarzAd"></span></div>
    <div class="sonucKutu"><canvas id="cSonuc"></canvas><div class="bos" id="bosSonuc">Sonuç burada görünür</div></div>
@@ -53,5 +52,5 @@
 </div>
 <div class="durum" hidden><span>Pencere: <b id="dPen">—</b></span><span>Seçim: <b id="dSecim">yok</b></span><span>Ses: <b id="dSes">—</b></span></div>
 <input type="file" id="dosyaSes" accept="audio/*,video/*" hidden><input type="file" id="dosyaMuzik" accept="audio/*" hidden>
-<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/ortak.js"></script><script src="js/motor.js?v=3"></script><script src="js/araclar.js?v=3"></script><script src="js/studyo.js?v=3"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js"></script><script src="js/veri.js"></script><script src="js/ortak.js"></script><script src="js/motor.js?v=5"></script><script src="js/araclar.js?v=5"></script><script src="js/studyo.js?v=5"></script>
 </body></html>

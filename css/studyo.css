@@ -28,13 +28,7 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .acilir button>div{display:flex;flex-direction:column;align-items:flex-start;gap:.05rem}
 .acilir button small{color:#5d6673;font-size:12px;font-weight:400;text-align:left}
 .acilir hr{border:0;border-top:1px solid #dde1e6;margin:.3rem 0}
-.arac{display:flex;gap:.4rem;align-items:center;padding:.4rem .7rem;background:#f3f4f6;border-bottom:1px solid #cfd4da;flex-wrap:wrap}
-.arac .zaman{font-family:'Barlow Condensed';font-size:1.7rem;min-width:7.5ch;color:#1d2430;letter-spacing:.03em}
-.arac .ayir{width:1px;align-self:stretch;background:#cfd4da;margin:0 .25rem}
-#kayitBtn.kayitta{background:var(--kirmizi);border-color:var(--kirmizi);color:#fff;animation:nabiz 1s infinite}
 @keyframes nabiz{50%{opacity:.65}}
-#metre{width:90px;height:10px;background:#fff;border:1px solid #c3c9d1;border-radius:5px;overflow:hidden}
-#metre i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--yesil),#e0b84a 70%,var(--kirmizi))}
 .orta{flex:1;min-height:0;position:relative;z-index:1;isolation:isolate}
 .panel{display:none;position:absolute;inset:0;overflow:auto}
 .panel.acik{display:block}
@@ -92,11 +86,6 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .tasiGhost{position:fixed;z-index:1100;background:#d83a2c;color:#fff;padding:.3rem .7rem;border-radius:6px;font-size:13px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 @media(max-width:700px){.sat{grid-template-columns:1fr 1fr 60px}.pen{min-width:300px}}
 
-.kayitDugme{width:42px;height:42px;border-radius:50%;border:3px solid #fff;background:#d83a2c;box-shadow:0 0 0 2px #9d2a20,0 2px 6px rgba(0,0,0,.35);cursor:pointer;padding:0;position:relative;flex:none}
-.kayitDugme i{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff}
-.kayitDugme:hover{background:#ec4a3a}
-.kayitDugme.kayitta{animation:nabiz 1s infinite}
-.kayitDugme.kayitta i{border-radius:2px}
 
 #toast{z-index:2000!important}
 
@@ -150,11 +139,61 @@ body.st input[type=text],body.st input[type=number],body.st select{background:#f
 .btn.buyuk{padding:.8rem 1.4rem;font-size:16px}
 @media(max-width:1000px){.otoSayfa{grid-template-columns:1fr}.otoSag{position:static}}
 
-.arac{gap:.3rem;padding:.3rem .6rem}
-.arac .btn{padding:.3rem .65rem;font-size:13.5px}
-.arac .btn.kucuk{padding:.25rem .5rem;font-size:13px}
-.arac .zaman{font-size:1.45rem;min-width:6.5ch}
-.kayitDugme{width:36px;height:36px}
-#metre{width:60px}
-.arac .ayir{margin:0 .1rem}
-.sekmeler button{padding:.4rem 1.2rem}
+
+/* ===== Sound Forge tarzı üst bölüm ===== */
+body.st{font-family:'Segoe UI','Open Sans',Tahoma,system-ui,sans-serif;font-size:13px}
+body.st .ust{padding:.25rem .9rem;gap:.9rem}
+body.st .logo{font-size:1.2rem}
+body.st .ust nav a,body.st .sag{font-size:13px}
+.sekmeler{padding:.25rem .5rem 0;gap:2px}
+.sekmeler button{padding:.28rem 1.1rem;font-size:13px;border-radius:4px 4px 0 0}
+.menu{padding:0 .2rem}
+.menu>div>button{padding:.22rem .7rem;font-size:13px}
+.acilir button{font-size:13px;padding:.3rem .9rem}
+.arac{display:flex;align-items:stretch;gap:.5rem;padding:3px 6px;background:#ecebe8;border-bottom:1px solid #b8b6b0}
+.aracSol{flex:1;display:flex;flex-wrap:wrap;gap:3px 0;align-content:flex-start;min-width:0}
+.grup{display:flex;gap:1px;padding:0 5px;border-left:1px solid #c6c4be;align-items:center}
+.grup:first-child{border-left:0;padding-left:0}
+.ik{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid transparent;border-radius:2px;cursor:pointer;padding:0;color:#2b3440}
+.ik:hover{background:#fff;border-color:#8fb0e6}
+.ik:active,.ik.on{background:#cfe0fa;border-color:#5b8fd8}
+.ik svg{display:block;overflow:visible}
+.ik svg *{fill:none;stroke:#3b4656;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ik svg .f{fill:#fff}.ik svg .fl{fill:#cfe0fa}.ik svg .fd{fill:#3b4656;stroke:#3b4656}
+.ik svg .fb{fill:#2f6fd0;stroke:#2f6fd0}.ik svg .fg{fill:#2e9d57;stroke:#2e9d57}
+.ik svg .fr{fill:#d83a2c;stroke:#d83a2c}.ik svg .fo{fill:#f08a24;stroke:#c96d10}
+.ik svg .y{fill:#f3cf6b;stroke:#8a6d12}
+.ik svg .b{stroke:#2f6fd0}.ik svg .o{stroke:#e8801a}.ik svg .r{stroke:#d83a2c}.ik svg .g{stroke:#2e9d57}
+.ik svg .fr+.r{stroke:#8d2318}
+.kayitIk svg{width:22px;height:22px}
+.kayitIk.kayitta{background:#fde3df;border-color:#d83a2c;animation:nabiz 1s infinite}
+@keyframes nabiz{50%{opacity:.6}}
+.aracSag{display:flex;flex-direction:column;gap:3px;justify-content:center;width:300px;flex:none;border-left:1px solid #c6c4be;padding-left:8px}
+.led{background:#0b0d10;border:1px solid #6d6a63;border-radius:2px;padding:0 10px;text-align:right}
+.led span{font-family:'Barlow Condensed',monospace;font-size:28px;line-height:34px;color:#3dff85;letter-spacing:.06em;font-weight:500}
+.metreKutu{position:relative}
+#metre{height:9px;background:#0b0d10;border:1px solid #6d6a63;border-radius:1px;overflow:hidden}
+#metre i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2e9d57 0 65%,#e0b84a 65% 85%,#d83a2c 85%)}
+.skala{display:flex;justify-content:space-between;font-size:9.5px;color:#5d6673;line-height:11px}
+.skala u{text-decoration:none}
+/* sayfa kenar boşlukları: yaklaşık 1 cm */
+.alan{background:#a9acb2}
+.bankaKutu,.otoKutu{max-width:none;margin:0;padding:1.1rem 40px 2rem}
+.otoSayfa{max-width:none;margin:0;padding:1.1rem 40px 2rem}
+.bosalan{color:#2b3440}.bosalan b{font-size:1.25rem}
+/* alt durum çubuğu */
+.durum{display:flex;background:#ecebe8;border-top:1px solid #b8b6b0;font-size:12px;color:#2b3440}
+.durum span{padding:2px 12px;border-right:1px solid #c6c4be;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.durum span:nth-child(3){flex:1}
+.durum .sag{border-right:0;margin-left:auto}
+/* diyalog başlığı */
+.pencere{border-radius:3px;border-color:#7a8aa3}
+.pencere h3{font-family:'Segoe UI','Open Sans',sans-serif;font-size:13px;font-weight:600;padding:.4rem .8rem;background:#fff;border-bottom:1px solid #c6c4be}
+.pencere .alt{background:#ecebe8}
+
+.pen .zb{background:#ecebe8;border-top:1px solid #b8b6b0;gap:1px;padding:0 6px}
+.pen .zb .ik{width:24px;height:24px}
+.pen .zb .ik svg{width:16px;height:16px}
+.pen .zb .ay{margin:0 5px;background:#c6c4be}
+.pen .zb .bir{font-size:10.5px;font-weight:600;color:#3b4656}
+.pen .zb .sure{font-size:12px}

@@ -29,8 +29,10 @@
     el.innerHTML = '<div class="bas"><b></b><small></small><button class="wb mn" title="Küçült (alta indir)"><svg viewBox="0 0 12 12" width="11" height="11"><path d="M2 9h8" stroke="currentColor" stroke-width="1.6"/></svg></button><button class="wb mx" title="Büyüt / eski boyuta dön"><svg viewBox="0 0 12 12" width="11" height="11"><rect x="2" y="2" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button><button class="x" title="Pencereyi kapat">✕</button></div><div class="ov" title="Genel görünüm: tıklayıp sürükleyerek gezinin"><canvas></canvas></div><div class="dalga"><canvas class="cv"></canvas></div><div class="kay" title="Kaydırma çubuğu"><div class="th"></div></div><i class="rz rzr" data-d="r"></i><i class="rz rzl" data-d="l"></i><i class="rz rzb" data-d="b"></i><i class="rz rzbr" data-d="rb"></i><i class="rz rzbl" data-d="lb"></i><div class="zb">' + zbHtml() + '<span class="sure"></span></div>';
     alan.appendChild(el); p.el = el; p.cv = $('.cv', el); p.ovc = $('.ov canvas', el); p.kay = $('.kay', el); p.th = $('.th', el);
     var w = alan.clientWidth, h = alan.clientHeight, n = S.pen.length;
-    var MG = 110, yuk = 340, satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
+    var gizli = !alan.clientHeight, pn = null; if (gizli) { pn = alan.closest('.panel'); if (pn) { pn.classList.add('acik'); w = alan.clientWidth; h = alan.clientHeight; } }
+    var MG = 110, yuk = (n === 0 && h > 340) ? h - 16 : 340, satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
     el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 8 + ((n - satir) % 6 + 1) * 28) + 'px';
+    if (gizli && pn && S.tab !== 'manuel') pn.classList.remove('acik');
     S.pen.push(p); kenarlar(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
     baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle();
     if (window.ResizeObserver) new ResizeObserver(function () { if (p.el.isConnected) ciz(p); }).observe(p.el);
@@ -651,21 +653,25 @@
       var d = document.createElement('div'); d.className = 'perde';
       var ad0 = (p.ad || 'Ses').replace(/\.(wav|mp3)$/i, '');
       d.innerHTML = '<div class="pencere" role="dialog" aria-modal="true" style="width:min(520px,100%)"><h3>Nereye kaydedilsin?</h3><div class="govde">' +
-        '<label class="kn"><input type="radio" name="kn" value="calisma"><span><b>Çalışma alanıma</b><small>Bu tarayıcıda durur. Dosya menüsü > Çalışma alanı’ndan tekrar açarsınız.</small></span></label>' +
-        '<label class="kn"><input type="radio" name="kn" value="wav"><span><b>Bilgisayarıma, WAV olarak</b><small>Masaüstü ya da istediğiniz klasörü seçersiniz. İndirme hakkından düşmez.</small></span></label>' +
-        '<label class="kn"><input type="radio" name="kn" value="mp3"><span><b>Bilgisayarıma, MP3 olarak</b><small>Masaüstü ya da istediğiniz klasörü seçersiniz. İndirme hakkından 1 düşer.</small></span></label>' +
+        '<p class="not" style="margin:0 0 8px">İkisini birden de seçebilirsiniz.</p>' +
+        '<label class="kn"><input type="checkbox" id="knCal"><span><b>Çalışma alanıma</b><small>Bu tarayıcıda durur. Dosya menüsü > Çalışma alanı’ndan tekrar açarsınız.</small></span></label>' +
+        '<div style="margin:8px 0 4px"><b>Bilgisayarıma da kaydet</b> <small>(masaüstü ya da istediğiniz klasör)</small></div>' +
+        '<label class="kn"><input type="radio" name="kn" value="yok"><span><b>Hayır</b></span></label>' +
+        '<label class="kn"><input type="radio" name="kn" value="wav"><span><b>WAV olarak</b><small>İndirme hakkından düşmez.</small></span></label>' +
+        '<label class="kn"><input type="radio" name="kn" value="mp3"><span><b>MP3 olarak</b><small>İndirme hakkından 1 düşer.</small></span></label>' +
         '<div class="sat"><label style="margin:0">Dosya adı</label><input type="text" id="knAd" style="grid-column:2/4"></div></div>' +
         '<div class="alt"><button class="btn" data-k="iptal">İptal</button><button class="btn ana" data-k="tamam">Kaydet</button></div></div>';
       document.body.appendChild(d); $('#knAd', d).value = ad0;
-      var r = $('input[value=' + KN.tur + ']', d); if (r) r.checked = true;
+      $('#knCal', d).checked = KN.cal !== false; var r = $('input[name=kn][value=' + (KN.bil || 'wav') + ']', d); if (r) r.checked = true;
       function bit(v) { d.remove(); document.removeEventListener('keydown', kd, true); res(v); }
       function kd(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); bit(false); } }
       document.addEventListener('keydown', kd, true);
       $('[data-k=iptal]', d).onclick = function () { bit(false); };
       $('[data-k=tamam]', d).onclick = async function () {
-        var tur = ($('input[name=kn]:checked', d) || {}).value || 'calisma', ad = ($('#knAd', d).value || ad0).trim() || ad0; KN.tur = tur;
+        var bil = ($('input[name=kn]:checked', d) || {}).value || 'yok', cal = $('#knCal', d).checked, ad = ($('#knAd', d).value || ad0).trim() || ad0; KN.bil = bil; KN.cal = cal;
+        if (!cal && bil === 'yok') return toast('Bir yer seçin: çalışma alanı ve/veya bilgisayar');
         var b = $('[data-k=tamam]', d); b.disabled = true;
-        try { var ok = await kaydetYaz(p, tur, ad); if (ok) { d.remove(); document.removeEventListener('keydown', kd, true); res(true); } else b.disabled = false; }
+        try { var ok = true; if (cal) ok = await kaydetYaz(p, 'calisma', ad); if (ok && bil !== 'yok') ok = await kaydetYaz(p, bil, ad); if (ok) { d.remove(); document.removeEventListener('keydown', kd, true); res(true); } else b.disabled = false; }
         catch (e) { b.disabled = false; hata(e); }
       };
     });
@@ -980,6 +986,7 @@
       ['Farklı kaydet…', 'Ctrl+Shift+S', farkliKaydet, 'Yeni bir adla, istediğiniz yere (çalışma alanı, masaüstü ya da klasör) kaydeder'],
       ['Tümünü kaydet', '', tumunuKaydet, 'Açık bütün pencereleri çalışma alanına kaydeder'],
       '-',
+      ['Otomatiğe gönder', '', otoyaGonder, 'Bu penceredeki sesi (seçim varsa yalnız seçimi) Otomatik sekmesinde kaynak olarak seçer; masaüstüne kaydetmeniz gerekmez'],
       ['Dışa aktar…', 'Ctrl+E', I.disa, 'MP3, WAV ya da santral dosyası olarak hazırlar (MP3 ve santral indirme hakkından düşer)'],
       '-',
       ['Panelime dön', '', function () { location.href = 'panel'; }, '']]],
@@ -1239,7 +1246,15 @@
   $('#otoBtn').onclick = function () { oto(false); }; $('#yenidenBtn').onclick = function () { oto(true); };
   $('#sonucDur').onclick = function () { durdur(); };
   $('#sonucCal').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); if (S.cal) durdur(); else calDizi(S.sonuc.L, S.sonuc.R, null, 0); };
-  $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); otoListeleri(); sekme('manuel'); };
+  $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); sekme('manuel'); var p = pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); buyut(p); otoListeleri(); };
+  function otoyaGonder() {
+    var p = akt(); if (!p) return toast('Önce manuel stüdyoda bir pencere seçin');
+    if (p.bos) return toast('Bu pencere boş');
+    otoListeleri(); var id = p.id;
+    if (p.sec && p.sec[1] - p.sec[0] > SR * 0.2) { var q = panoAl(p), y = pencereAc(p.ad + ' (seçim)', q.L, q.R || q.L, 'ses'); id = y.id; otoListeleri(); kucult(y); }
+    sekme('oto'); $('#otoSes').value = 'p' + id; toast('“' + p.ad + '” Otomatik sekmesine kaynak olarak eklendi. “Otomatik hazırla”ya basın.');
+  }
+  if ($('#otoyaGonder')) $('#otoyaGonder').onclick = otoyaGonder;
   $('#sonucPaylas').onclick = paylas;
   $('#sonucDisa').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); disaDlg('sonuc'); };
   document.addEventListener('dragover', function (e) { e.preventDefault(); if (S.tab === 'manuel') alan.classList.add('birak'); });

@@ -67,3 +67,6 @@ th{color:var(--sol);font-weight:500}
 .gbBtn{background:transparent;border:1px solid var(--cizgi);color:var(--yazi);border-radius:8px;padding:.3rem .8rem;font-size:13.5px;cursor:pointer}.gbBtn:hover{border-color:#8fb0e6;color:#1f5fd6}
 
 .ops{opacity:.65;font-weight:400}.ipucu{color:var(--sol);font-size:12.5px;margin-top:.35rem}
+.logo .logoIk{display:inline-block;vertical-align:-.25em;margin-right:.45em}
+#altBilgi{text-align:center;padding:1.6rem 1rem 2.2rem;font-size:13px;color:var(--sol)}#altBilgi a{color:inherit;text-decoration:none;font-weight:600}
+.hkSayfa{max-width:760px}.hkSayfa h1{font-size:2rem;margin:.2rem 0 1rem}.hkSayfa p{line-height:1.75;margin:0 0 1.1rem;font-size:16px}.hkSayfa .hkIletisim{margin-top:1.6rem;padding-top:1.2rem;border-top:1px solid var(--cizgi)}

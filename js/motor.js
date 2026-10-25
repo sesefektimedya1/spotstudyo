@@ -385,7 +385,7 @@
     return ak;
   }
   function miksle(vL, vR, sr, muzik, p) {
-    var vlen = vL.length, giris = muzik ? Math.round((p.giris || 0) * sr) : 0, kuyruk = Math.round((muzik ? p.kuyruk : 0.1) * sr);
+    var vlen = vL.length, giris = muzik ? Math.round((p.giris || 0) * sr) : 0, vurus = !!(muzik && p.bitis === 'vurus'), kuyruk = Math.round((muzik ? (vurus ? Math.max(p.kuyruk, 2.2) : p.kuyruk) : 0.1) * sr);
     var n = giris + vlen + kuyruk, oL = new Float32Array(n), oR = new Float32Array(n), i;
     for (i = 0; i < vlen; i++) { oL[giris + i] = vL[i]; oR[giris + i] = vR[i]; }
     var sesLufs = lufs([vL, vR], sr), muzikLufs = null;
@@ -404,9 +404,11 @@
         var a = sm[Math.max(0, Math.min(nf - 1, i0))], b = sm[Math.max(0, Math.min(nf - 1, i0 + 1))], act = a + (b - a) * fk;
         var g = dB(baz + (1 - act) * yuk);
         if (i < fadeI) g *= i / fadeI;
-        var kal = n - i; if (kal < fadeO) g *= 0.5 - 0.5 * Math.cos(Math.PI * kal / fadeO);
+        if (vurus) { var hitI = giris + vlen + Math.round(0.35 * sr), kes = Math.round(0.12 * sr); if (i > hitI) g *= i > hitI + kes ? 0 : 0.5 + 0.5 * Math.cos(Math.PI * (i - hitI) / kes); }
+        else { var kal = n - i; if (kal < fadeO) g *= 0.5 - 0.5 * Math.cos(Math.PI * kal / fadeO); }
         oL[i] += m.L[i] * g; oR[i] += m.R[i] * g;
       }
+      if (vurus) { var v = vurusUret(sr, 1.9), hi = giris + vlen + Math.round(0.35 * sr), vg = dB(sesLufs - 4 - toDb(Math.max(1e-4, Math.sqrt(rmsLin(v.subarray(0, Math.round(0.25 * sr))))))); for (i = 0; i < v.length && hi + i < n; i++) { oL[hi + i] += v[i] * vg; oR[hi + i] += v[i] * vg; } }
     }
     return { L: oL, R: oR, sesBasi: giris / sr, sesLufs: sesLufs, muzikLufs: muzikLufs };
   }
@@ -476,18 +478,20 @@
     { ad: 'Dengeli radyo', temizle: 'standart', ton: 'uRadyo', kuvvet: 'radyo', efekt: 'yok', muzik: { altDb: 15, yuksel: 1.5, giris: 1, kuyruk: 1.2, cikisFade: 1 } },
     { ad: 'Sıcak', temizle: 'standart', ton: 'uSicak', kuvvet: 'radyo', efekt: 'oda', muzik: { altDb: 14, yuksel: 2, giris: 1.2, kuyruk: 1.4, cikisFade: 1.2 } },
     { ad: 'Parlak', temizle: 'standart', ton: 'uParlak', kuvvet: 'siki', efekt: 'yok', muzik: { altDb: 16, yuksel: 2, giris: 0.9, kuyruk: 1.1, cikisFade: 1 } },
-    { ad: 'Enerjik', temizle: 'standart', ton: 'uParlak', kuvvet: 'siki', efekt: 'plak', muzik: { altDb: 13, yuksel: 3, giris: 0.8, kuyruk: 1, cikisFade: 0.8 } },
+    { ad: 'Enerjik', temizle: 'standart', ton: 'uParlak', kuvvet: 'siki', efekt: 'plak', muzik: { altDb: 13, yuksel: 3, giris: 0.8, kuyruk: 1, cikisFade: 0.8, bitis: 'vurus' } },
     { ad: 'Tok ve resmi', temizle: 'standart', ton: 'uTok', kuvvet: 'radyo', efekt: 'yok', muzik: { altDb: 17, yuksel: 2, giris: 1.4, kuyruk: 1.5, cikisFade: 1.2 } }
   ];
 
   function varsayilanZincir() {
     return {
+      agiz: { aktif: true, guc: 1 },
+      deess: { aktif: true, oran: 3 },
       gurultu: { aktif: true, db: 18, bias: 0, hiz: 50, iz: null },
       kapi: { aktif: true, esik: null, konum: 0.45, aralik: 70, bekle: 20, ac: 8, kapa: 40 },
       ton: { onayar: 'duz', bantlar: [] },
       kuvvet: { aktif: true, esik: -8.1, oran: 4, atak: 40, birak: 80, makyaj: 2, diz: 6 },
       efekt: { tur: 'yok', onayar: 'yok', p: {} },
-      muzik: { altDb: 15, yuksel: 1.5, giris: 1, kuyruk: 1.2, cikisFade: 1, girisFade: 0.05, duckAtak: 200, duckBirak: 600 },
+      muzik: { altDb: 15, yuksel: 1.5, giris: 1, kuyruk: 1.2, cikisFade: 1, girisFade: 0.05, duckAtak: 200, duckBirak: 600, bitis: 'fade' },
       seviye: { tur: 'radyo', hedef: -11.6, tavan: -1.5 }
     };
   }
@@ -498,25 +502,160 @@
     z.ton = { onayar: t.ton, bantlar: JSON.parse(JSON.stringify(TON[t.ton].bantlar)) };
     var K = KUVVET[t.kuvvet]; z.kuvvet = Object.assign({ aktif: true, diz: 6 }, K, K.uEsik != null ? { esik: K.uEsik } : {}); z.uretim = { aktif: true, hedefLufs: -20 };
     var E = EFEKT[t.efekt]; z.efekt = { tur: E.tur, onayar: t.efekt, p: JSON.parse(JSON.stringify(E.p)) };
-    z.muzik = Object.assign({}, z.muzik, t.muzik);
+    z.muzik = Object.assign({}, z.muzik, { bitis: 'fade' }, t.muzik);
+    if (!z.agiz) z.agiz = { aktif: true, guc: 1 }; if (!z.deess) z.deess = { aktif: true, oran: 3 };
     return z;
+  }
+
+
+  /* ---------- Ağız sesi (dudak/dil tıkırtısı) temizleyici ---------- */
+  function agizTemizle(x, sr, p) {
+    p = p || {}; var guc = p.guc == null ? 1 : p.guc, n = x.length, i, j;
+    if (n < sr / 10) return { y: x, adet: 0 };
+    var e = new Float32Array(n);
+    for (i = 2; i < n; i++) e[i] = Math.abs(x[i] - 2 * x[i - 1] + x[i - 2]);
+    var ps = new Float64Array(n + 1); for (i = 0; i < n; i++) ps[i + 1] = ps[i] + e[i] * e[i];
+    var W = Math.round(sr * 0.02), T = 7 / Math.max(0.4, guc);
+    var mx = 0, st = new Float32Array(n); for (i = 0; i < n; i++) st[i] = Math.abs(x[i]);
+    var srt = Array.prototype.slice.call(st.filter(function (v, k) { return k % 7 === 0; })).sort(function (a, b) { return a - b; }), ref = srt[Math.floor(srt.length * 0.995)] || 0.1;
+    var maxSpan = Math.round(sr * 0.012), sure = Math.round(sr * 0.0015);
+    var aralik = [], son = -1e9;
+    for (i = 3; i < n - 3; i++) {
+      var a = Math.max(0, i - W), b = Math.min(n, i + W), bas = Math.sqrt((ps[b] - ps[a] - e[i] * e[i]) / Math.max(1, b - a)) + 1e-5;
+      if (e[i] > T * bas && e[i] > 0.003) {
+        if (i - son <= sure && aralik.length) aralik[aralik.length - 1][1] = i; else aralik.push([i, i]);
+        son = i;
+      }
+    }
+    var y = Float32Array.from(x), adet = 0, lpk = biquadKatsayi('lp', sr, 1100, 0.7071), lp = null;
+    for (var k = 0; k < aralik.length; k++) {
+      var s0 = aralik[k][0] - Math.round(sr * 0.0008), s1 = aralik[k][1] + Math.round(sr * 0.0025);
+      s0 = Math.max(3, s0); s1 = Math.min(n - 4, s1);
+      if (s1 - s0 > maxSpan) continue;
+      var pk = 0; for (j = s0; j <= s1; j++) pk = Math.max(pk, Math.abs(x[j]));
+      if (pk > 0.22 * ref) continue; /* konuşmanın patlayıcı harfleri (p, t, k) bu kadar yüksektir; dokunma */
+      var lw0 = Math.max(0, s0 - W), lw1 = Math.min(n, s1 + W), lr = 0; for (j = lw0; j < lw1; j++) lr += x[j] * x[j]; if (10 * Math.log10(lr / Math.max(1, lw1 - lw0) + 1e-12) > -21) continue; /* yüksek sesli konuşma içi: ses zaten örter */
+      if (!lp) lp = biquadUygula(biquadUygula(x, lpk), lpk);
+      var cf = Math.round(sr * 0.0008);
+      for (j = s0 - cf; j <= s1 + cf; j++) {
+        if (j < 0 || j >= n) continue;
+        var w = j < s0 ? (j - (s0 - cf)) / cf : j > s1 ? 1 - (j - s1) / cf : 1;
+        y[j] = x[j] * (1 - w) + (lp[j] * 0.8) * w;
+      }
+      adet++;
+    }
+    return { y: y, adet: adet };
+  }
+
+  /* ---------- De-esser: s / ş harflerinin cızırtısını yumuşatır ---------- */
+  function deEss(x, sr, p) {
+    p = p || {}; var oran = p.oran || 3, n = x.length, i;
+    var bk = biquadKatsayi('bp', sr, p.frek || 7000, 1.1), band = biquadUygula(biquadUygula(x, bk), biquadKatsayi('hp', sr, 4500, 0.7071));
+    var env = new Float32Array(n), ca = Math.exp(-1 / (sr * 0.0015)), cr = Math.exp(-1 / (sr * 0.04)), c = 0;
+    for (i = 0; i < n; i++) { var a = Math.abs(band[i]); c = a > c ? ca * c + (1 - ca) * a : cr * c + (1 - cr) * a; env[i] = c; }
+    var sr2 = [], ad = Math.max(1, Math.floor(n / 4000));
+    for (i = 0; i < n; i += ad) sr2.push(env[i]);
+    sr2.sort(function (a, b) { return a - b; });
+    var esik = Math.max(1e-4, (sr2[Math.floor(sr2.length * (p.yuzde || 0.82))] || 0) * (p.carpan || 1));
+    var y = new Float32Array(n), x1 = 0, x2 = 0, y1 = 0, y2 = 0, k = null, maxAz = p.maxDb || 6, gdb = 0, fr = p.frek || 7000;
+    for (i = 0; i < n; i++) {
+      if (i % 48 === 0) {
+        var ex = env[i] > esik ? 20 * Math.log10(env[i] / esik) * (1 - 1 / oran) : 0; ex = Math.min(maxAz, ex);
+        gdb = ex > gdb ? ex : gdb + (ex - gdb) * 0.06; /* hızlı kıs, yavaş bırak */
+        k = biquadKatsayi('peak', sr, fr, 0.8, -gdb);
+      }
+      var xi = x[i], yi = k.b0 * xi + k.b1 * x1 + k.b2 * x2 - k.a1 * y1 - k.a2 * y2;
+      y[i] = yi; x2 = x1; x1 = xi; y2 = y1; y1 = yi;
+    }
+    return y;
+  }
+
+  /* ---------- Bitiş vuruşu ("dunk") ---------- */
+  function vurusUret(sr, sn) {
+    var n = Math.round(sn * sr), o = new Float32Array(n), ph = 0, i, nz = 12345;
+    for (i = 0; i < n; i++) {
+      var t = i / sr, f = 42 + 70 * Math.exp(-t * 18); ph += 2 * Math.PI * f / sr;
+      nz = (nz * 1103515245 + 12345) & 0x7fffffff; var r = (nz / 0x3fffffff) - 1;
+      o[i] = Math.sin(ph) * Math.exp(-t * 3.6) * 0.9 + r * Math.exp(-t * 28) * 0.35;
+    }
+    var ln = biquadKatsayi('lp', sr, 2600, 0.7071); return biquadUygula(o, ln);
+  }
+
+
+  /* ---------- Kayıt başındaki mikrofon açma takırtısı ---------- */
+  function baslangicTemizle(x, sr) {
+    var n = x.length, F = Math.round(sr * 0.01), nf = Math.floor(n / F), i, j;
+    if (nf < 60) return { y: x, kesildi: 0 };
+    var env = new Float64Array(nf);
+    for (i = 0; i < nf; i++) { var s = 0; for (j = 0; j < F; j++) { var v = x[i * F + j]; s += v * v; } env[i] = 10 * Math.log10(s / F + 1e-12); }
+    var srt = Array.prototype.slice.call(env).sort(function (a, b) { return a - b; }), ref = srt[Math.floor(nf * 0.9)], esik = ref - 12, sessiz = ref - 18;
+    var ilk = 0; while (ilk < nf && env[ilk] < -80) ilk++;                    /* baştaki dijital sessizlik */
+    var a = ilk; if (a >= nf || a > 40) return { y: x, kesildi: 0 };          /* ilk ses kaydın başından çok sonra: takırtı değil */
+    var b = a; while (b < nf && b - a < 40 && env[b] > esik - 6) b++;         /* yüksek bölüm (en çok 400 ms) */
+    if (b >= nf || b - a > 25 || env[a] < esik - 6) return { y: x, kesildi: 0 };
+    var bosluk = 0; for (i = b; i < Math.min(nf, b + 20) && env[i] < sessiz; i++) bosluk++;
+    if (bosluk < 12) return { y: x, kesildi: 0 };                              /* ardından en az ~120 ms sakinlik yoksa bu bir kelimedir */
+    var y = Float32Array.from(x), s0 = a * F, s1 = Math.min(n, (b + 3) * F), fd = Math.round(sr * 0.006);
+    for (i = s0; i < s1; i++) y[i] = 0;
+    for (i = 0; i < fd && s1 + i < n; i++) y[s1 + i] = x[s1 + i] * (i / fd);   /* çıkışta yumuşak geçiş */
+    return { y: y, kesildi: (s1 - s0) / sr };
+  }
+
+
+  /* ---------- Baş ve son kırpma: konuşmadan önceki takırtı, sonraki gürültü ---------- */
+  function uclariKes(x, sr, p) {
+    p = p || {}; var n = x.length, F = Math.round(sr * 0.01), nf = Math.floor(n / F), i, j, k;
+    var ON = p.on == null ? 0.15 : p.on, SON = p.son == null ? 0.2 : p.son;
+    if (nf < 80) return { y: x, bas: 0, son: 0 };
+    var env = new Float64Array(nf);
+    for (i = 0; i < nf; i++) { var s = 0; for (j = 0; j < F; j++) { var v = x[i * F + j]; s += v * v; } env[i] = 10 * Math.log10(s / F + 1e-12); }
+    var srt = Array.prototype.slice.call(env).sort(function (a, b) { return a - b; }), ref = srt[Math.floor(nf * 0.9)], T = ref - 20;
+    /* Sesli (perdeli) çerçeveler: gerçek konuşmayı mikrofon/ağız takırtısından ayırır. Takırtılarda periyodik yapı yoktur. */
+    var dec = 4, dn = Math.floor(n / dec), d = new Float32Array(dn);
+    for (i = 0; i < dn; i++) d[i] = (x[i * dec] + x[i * dec + 1] + x[i * dec + 2] + x[i * dec + 3]) * 0.25;
+    var fd = F / dec, W = Math.round(0.03 * sr / dec), L0 = Math.round(sr / dec / 420), L1 = Math.round(sr / dec / 80), V = new Uint8Array(nf);
+    for (i = 0; i < nf; i++) {
+      if (env[i] < ref - 24) continue;
+      var a0 = Math.round(i * fd), best = 0;
+      if (a0 + W + L1 >= dn) continue;
+      for (var lag = L0; lag <= L1; lag++) { var sx = 0, e1 = 0, e2 = 0; for (k = 0; k < W; k++) { var u = d[a0 + k], w2 = d[a0 + k + lag]; sx += u * w2; e1 += u * u; e2 += w2 * w2; } var r = sx / Math.sqrt(e1 * e2 + 1e-18); if (r > best) best = r; }
+      if (best > 0.5) V[i] = 1;
+    }
+    function kumeler(gap) { var out = [], a = -1, bos = 0; for (i = 0; i < nf; i++) { if (env[i] > T) { if (a < 0) a = i; bos = 0; } else if (a >= 0) { bos++; if (bos > gap) { out.push([a, i - bos + 1]); a = -1; bos = 0; } } } if (a >= 0) out.push([a, nf - bos]); return out; }
+    function sesliSay(r) { var c = 0; for (var q = r[0]; q < r[1]; q++) c += V[q]; return c; }
+    var bas = kumeler(15).filter(function (r) { return sesliSay(r) >= 6; });
+    if (!bas.length) bas = kumeler(15).filter(function (r) { return r[1] - r[0] >= 13; }); /* hiç perdeli parça yoksa süreye bak */
+    if (!bas.length) return { y: x, bas: 0, son: 0 };
+    var son = kumeler(8).filter(function (r) { return r[1] - r[0] >= 8 && sesliSay(r) >= 4; });
+    var sonKume = son.length ? son[son.length - 1][1] : bas[bas.length - 1][1];
+    var b0 = Math.max(0, Math.round((bas[0][0] * F) - ON * sr)), b1 = Math.min(n, Math.round(Math.max(sonKume, bas[0][1]) * F + SON * sr));
+    if (b0 < 0.03 * sr) b0 = 0; if (n - b1 < 0.03 * sr) b1 = n;
+    if (b0 === 0 && b1 === n) return { y: x, bas: 0, son: 0 };
+    var y = Float32Array.from(x.subarray(b0, b1)), fi = Math.min(Math.round(sr * 0.008), y.length >> 2), fo = Math.min(Math.round(sr * 0.12), y.length >> 2);
+    if (b0 > 0) for (i = 0; i < fi; i++) y[i] *= i / fi;
+    if (b1 < n) for (i = 0; i < fo; i++) y[y.length - 1 - i] *= i / fo;
+    return { y: y, bas: b0 / sr, son: (n - b1) / sr };
   }
 
   /* ---------- Hat ---------- */
   function sesIsle(x, sr, z) {
     var y = x;
+    if (z.basla !== false) { var bs = baslangicTemizle(y, sr); y = bs.y; z.baslaKesilen = bs.kesildi; }
+    if (z.agiz && z.agiz.aktif) { var ag = agizTemizle(y, sr, z.agiz); y = ag.y; z.agiz.sonAdet = ag.adet; }
     if (z.gurultu && z.gurultu.aktif) y = gurultuAzalt(y, sr, z.gurultu, z.gurultu.iz);
     if (z.kapi && z.kapi.aktif) y = kapi(y, sr, z.kapi);
     if (z.uretim && z.uretim.aktif) {
       /* PRODÜKSİYON ZİNCİRİ: ses önce sabit bir seviyeye getirilir, sonra çamurluk kesilir, parlaklık eklenir, iki kademe sıkıştırılır */
       var lf = lufs([y, y], sr); if (isFinite(lf) && lf > -70) { var gg = dB(z.uretim.hedefLufs - lf), y2 = new Float32Array(y.length); for (var q = 0; q < y.length; q++) y2[q] = y[q] * gg; y = y2; }
       if (z.ton && z.ton.bantlar && z.ton.bantlar.length) y = eq(y, sr, z.ton.bantlar);
+      if (z.deess && z.deess.aktif) y = deEss(y, sr, z.deess);
       y = kompresor(y, sr, { esik: -26, oran: 2.2, atak: 12, birak: 220, makyaj: 0, diz: 6 });
-    } else if (z.ton && z.ton.bantlar && z.ton.bantlar.length) y = eq(y, sr, z.ton.bantlar);
+    } else { if (z.ton && z.ton.bantlar && z.ton.bantlar.length) y = eq(y, sr, z.ton.bantlar); if (z.deess && z.deess.aktif) y = deEss(y, sr, z.deess); }
     if (z.kuvvet && z.kuvvet.aktif) { y = kompresor(y, sr, z.kuvvet); if (z.kapi && z.kapi.aktif) y = kapi(y, sr, z.kapi); }
     return y;
   }
   function uret(x, sr, muzik, z) {
+    if (z.kes !== false) { var uk = uclariKes(x, sr, z.kes); x = uk.y; z.kesilen = { bas: uk.bas, son: uk.son }; }
     var islenmis = sesIsle(x, sr, z), e = efektUygula(islenmis, sr, z.efekt);
     var m = miksle(e.L, e.R, sr, muzik, z.muzik);
     var s = seviyeAyarla(m.L, m.R, sr, z.seviye.hedef, z.seviye.tavan);
@@ -586,6 +725,7 @@
     SR: 44100, dB: dB, toDb: toDb,
     TON: TON, KUVVET: KUVVET, TEMIZLE: TEMIZLE, EFEKT: EFEKT, SEVIYE: SEVIYE, TARZ: TARZ,
     varsayilanZincir: varsayilanZincir, tarzUygula: tarzUygula,
+    baslangicTemizle: baslangicTemizle, uclariKes: uclariKes, agizTemizle: agizTemizle, deEss: deEss, vurusUret: vurusUret,
     gurultuAzalt: gurultuAzalt, kapi: kapi, eq: eq, kompresor: kompresor, sinirla: sinirla,
     efektUygula: efektUygula, miksle: miksle, seviyeAyarla: seviyeAyarla, sesIsle: sesIsle, uret: uret,
     lufs: lufs, tepeDb: tepeDb, rmsDb: rmsDb, istatistik: istatistik, tepeler: tepeler,

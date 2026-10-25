@@ -756,6 +756,28 @@
       mesaj(''); toast('İndirildi · Bu ay ' + r.kullanilan + (r.limit > 0 ? ' / ' + r.limit : '') + ' indirme'); ustYenile();
     } catch (e) { hata(e); }
   }
+
+  async function paylas() {
+    if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın');
+    var ad = (S.sonucAd || 'Spot').replace(/\.[a-z0-9]+$/i, '').replace(/[^\wÇĞİÖŞÜçğıöşü\- ]+/g, '').replace(/\s+/g, '_') || 'Spot';
+    try {
+      var d = await Veri.hakDurumu(); if (d.limit > 0 && d.kullanilan >= d.limit) return bilgi('Aylık indirme hakkınız doldu', '<p>Bu ay ' + d.limit + ' hakkınızı kullandınız. Panelim sayfasından Pro pakete geçebilirsiniz.</p>');
+      mesaj('Dosya hazırlanıyor…'); await bekle();
+      var blob = new Blob(Motor.mp3Kodla(S.sonuc.L, S.sonuc.R, SR, 192), { type: 'audio/mpeg' }), dosya = null;
+      try { dosya = new File([blob], ad + '.mp3', { type: 'audio/mpeg' }); } catch (e) {}
+      mesaj('');
+      if (dosya && navigator.canShare && navigator.canShare({ files: [dosya] })) {
+        try { await navigator.share({ files: [dosya], title: ad, text: 'Ses Efekti Spot Stüdyo ile hazırladım: sesefekti.com' }); }
+        catch (e) { if (e && e.name === 'AbortError') return; throw e; }
+        await Veri.indirmeHakki(ad, 'paylas'); ustYenile(); toast('Paylaşıldı'); return;
+      }
+      /* Bilgisayar ya da paylaşımı desteklemeyen tarayıcı: indir, WhatsApp'ı aç */
+      var r = await Veri.indirmeHakki(ad, 'mp3'); if (!r.ok) return toast('İndirme hakkınız doldu');
+      indirDosya(blob, ad + '.mp3'); ustYenile();
+      toast('MP3 indirildi. WhatsApp’ta dosyayı ekleyip gönderin.');
+      window.open('https://wa.me/?text=' + encodeURIComponent('Spotum hazır! Ses Efekti Spot Stüdyo: sesefekti.com'), '_blank', 'noopener');
+    } catch (e) { mesaj(''); hata(e); }
+  }
   async function ustYenile() { var u = $('.kota'); if (u) { var d = await Veri.hakDurumu(); u.textContent = 'Bu ay ' + d.kullanilan + ' / ' + (d.limit > 0 ? d.limit : '∞') + ' indirme'; } }
   async function mikSec() {
     var l; try { await navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) { s.getTracks().forEach(function (t) { t.stop(); }); }); l = (await navigator.mediaDevices.enumerateDevices()).filter(function (d) { return d.kind === 'audioinput'; }); }
@@ -798,10 +820,12 @@
       var ham = mono(p.L, p.R), zem = Motor.istatistik(ham, SR).zeminDb, tm = zem > -34 ? 'cokguclu' : 'guclu'; /* HER SESE güçlü dip ses temizliği uygulanır (en az 'guclu') */
       S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: tm })); S.z.gurultu.iz = S.iz || iz || null;
       if (S.tarzNo >= Motor.TARZ.length) { var j = function (a) { return (Math.random() - 0.5) * 2 * a; }; S.z.muzik.altDb += j(1); S.z.muzik.yuksel = Math.max(0, S.z.muzik.yuksel + j(1)); S.z.muzik.giris = Math.max(0.5, S.z.muzik.giris + j(0.5)); }
+      var bt = $('#otoBitis').value; if (bt) S.z.muzik.bitis = bt;
       hedefUygula(); $('#tarzAd').textContent = T.ad + (S.tarzNo >= Motor.TARZ.length ? ' (ince ayar)' : '');
       S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb;
-      if (S.sonuc.zeminSonra > -62 && tm !== 'cokguclu') { /* dip ses hâlâ duyulur: daha güçlü ikinci tur */ S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: 'cokguclu' })); S.z.gurultu.iz = S.iz || iz || null; S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb; }
+      if (S.sonuc.zeminSonra > -62 && tm !== 'cokguclu') { /* dip ses hâlâ duyulur: daha güçlü ikinci tur */ S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: 'cokguclu' })); S.z.gurultu.iz = S.iz || iz || null; if (bt) S.z.muzik.bitis = bt; hedefUygula(); S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb; }
       sonucCiz(); calDizi(S.sonuc.L, S.sonuc.R, null, 0);
+      if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) { var sk = $('#cSonuc'); if (sk && sk.scrollIntoView) sk.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     } catch (e) { hata(e); }
     S.mesgul = false; mesaj('');
   }
@@ -809,7 +833,7 @@
     var c = $('#cSonuc'), d = boyutla(c), g = c.getContext('2d'), W = c.width, H = c.height; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
     $('#bosSonuc').style.display = S.sonuc ? 'none' : 'flex'; if (!S.sonuc) { $('#sonucBilgi').textContent = ''; return; }
     var pk = Motor.tepeler(S.sonuc.L, Math.max(1, W)); g.fillStyle = '#2b2bff'; for (var i = 0; i < W; i++) { var y1 = H / 2 - pk[2 * i + 1] * H * 0.46, y2 = H / 2 - pk[2 * i] * H * 0.46; g.fillRect(i, y1, 1, Math.max(1, y2 - y1)); }
-    $('#sonucBilgi').textContent = sn(S.sonuc.sure) + ' · ' + S.sonuc.lufs.toFixed(1) + ' LUFS · tepe ' + S.sonuc.tepeDb.toFixed(1) + ' dB · dip ses ' + S.sonuc.zeminOnce.toFixed(0) + ' dB → ' + S.sonuc.zeminSonra.toFixed(0) + ' dB';
+    $('#sonucBilgi').textContent = sn(S.sonuc.sure) + ' · ' + S.sonuc.lufs.toFixed(1) + ' LUFS · tepe ' + S.sonuc.tepeDb.toFixed(1) + ' dB · dip ses ' + S.sonuc.zeminOnce.toFixed(0) + ' dB → ' + S.sonuc.zeminSonra.toFixed(0) + ' dB' + (S.z.kesilen && (S.z.kesilen.bas > 0.02 || S.z.kesilen.son > 0.02) ? ' · baştan ' + S.z.kesilen.bas.toFixed(2) + ' sn, sondan ' + S.z.kesilen.son.toFixed(2) + ' sn kesildi' : '');
   }
 
   /* ---------- Bankalar ---------- */
@@ -870,6 +894,7 @@
   function sekme(t) {
     S.tab = t; $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
     ['#menu', '#arac', '.durum'].forEach(function (q) { $(q).style.display = t === 'manuel' ? '' : 'none'; });
+    if (t === 'manuel' && window.matchMedia && window.matchMedia('(max-width:820px)').matches && !S.mobUyari) { S.mobUyari = 1; toast('Manuel stüdyo bilgisayarda daha rahat kullanılır. Telefonda Otomatik sekmesini öneririz.'); }
     if (t === 'manuel') guncelle(); if (t === 'oto') { otoListeleri(); sonucCiz(); } if (t === 'yz') yzDurum();
   }
   $$('#sekmeler button').forEach(function (b) { b.onclick = function () { sekme(b.dataset.t); }; });
@@ -1214,6 +1239,7 @@
   $('#sonucDur').onclick = function () { durdur(); };
   $('#sonucCal').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); if (S.cal) durdur(); else calDizi(S.sonuc.L, S.sonuc.R, null, 0); };
   $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); otoListeleri(); sekme('manuel'); };
+  $('#sonucPaylas').onclick = paylas;
   $('#sonucDisa').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); disaDlg('sonuc'); };
   document.addEventListener('dragover', function (e) { e.preventDefault(); if (S.tab === 'manuel') alan.classList.add('birak'); });
   document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) alan.classList.remove('birak'); });
@@ -1312,4 +1338,5 @@
   window.addEventListener('beforeunload', function (e) { if (S.pen.some(function (p) { return p.kirli; })) { e.preventDefault(); e.returnValue = ''; } });
 
   hedefUygula(); otoListeleri(); guncelle(); bankaYukle();
+  if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) sekme('oto'); /* telefonda önce otomatik kurgu */
 })();

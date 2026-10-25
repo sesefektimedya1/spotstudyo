@@ -103,3 +103,5 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
 .kn{display:flex;gap:.7rem;align-items:flex-start;border:1px solid #cfd4da;border-radius:8px;padding:.6rem .8rem;cursor:pointer;margin:0;color:#1d2430}
 .kn:hover{background:#f3f6fb}.kn input{margin-top:.3rem}.kn b{display:block}.kn small{color:#5d6673;font-size:12.5px}
 .kn input[type=radio]{appearance:auto;-webkit-appearance:radio;width:18px;height:18px;padding:0;background:#fff;accent-color:#e0452f;flex:none}
+
+.logo .logoIk{display:inline-block;vertical-align:-.2em;margin-right:.4em}

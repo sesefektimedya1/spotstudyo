@@ -32,11 +32,12 @@
     if (!Veri.planAd) Veri.planAd = function (p) { return ({ ucretsiz: 'Ücretsiz plan', pro_aylik: 'Pro Aylık', pro_yillik: 'Pro Yıllık', premium: 'Pro Aylık' })[p] || 'Ücretsiz plan'; };
     var h = '';
     if (!Veri.canli) h += '<div class="deneme">Deneme modu: kayıtlar yalnız bu tarayıcıda durur. Canlı yayın için Supabase bilgilerini js/config.js dosyasına yazın.</div>';
-    h += '<header class="ust"><a class="logo" href="./" title="Ses Efekti Spot Stüdyo"><i></i><b>sesefekti.com</b><span>/spot-stüdyo</span></a><nav>';
+    h += '<header class="ust"><a class="logo" href="./" title="Ses Efekti Spot Stüdyo"><svg class="logoIk" viewBox="0 0 40 40" width="26" height="26" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#e03a2c"/><g fill="#fff"><rect x="8" y="16.5" width="2.6" height="7" rx="1.3"/><rect x="12.6" y="12" width="2.6" height="16" rx="1.3"/><rect x="17.2" y="8.5" width="2.6" height="23" rx="1.3"/><rect x="21.8" y="14" width="2.6" height="12" rx="1.3"/><rect x="26.4" y="10.5" width="2.6" height="19" rx="1.3"/><rect x="31" y="16" width="2.6" height="8" rx="1.3"/></g></svg><b>sesefekti.com</b><span>/spot-stüdyo</span></a><nav>';
     if (oturum) {
       h += '<a href="studyo"' + (aktif === 'studyo' ? ' class="acik"' : '') + '>Stüdyo</a><a href="panel"' + (aktif === 'panel' ? ' class="acik"' : '') + '>Panelim</a>';
       if (oturum.role === 'admin') h += '<a href="yonetim"' + (aktif === 'yonetim' ? ' class="acik"' : '') + '>Yönetim</a>';
     }
+    h += '<a href="hakkimizda"' + (aktif === 'hakkimizda' ? ' class="acik"' : '') + '>Hakkımızda</a>';
     h += '</nav><div class="sag">';
     h += '<div class="dilSec" role="group" aria-label="Dil / Language"><button data-dil="tr" class="' + (window.DIL !== 'en' ? 'acik' : '') + '">TR</button><button data-dil="en" class="' + (window.DIL === 'en' ? 'acik' : '') + '">EN</button></div>';
     if (oturum) {
@@ -51,6 +52,7 @@
     h += '</header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
     $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });
+    if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; ab.innerHTML = '<a href="hakkimizda">sesefekti.com</a> · © 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
     var gb = $('#gbBtn'); if (gb) gb.onclick = function () { geriBildirimAc(aktif); };
     var c = $('#cikisBtn'); if (c) c.onclick = async function () { await Veri.cikis(); location.href = './'; };
   };

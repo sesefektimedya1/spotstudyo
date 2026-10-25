@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap&subset=latin-ext">
-<link rel="stylesheet" href="css/stil.css?v=22"><link rel="stylesheet" href="css/studyo.css?v=22"><link rel="stylesheet" href="css/ek.css?v=22"><title>Stüdyo — Ses Efekti Spot Stüdyo</title></head>
+<link rel="stylesheet" href="css/stil.css?v=28"><link rel="stylesheet" href="css/studyo.css?v=28"><link rel="stylesheet" href="css/ek.css?v=28"><link rel="stylesheet" href="css/mobil.css?v=28"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Ccircle cx=%2720%27 cy=%2720%27 r=%2720%27 fill=%27%23e03a2c%27/%3E%3Cg fill=%27%23fff%27%3E%3Crect x=%278%27 y=%2716.5%27 width=%272.6%27 height=%277%27 rx=%271.3%27/%3E%3Crect x=%2712.6%27 y=%2712%27 width=%272.6%27 height=%2716%27 rx=%271.3%27/%3E%3Crect x=%2717.2%27 y=%278.5%27 width=%272.6%27 height=%2723%27 rx=%271.3%27/%3E%3Crect x=%2721.8%27 y=%2714%27 width=%272.6%27 height=%2712%27 rx=%271.3%27/%3E%3Crect x=%2726.4%27 y=%2710.5%27 width=%272.6%27 height=%2719%27 rx=%271.3%27/%3E%3Crect x=%2731%27 y=%2716%27 width=%272.6%27 height=%278%27 rx=%271.3%27/%3E%3C/g%3E%3C/svg%3E"><title>Stüdyo — Ses Efekti Spot Stüdyo</title></head>
 <body class="st">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="ikBeyaz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d5deea"/></linearGradient>
@@ -38,7 +38,8 @@
     <div class="adim"><h3><span>2</span> Müzik <em>(isteğe bağlı)</em></h3>
      <div class="birakAlan" id="dzMuzik"><b>Müzik dosyanızı buraya sürükleyip bırakın</b><small>Ya da aşağıdan müzik bankasından seçin</small>
       <div class="btnler"><button class="btn ana" id="otoMuzikAc">Dosya yükle…</button></div></div>
-     <select id="otoMuzik" aria-label="Kullanılacak müzik"></select></div>
+     <select id="otoMuzik" aria-label="Kullanılacak müzik"></select>
+     <label class="sol" style="display:block;margin-top:.6rem;font-size:13px">Müziğin bitişi <select id="otoBitis" style="width:auto;margin-left:.4rem"><option value="">Otomatik (tarza göre)</option><option value="fade">Yumuşak fade out</option><option value="vurus">Vuruş (dunk) ile bitir</option></select></label></div>
     <div class="adim"><h3><span>3</span> Çıkış türü</h3>
      <div class="kartlar" id="hedefKart">
       <button data-h="radyo" class="secili"><b>Radyo</b><small>Yayına hazır, −11,6 LUFS, MP3</small></button>
@@ -51,7 +52,7 @@
     <div class="sonucUst"><h3>Sonuç</h3><span class="tarz" id="tarzAd"></span></div>
     <div class="sonucKutu"><canvas id="cSonuc"></canvas><div class="bos" id="bosSonuc">Sonuç burada görünür</div></div>
     <div class="sonucEylem"><button class="btn ana buyuk" id="otoBtn">Otomatik hazırla</button><button class="btn buyuk" id="yenidenBtn">Başka bir tarz dene</button></div>
-    <div class="sonucEylem"><button class="btn" id="sonucCal">▶ Sonucu dinle</button><button class="btn" id="sonucDur" title="Dinlemeyi durdur">■ Durdur</button><button class="btn" id="sonucManuel">Manuel stüdyoda düzenle</button><button class="btn ana" id="sonucDisa">Dışa aktar…</button></div>
+    <div class="sonucEylem"><button class="btn" id="sonucCal">▶ Sonucu dinle</button><button class="btn" id="sonucDur" title="Dinlemeyi durdur">■ Durdur</button><button class="btn" id="sonucManuel">Manuel stüdyoda düzenle</button><button class="btn ana" id="sonucPaylas">Paylaş (WhatsApp…)</button><button class="btn" id="sonucDisa">Dışa aktar…</button></div>
     <div class="sol" id="sonucBilgi"></div>
    </div>
   </div>
@@ -84,5 +85,5 @@
 </div>
 <div class="durum"><span id="dPen">—</span><span id="dSecim">yok</span><span id="dSes">—</span><span class="sag" id="dFmt"></span></div>
 <input type="file" id="dosyaSes" accept="audio/*,video/*" hidden><input type="file" id="dosyaMuzik" accept="audio/*" hidden>
-<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js?v=22"></script><script src="js/veri.js?v=22"></script><script src="js/dil.js?v=22"></script><script src="js/ortak.js?v=22"></script><script src="js/motor.js?v=22"></script><script src="js/araclar.js?v=22"></script><script src="js/studyo.js?v=22"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/vendor/lame.min.js"></script><script src="js/config.js?v=28"></script><script src="js/veri.js?v=28"></script><script src="js/dil.js?v=28"></script><script src="js/ortak.js?v=28"></script><script src="js/motor.js?v=28"></script><script src="js/araclar.js?v=28"></script><script src="js/studyo.js?v=28"></script>
 </body></html>

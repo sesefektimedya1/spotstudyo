@@ -65,14 +65,15 @@
       var buAy = LS.oku('indirmeler', []).filter(function (x) { return x.user_id === o.id && x.t >= ayBasi(); }).length;
       return { kullanilan: buAy, limit: lim };
     },
-    basvuruYap: async function (paket) {
+    basvuruYap: async function (paket, fatura) {
       var o = await demo.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); var a = await demo.ayarlar(), l = LS.oku('basvurular', []);
       if (l.some(function (x) { return x.user_id === o.id && x.durum === 'beklemede'; })) throw new Error('Bekleyen bir başvurunuz zaten var.');
-      var k = { id: uid(), user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || '', paket: paket, fiyat_tl: +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat), durum: 'beklemede', created_at: new Date().toISOString(), islem_tarihi: null };
+      var k = { id: uid(), user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || '', paket: paket, fiyat_tl: +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat), fatura: fatura || null, fatura_kesildi: false, fatura_no: '', durum: 'beklemede', created_at: new Date().toISOString(), islem_tarihi: null };
       l.push(k); LS.yaz('basvurular', l); return k;
     },
     basvurularim: async function () { var o = await demo.oturum(); return LS.oku('basvurular', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
     basvuruTum: async function () { return LS.oku('basvurular', []).slice().reverse(); },
+    faturaGuncelle: async function (id, d) { var l = LS.oku('basvurular', []), b = l.find(function (x) { return x.id === id; }); if (b) Object.assign(b, d); LS.yaz('basvurular', l); },
     basvuruKarar: async function (id, onay) {
       var l = LS.oku('basvurular', []), b = l.find(function (x) { return x.id === id && x.durum === 'beklemede'; }); if (!b) throw new Error('Başvuru bulunamadı ya da işlenmiş.');
       if (onay) { var us = LS.oku('uyeler', []), u = us.find(function (x) { return x.id === b.user_id; }); if (u) { u.plan_bitis = bitisHesapla(b.paket, planKey(u.plan) !== 'ucretsiz' ? u.plan_bitis : null); u.plan = b.paket; u.odendi = true; u.odeme_tarihi = tarihYaz(new Date()); LS.yaz('uyeler', us); } }
@@ -95,7 +96,7 @@
       var l = LS.oku('uyeler', []), ind = LS.oku('indirmeler', []), q = (o.ara || '').toLowerCase();
       var r = l.filter(function (u) { return (!q || u.email.toLowerCase().indexOf(q) > -1 || (u.ad || '').toLowerCase().indexOf(q) > -1 || (u.telefon || '').indexOf(q) > -1) && (!o.plan || u.plan === o.plan); });
       var top = r.length, bas = (o.sayfa || 0) * o.adet;
-      return { toplam: top, satirlar: r.slice(bas, bas + o.adet).map(function (u) { return { id: u.id, email: u.email, ad: u.ad, telefon: u.telefon || '', role: u.role, plan: planKey(u.plan), plan_bitis: u.plan_bitis, odendi: !!u.odendi, odeme_tarihi: u.odeme_tarihi || null, created_at: u.created_at, bu_ay_indirme: ind.filter(function (x) { return x.user_id === u.id && x.t >= ayBasi(); }).length, toplam_indirme: ind.filter(function (x) { return x.user_id === u.id; }).length }; }) };
+      return { toplam: top, satirlar: r.slice(bas, bas + o.adet).map(function (u) { return { id: u.id, email: u.email, ad: u.ad, telefon: u.telefon || '', role: u.role, plan: planKey(u.plan), plan_bitis: u.plan_bitis, odendi: !!u.odendi, odeme_tarihi: u.odeme_tarihi || null, created_at: u.created_at, bu_ay_indirme: ind.filter(function (x) { return x.user_id === u.id && x.t >= ayBasi(); }).length, toplam_indirme: ind.filter(function (x) { return x.user_id === u.id; }).length, fatura_tur: (function () { var b = LS.oku('basvurular', []).filter(function (x) { return x.user_id === u.id && x.fatura; }).pop(); return b ? b.fatura.tur : null; })() }; }) };
     },
     uyeGuncelle: async function (id, d) { var l = LS.oku('uyeler', []); var u = l.find(function (x) { return x.id === id; }); if (u) Object.assign(u, d); LS.yaz('uyeler', l); },
     ozet: async function () {
@@ -125,16 +126,17 @@
     indirmeler: async function () { return hata(await sb.from('indirmeler').select('*').order('created_at', { ascending: false }).limit(200)); },
     indirmeHakki: async function (proje, tur) { var r = hata(await sb.rpc('indirme_hakki_al', { p_proje: proje, p_tur: tur })); return r; },
     hakDurumu: async function () { return hata(await sb.rpc('indirme_durumu')); },
-    basvuruYap: async function (paket) {
+    basvuruYap: async function (paket, fatura) {
       var o = await canliApi.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); var a = await canliApi.ayarlar();
       var fy = +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat);
-      var r = await sb.from('paket_basvurulari').insert({ user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || null, paket: paket, fiyat_tl: fy }).select().single();
+      var r = await sb.from('paket_basvurulari').insert({ user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || null, paket: paket, fiyat_tl: fy, fatura: fatura || null }).select().single();
       if (r.error) { if (/duplicate|unique/i.test(r.error.message)) throw new Error('Bekleyen bir başvurunuz zaten var.'); throw new Error(r.error.message); }
-      bildir('Paket başvurusu: ' + planAdi(paket), { Ad: o.ad || '', Eposta: o.email, Telefon: o.telefon || '(yok)', Paket: planAdi(paket), Fiyat: fy + ' TL' });
+      bildir('Paket başvurusu: ' + planAdi(paket), { Ad: o.ad || '', Eposta: o.email, Telefon: o.telefon || '(yok)', Paket: planAdi(paket), Fiyat: fy + ' TL', Fatura: fatura ? (fatura.tur === 'ticari' ? fatura.unvan + ' / VKN ' + fatura.vkn : fatura.ad + ' / TC ' + fatura.tc) : '' });
       return r.data;
     },
     basvurularim: async function () { var o = await canliApi.oturum(); return hata(await sb.from('paket_basvurulari').select('*').eq('user_id', o.id).order('created_at', { ascending: false })); },
     basvuruTum: async function () { return hata(await sb.from('paket_basvurulari').select('*').order('created_at', { ascending: false })); },
+    faturaGuncelle: async function (id, d) { hata(await sb.from('paket_basvurulari').update(d).eq('id', id)); },
     basvuruKarar: async function (id, onay) { hata(await sb.rpc('basvuru_karar', { p_id: id, p_onay: onay })); },
     geriBildirim: async function (g) { var o = await canliApi.oturum(); return hata(await sb.from('geri_bildirimler').insert(Object.assign({ user_id: o ? o.id : null, eposta: o ? o.email : null }, g)).select().single()); },
     geriBildirimTum: async function () { return hata(await sb.from('geri_bildirimler').select('*').order('created_at', { ascending: false })); },

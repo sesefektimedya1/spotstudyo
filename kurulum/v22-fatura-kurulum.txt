@@ -1,0 +1,31 @@
+-- Ses Efekti Spot Stüdyo v22 — FATURA BİLGİLERİ
+-- Supabase > SQL Editor'e tamamını yapıştırıp RUN'a basın. Tekrar çalıştırmak zarar vermez.
+-- (Siparişler/Geri bildirimler tabloları için ayrı "siparis-ve-geribildirim-kurulum.txt" dosyasını da çalıştırmış olmalısınız.)
+
+alter table public.paket_basvurulari add column if not exists fatura jsonb;
+alter table public.paket_basvurulari add column if not exists fatura_kesildi boolean not null default false;
+alter table public.paket_basvurulari add column if not exists fatura_no text;
+alter table public.paket_basvurulari add column if not exists fatura_tarihi timestamptz;
+
+-- Yönetici başvuruyu güncelleyebilsin (Fatura kesildi işareti)
+drop policy if exists b_yonetici_guncelle on public.paket_basvurulari;
+create policy b_yonetici_guncelle on public.paket_basvurulari for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Üye listesine "tür" (bireysel/ticari) eklenir
+create or replace function public.uye_listesi(p_ara text, p_plan text, p_sayfa int, p_adet int) returns json
+language plpgsql security definer set search_path=public as $$
+declare toplam int; satirlar json;
+begin
+  if not public.is_admin() then raise exception 'Yetki yok'; end if;
+  select count(*) into toplam from public.profiles p
+    where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%' or p.telefon ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan);
+  select coalesce(json_agg(t),'[]'::json) into satirlar from (
+    select p.id,p.email,p.ad,p.telefon,p.role,p.plan,p.plan_bitis,p.odendi,p.odeme_tarihi,p.created_at,
+      (select count(*) from public.indirmeler i where i.user_id=p.id and i.created_at >= date_trunc('month', now())) as bu_ay_indirme,
+      (select count(*) from public.indirmeler i where i.user_id=p.id) as toplam_indirme,
+      (select b.fatura->>'tur' from public.paket_basvurulari b where b.user_id=p.id and b.fatura is not null order by b.created_at desc limit 1) as fatura_tur
+    from public.profiles p
+    where (p_ara='' or p.email ilike '%'||p_ara||'%' or p.ad ilike '%'||p_ara||'%' or p.telefon ilike '%'||p_ara||'%') and (p_plan='' or p.plan=p_plan)
+    order by p.created_at desc limit p_adet offset p_sayfa*p_adet) t;
+  return json_build_object('toplam',toplam,'satirlar',satirlar);
+end $$;

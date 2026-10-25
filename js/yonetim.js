@@ -2,7 +2,8 @@
   var o = await korumali('yonetim', true); if (!o) return;
   var ic = $('#icerik'), SAYFA = 25, durum = { sayfa: 0, ara: '', plan: '' };
   $$('#sekme button').forEach(function (b) { b.onclick = function () { $$('#sekme button').forEach(function (x) { x.classList.remove('acik'); }); b.classList.add('acik'); ac(b.dataset.s); }; });
-  function ac(s) { ({ ozet: ozet, basvuru: basvuru, siparis: siparis, geri: geri, uyeler: uyeler, kutup: kutupSayfa, ayar: ayar })[s](); }
+  function ac(s) { try { var p = ({ ozet: ozet, basvuru: basvuru, siparis: siparis, geri: geri, uyeler: uyeler, kutup: kutupSayfa, ayar: ayar })[s](); if (p && p.catch) p.catch(hataGoster); } catch (e) { hataGoster(e); } }
+  function hataGoster(e) { var m = (e && e.message) || String(e); ic.innerHTML = '<div class="kart"><b>Bu sayfa açılamadı.</b><div class="sol" style="margin:.4rem 0">' + esc(/relation|does not exist|schema cache|42P01/i.test(m) ? 'Supabase’de bu bölümün tablosu kurulmamış. İlgili kurulum SQL dosyasını SQL Editor’de çalıştırın.' : m) + '</div><div class="sol" style="font-size:12px">' + esc(m) + '</div></div>'; }
 
   function tl(n) { return Number(n || 0).toLocaleString('tr-TR') + ' TL'; }
   async function rozet() { try { var z = await Veri.ozet(); var r = $('#bkRozet'); if (r) r.innerHTML = z.bekleyen > 0 ? '<span class="etiket p">' + z.bekleyen + '</span>' : ''; return z; } catch (e) { return null; } }
@@ -11,21 +12,35 @@
     ic.innerHTML = '<div class="izgara g4">' + [['Toplam üye', z.uye], ['Pro üye', z.premium], ['Onay bekleyen başvuru', z.bekleyen || 0], ['Bu ay indirme', z.bu_ay], ['Seslendirme kaydı', z.ses], ['Müzik', z.muzik]].map(function (a) { return '<div class="kart"><div class="sol">' + a[0] + '</div><div class="sayi">' + a[1] + '</div></div>'; }).join('') + '</div>';
   }
 
+  function faturaBlok(x) {
+    var f = x.fatura; if (!f) return '<span class="sol">Fatura bilgisi girilmemiş (eski başvuru)</span>';
+    var s = f.tur === 'ticari' ? ['Ticari', f.unvan, 'V.D.: ' + (f.vd || '—') + ' · VKN: ' + (f.vkn || '—'), f.adres] : ['Bireysel', f.ad, 'TC: ' + (f.tc || '—'), f.adres];
+    return '<div style="font-size:13px;line-height:1.5"><span class="etiket">' + s[0] + '</span> <b>' + esc(s[1] || '') + '</b><br>' + esc(s[2]) + '<br>' + esc(s[3] || '') + '</div>';
+  }
+  function faturaMetin(x) { var f = x.fatura || {}; return f.tur === 'ticari' ? [f.unvan, 'V.D.: ' + f.vd, 'VKN: ' + f.vkn, f.adres, 'Tutar: ' + tl(x.fiyat_tl) + ' (' + Veri.planAd(x.paket) + ')'].join('\n') : [f.ad, 'TC: ' + f.tc, f.adres, 'Tutar: ' + tl(x.fiyat_tl) + ' (' + Veri.planAd(x.paket) + ')'].join('\n'); }
   async function basvuru() {
     var L = await Veri.basvuruTum(), bek = L.filter(function (x) { return x.durum === 'beklemede'; }), gec = L.filter(function (x) { return x.durum !== 'beklemede'; });
+    var fat = L.filter(function (x) { return x.durum === 'onaylandi' && !x.fatura_kesildi; });
     var DB = { onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
-    ic.innerHTML = '<div class="kart"><h3 style="font-size:1.3rem;margin-bottom:.7rem">Onay bekleyenler (' + bek.length + ')</h3>' + (bek.length ? bek.map(function (x) {
-      return '<div class="bvSatir" data-id="' + x.id + '" style="padding:.8rem 0;border-bottom:1px solid var(--cizgi);display:flex;gap:1rem;flex-wrap:wrap;align-items:center"><div style="min-width:220px"><b>' + esc(x.ad || '') + '</b><div class="sol" style="font-size:13px">' + esc(x.eposta || '') + ' · ' + esc(x.telefon || 'telefon yok') + '</div></div><span class="etiket">' + Veri.basvuruKod(x) + '</span><span class="etiket p">' + esc(Veri.planAd(x.paket)) + '</span><b>' + tl(x.fiyat_tl) + '</b><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span><span style="margin-left:auto;display:flex;gap:.5rem"><button class="btn ana kucuk ok">Ödeme geldi, onayla</button><button class="btn kucuk red">Reddet</button></span></div>';
+    ic.innerHTML = '<div class="kart"><h3 style="font-size:1.3rem;margin-bottom:.7rem">Fatura kesilecekler (' + fat.length + ')</h3>' + (fat.length ? fat.map(function (x, i) {
+      return '<div class="ftSatir" data-id="' + x.id + '" data-i="' + i + '" style="padding:.8rem 0;border-bottom:1px solid var(--cizgi);display:flex;gap:1rem;flex-wrap:wrap;align-items:center"><div style="min-width:260px;flex:1">' + faturaBlok(x) + '</div><span class="etiket p">' + esc(Veri.planAd(x.paket)) + '</span><b>' + tl(x.fiyat_tl) + '</b><span style="margin-left:auto;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap"><button class="btn kucuk kop">Bilgileri kopyala</button><input class="fno" placeholder="Fatura no (isteğe bağlı)" style="width:170px"><button class="btn ana kucuk fk">Fatura kesildi</button></span></div>';
+    }).join('') : '<span class="sol">Kesilecek fatura yok.</span>') + '</div>' +
+    '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.7rem">Onay bekleyenler (' + bek.length + ')</h3>' + (bek.length ? bek.map(function (x) {
+      return '<div class="bvSatir" data-id="' + x.id + '" style="padding:.8rem 0;border-bottom:1px solid var(--cizgi);display:flex;gap:1rem;flex-wrap:wrap;align-items:center"><div style="min-width:220px"><b>' + esc(x.ad || '') + '</b><div class="sol" style="font-size:13px">' + esc(x.eposta || '') + ' · ' + esc(x.telefon || 'telefon yok') + '</div></div><div style="min-width:240px">' + faturaBlok(x) + '</div><span class="etiket">' + Veri.basvuruKod(x) + '</span><span class="etiket p">' + esc(Veri.planAd(x.paket)) + '</span><b>' + tl(x.fiyat_tl) + '</b><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span><span style="margin-left:auto;display:flex;gap:.5rem"><button class="btn ana kucuk ok">Ödeme geldi, onayla</button><button class="btn kucuk red">Reddet</button></span></div>';
     }).join('') : '<span class="sol">Bekleyen başvuru yok.</span>') + '</div>' +
-    '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.7rem">Paket geçmişi</h3>' + (gec.length ? '<div style="overflow-x:auto"><table><tr><th>Başvuru</th><th>Kod</th><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Paket</th><th>Tutar</th><th>Sonuç</th><th>İşlem tarihi</th></tr>' + gec.map(function (x) {
-      return '<tr><td>' + new Date(x.created_at).toLocaleDateString('tr-TR') + '</td><td>' + Veri.basvuruKod(x) + '</td><td>' + esc(x.ad || '') + '</td><td>' + esc(x.eposta || '') + '</td><td>' + esc(x.telefon || '') + '</td><td>' + esc(Veri.planAd(x.paket)) + '</td><td>' + tl(x.fiyat_tl) + '</td><td><span class="etiket' + (x.durum === 'onaylandi' ? ' p' : '') + '">' + DB[x.durum] + '</span></td><td>' + (x.islem_tarihi ? new Date(x.islem_tarihi).toLocaleDateString('tr-TR') : '') + '</td></tr>';
+    '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.7rem">Paket geçmişi</h3>' + (gec.length ? '<div style="overflow-x:auto"><table><tr><th>Başvuru</th><th>Kod</th><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Paket</th><th>Tutar</th><th>Sonuç</th><th>Fatura</th><th>İşlem tarihi</th></tr>' + gec.map(function (x) {
+      return '<tr><td>' + new Date(x.created_at).toLocaleDateString('tr-TR') + '</td><td>' + Veri.basvuruKod(x) + '</td><td>' + esc(x.ad || '') + '</td><td>' + esc(x.eposta || '') + '</td><td>' + esc(x.telefon || '') + '</td><td>' + esc(Veri.planAd(x.paket)) + '</td><td>' + tl(x.fiyat_tl) + '</td><td><span class="etiket' + (x.durum === 'onaylandi' ? ' p' : '') + '">' + DB[x.durum] + '</span></td><td>' + (x.durum !== 'onaylandi' ? '' : x.fatura_kesildi ? '<span class="etiket p">Kesildi' + (x.fatura_no ? ' · ' + esc(x.fatura_no) : '') + '</span>' : '<span class="etiket">Bekliyor</span>') + '</td><td>' + (x.islem_tarihi ? new Date(x.islem_tarihi).toLocaleDateString('tr-TR') : '') + '</td></tr>';
     }).join('') + '</table></div>' : '<span class="sol">Henüz işlem yok.</span>') + '</div>';
+    $$('.ftSatir', ic).forEach(function (tr) {
+      var x = fat[+tr.dataset.i];
+      tr.querySelector('.kop').onclick = function () { try { navigator.clipboard.writeText(faturaMetin(x)); toast('Fatura bilgileri kopyalandı'); } catch (e) { toast('Kopyalanamadı'); } };
+      tr.querySelector('.fk').onclick = async function () { try { await Veri.faturaGuncelle(x.id, { fatura_kesildi: true, fatura_no: tr.querySelector('.fno').value.trim() || null, fatura_tarihi: new Date().toISOString() }); toast('Fatura kesildi olarak işaretlendi'); basvuru(); } catch (e) { toast(e.message); } };
+    });
     $$('.bvSatir', ic).forEach(function (tr) {
-      async function karar(onay) { if (!confirm(onay ? 'Ödeme geldi, paket açılsın mı?' : 'Başvuru reddedilsin mi?')) return; try { await Veri.basvuruKarar(tr.dataset.id, onay); toast(onay ? 'Paket açıldı' : 'Reddedildi'); basvuru(); rozet(); } catch (e) { toast(e.message); } }
+      async function karar(onay) { if (!confirm(onay ? 'Ödeme geldi, paket açılsın mı?' : 'Başvuru reddedilsin mi?')) return; try { await Veri.basvuruKarar(tr.dataset.id, onay); toast(onay ? 'Paket açıldı. Fatura bilgileri üstte.' : 'Reddedildi'); basvuru(); rozet(); } catch (e) { toast(e.message); } }
       tr.querySelector('.ok').onclick = function () { karar(true); }; tr.querySelector('.red').onclick = function () { karar(false); };
     });
   }
-
   async function siparis() {
     var L = await Veri.siparisTum();
     ic.innerHTML = '<div class="kart">' + (L.length ? L.map(function (x) {
@@ -56,11 +71,11 @@
   function kalan(b) { if (!b) return ''; var g = Math.ceil((new Date(b + 'T23:59:59') - new Date()) / 86400000); return g < 0 ? '<span style="color:#ff8f7e">Süresi bitti</span>' : g + ' gün'; }
   async function yukle() {
     var r = await Veri.uyeler({ ara: durum.ara, plan: durum.plan, sayfa: durum.sayfa, adet: SAYFA }), top = Math.max(1, Math.ceil(r.toplam / SAYFA));
-    $('#tab').innerHTML = '<div style="overflow-x:auto"><table><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th><th>Üyelik tarihi</th><th>Paket</th><th>Ödeme</th><th>Bitiş tarihi</th><th>Kalan</th><th>Bu ay</th><th>Toplam indirme</th><th>Rol</th></tr>' + r.satirlar.map(function (u) {
+    $('#tab').innerHTML = '<div style="overflow-x:auto"><table><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th><th>Üyelik tarihi</th><th>Paket</th><th>Ödeme</th><th>Bitiş tarihi</th><th>Kalan</th><th>Bu ay</th><th>Toplam indirme</th><th>Tür</th><th>Rol</th></tr>' + r.satirlar.map(function (u) {
       return '<tr data-id="' + u.id + '"><td>' + esc(u.ad) + '</td><td>' + esc(u.telefon || '—') + '</td><td>' + esc(u.email) + '</td><td>' + new Date(u.created_at).toLocaleDateString('tr-TR') + '</td>' +
         '<td><select class="pl"><option value="ucretsiz">Ücretsiz</option><option value="pro_aylik">Pro Aylık</option><option value="pro_yillik">Pro Yıllık</option></select></td>' +
         '<td class="odc"><label style="display:flex;gap:.35rem;align-items:center;margin:0;white-space:nowrap"><input type="checkbox" class="od" ' + (u.odendi ? 'checked' : '') + ' style="width:auto"><span class="odm">' + (u.odendi ? 'Ödendi' : 'Bekliyor') + '</span></label></td>' +
-        '<td><input type="date" class="bt" value="' + (u.plan_bitis || '') + '" style="width:140px"></td><td class="kl">' + kalan(u.plan === 'ucretsiz' ? '' : u.plan_bitis) + '</td><td>' + u.bu_ay_indirme + '</td><td>' + (u.toplam_indirme || 0) + '</td>' +
+        '<td><input type="date" class="bt" value="' + (u.plan_bitis || '') + '" style="width:140px"></td><td class="kl">' + kalan(u.plan === 'ucretsiz' ? '' : u.plan_bitis) + '</td><td>' + u.bu_ay_indirme + '</td><td>' + (u.toplam_indirme || 0) + '</td><td>' + (u.role === 'seslendirmen' ? 'Seslendirmen' : u.fatura_tur === 'ticari' ? 'Ticari' : u.fatura_tur === 'bireysel' ? 'Bireysel' : '—') + '</td>' +
         '<td><select class="rol"><option value="uye">Üye</option><option value="seslendirmen">Seslendirmen</option><option value="admin">Yönetici</option></select></td></tr>';
     }).join('') + '</table></div><div style="display:flex;gap:.8rem;align-items:center;margin-top:1rem"><button class="btn kucuk" id="on" ' + (durum.sayfa === 0 ? 'disabled' : '') + '>Önceki</button><span class="sol">' + r.toplam + ' üye · sayfa ' + (durum.sayfa + 1) + ' / ' + top + '</span><button class="btn kucuk" id="sn" ' + (durum.sayfa + 1 >= top ? 'disabled' : '') + '>Sonraki</button></div>';
     $$('#tab tr[data-id]').forEach(function (tr, i) {

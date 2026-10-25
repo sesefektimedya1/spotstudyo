@@ -23,6 +23,34 @@
     var bilgi = (banka || iban) ? '<table class="odT"><tr><td class="sol">Tutar</td><td><b>' + tl(b.fiyat_tl) + '</b></td></tr><tr><td class="sol">Banka</td><td>' + esc(banka || '—') + '</td></tr><tr><td class="sol">Hesap sahibi</td><td>' + esc(sahip || '—') + '</td></tr><tr><td class="sol">IBAN</td><td><b id="ibanMetin">' + esc(iban || '—') + '</b> <button class="btn kucuk" id="ibanKopya">Kopyala</button></td></tr><tr><td class="sol">Havale açıklaması</td><td><b>' + kod + '</b> <span class="sol">(bu kodu açıklamaya yazın)</span></td></tr></table>' : '<div class="sol" style="margin:.5rem 0">Ödeme bilgileri için WhatsApp’tan bize yazın. Başvuru kodunuz: <b>' + kod + '</b></div>';
     return '<div class="pkNot"><b>Başvurunuz alındı: ' + esc(Veri.planAd(b.paket)) + '</b>' + bilgi + (AY.odeme_notu ? '<div class="sol" style="margin:.4rem 0">' + esc(AY.odeme_notu) + '</div>' : '') + '<div class="sol" style="margin:.4rem 0">Ödemeyi yaptıktan sonra aşağıdaki düğmeyle bize haber verin. Ödemeyi gördüğümüzde paketiniz açılır.</div><a class="btn ana kucuk" target="_blank" rel="noopener" href="' + wa + '">Ödemeyi yaptım, WhatsApp’tan haber ver</a></div>';
   }
+  function tcGecerli(t) {
+    if (!/^[1-9][0-9]{10}$/.test(t)) return false; var d = t.split('').map(Number);
+    var a = (d[0] + d[2] + d[4] + d[6] + d[8]) * 7 - (d[1] + d[3] + d[5] + d[7]); if (((a % 10) + 10) % 10 !== d[9]) return false;
+    return d.slice(0, 10).reduce(function (s, x) { return s + x; }, 0) % 10 === d[10];
+  }
+  function faturaFormu(pk, B) {
+    var son = (B.filter(function (x) { return x.fatura; })[0] || {}).fatura || {}, tur = son.tur || 'bireysel';
+    var f = function (id, et, d, ek) { return '<div style="margin-bottom:.6rem"><label>' + et + '</label><input id="' + id + '" value="' + esc(d || '') + '" ' + (ek || '') + '></div>'; };
+    $('#pkMesaj').innerHTML = '<div class="pkNot"><b>' + esc(Veri.planAd(pk)) + ' için önce fatura bilgilerinizi doldurun</b><div class="sol" style="margin:.3rem 0 .8rem">Faturanız bu bilgilere göre kesilir. Bilgileri sadece biz görürüz.</div>' +
+      '<div style="display:flex;gap:1.2rem;margin-bottom:.8rem"><label style="display:flex;gap:.4rem;align-items:center;margin:0"><input type="radio" name="ftur" value="bireysel" style="width:auto"' + (tur === 'bireysel' ? ' checked' : '') + '> Bireysel</label><label style="display:flex;gap:.4rem;align-items:center;margin:0"><input type="radio" name="ftur" value="ticari" style="width:auto"' + (tur === 'ticari' ? ' checked' : '') + '> Şirket (ticari)</label></div>' +
+      '<div id="fBir">' + f('f_ad', 'Ad Soyad', son.ad || o.ad) + f('f_tc', 'TC kimlik no', son.tc, 'inputmode="numeric" maxlength="11"') + '</div>' +
+      '<div id="fTic">' + f('f_unvan', 'Ticari unvan', son.unvan) + f('f_vd', 'Vergi dairesi', son.vd) + f('f_vkn', 'Vergi numarası', son.vkn, 'inputmode="numeric" maxlength="10"') + '</div>' +
+      '<div style="margin-bottom:.6rem"><label>Fatura adresi</label><textarea id="f_adres" rows="3" style="width:100%">' + esc(son.adres || '') + '</textarea></div>' +
+      '<label style="display:flex;gap:.5rem;align-items:flex-start;margin:.4rem 0 .8rem;font-size:13px;font-weight:400"><input type="checkbox" id="f_kvkk" style="width:auto;margin-top:3px"> Kimlik/vergi bilgilerimin yalnızca fatura düzenlemek amacıyla işlenmesini kabul ediyorum (KVKK).</label>' +
+      '<button class="btn ana" id="fGonder">Başvuruyu gönder</button> <button class="btn" id="fIptal">Vazgeç</button></div>';
+    function goster() { var t = document.querySelector('input[name=ftur]:checked').value; $('#fBir').style.display = t === 'bireysel' ? '' : 'none'; $('#fTic').style.display = t === 'ticari' ? '' : 'none'; }
+    $$('input[name=ftur]').forEach(function (r) { r.onchange = goster; }); goster();
+    $('#fIptal').onclick = function () { paketCiz(); };
+    $('#fGonder').onclick = async function () {
+      var t = document.querySelector('input[name=ftur]:checked').value, v = function (i) { return $('#' + i).value.trim(); }, fa = { tur: t, adres: v('f_adres') };
+      if (t === 'bireysel') { fa.ad = v('f_ad'); fa.tc = v('f_tc').replace(/\s/g, ''); if (fa.ad.length < 3) return toast('Ad soyad yazın.'); if (!tcGecerli(fa.tc)) return toast('TC kimlik numarası geçersiz (11 hane).'); }
+      else { fa.unvan = v('f_unvan'); fa.vd = v('f_vd'); fa.vkn = v('f_vkn').replace(/\s/g, ''); if (fa.unvan.length < 3) return toast('Ticari unvanı yazın.'); if (!fa.vd) return toast('Vergi dairesini yazın.'); if (!/^[0-9]{10}$/.test(fa.vkn)) return toast('Vergi numarası 10 haneli olmalı.'); }
+      if (fa.adres.length < 10) return toast('Fatura adresini tam yazın.');
+      if (!$('#f_kvkk').checked) return toast('KVKK onayını işaretleyin.');
+      this.disabled = true;
+      try { await Veri.basvuruYap(pk, fa); paketCiz(); } catch (e) { toast(e.message); this.disabled = false; }
+    };
+  }
   async function paketCiz() {
     var B = await Veri.basvurularim().catch(function () { return []; }), bekleyen = B.filter(function (x) { return x.durum === 'beklemede'; })[0];
     var mevcut = Veri.isPro(o.plan) ? o.plan : 'ucretsiz';
@@ -35,8 +63,7 @@
     $('#basvurular').innerHTML = B.length ? '<table><tr><th>Başvuru tarihi</th><th>Kod</th><th>Paket</th><th>Tutar</th><th>Durum</th></tr>' + B.map(function (x) { return '<tr><td>' + new Date(x.created_at).toLocaleString('tr-TR') + '</td><td>' + Veri.basvuruKod(x) + '</td><td>' + esc(Veri.planAd(x.paket)) + '</td><td>' + tl(x.fiyat_tl) + '</td><td><span class="etiket' + (x.durum === 'onaylandi' ? ' p' : '') + '">' + DB[x.durum] + '</span></td></tr>'; }).join('') + '</table>' : '';
     $$('[data-pk]').forEach(function (b) {
       b.onclick = async function () {
-        b.disabled = true;
-        try { await Veri.basvuruYap(b.dataset.pk); paketCiz(); } catch (e) { toast(e.message); b.disabled = false; }
+        faturaFormu(b.dataset.pk, B);
       };
     });
   }

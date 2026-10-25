@@ -113,5 +113,5 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
 .yzTurler button.acik{background:#111827;border-color:#111827;color:#fff}
 .yzEylem{display:flex;gap:.4rem;flex-wrap:wrap}.yzVurgu{background:#e03a2c!important;border-color:#e03a2c!important;color:#fff!important}
 .yzEtiket{color:#5d6673;font-size:11px}
-.menu .otoSekme{margin-left:auto;align-self:center;background:#e03a2c;color:#fff;border:0;border-radius:6px 6px 0 0;padding:.35rem 1rem;font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.15)}
-.menu .otoSekme:hover{background:#c52f22}
+.menu .otoSekme{margin:0 34px 0 auto;align-self:center;background:linear-gradient(180deg,#f0594a,#d8372a);color:#fff;border:1px solid #b9301d;border-radius:6px;padding:.36rem .8rem;font-weight:700;font-size:12.5px;line-height:1;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(0,0,0,.15)}
+.menu .otoSekme:hover{filter:brightness(1.08)}.menu .otoSekme:active{transform:translateY(1px)}

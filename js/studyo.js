@@ -29,9 +29,9 @@
     el.innerHTML = '<div class="bas"><b></b><small></small><button class="x" title="Pencereyi kapat">✕</button></div><div class="ov" title="Genel görünüm: tıklayıp sürükleyerek gezinin"><canvas></canvas></div><div class="dalga"><canvas class="cv"></canvas></div><div class="kay" title="Kaydırma çubuğu"><div class="th"></div></div><div class="zb">' + zbHtml() + '<span class="sure"></span></div>';
     alan.appendChild(el); p.el = el; p.cv = $('.cv', el); p.ovc = $('.ov canvas', el); p.kay = $('.kay', el); p.th = $('.th', el);
     var w = alan.clientWidth, h = alan.clientHeight, n = S.pen.length;
-    var MG = 40, yuk = Math.max(150, Math.floor((h - 32) / 3)), satir = Math.max(1, Math.floor((h - 8) / (yuk + 8))), sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
+    var MG = 72, yuk = Math.max(200, Math.floor((h - 32) / 3) + 22), satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
     el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 8 + ((n - satir) % 6 + 1) * 28) + 'px';
-    S.pen.push(p); $('.bas b', el).textContent = ad;
+    S.pen.push(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
     baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle();
     if (window.ResizeObserver) new ResizeObserver(function () { if (p.el.isConnected) ciz(p); }).observe(p.el);
     return p;
@@ -182,6 +182,7 @@
     var p = akt(); $('#dPen').textContent = p ? p.ad : '—'; $('#dFmt').textContent = p ? (SR / 1000).toFixed(1).replace('.', ',') + ' kHz · 32 bit float · ' + (p.R && p.R !== p.L ? 'Stereo' : 'Mono') + ' · ' + sn(p.L.length / SR) : '';
     $('#dSecim').textContent = p ? (p.sec ? sn(p.sec[0] / SR) + ' – ' + sn(p.sec[1] / SR) + ' (' + ((p.sec[1] - p.sec[0]) / SR).toFixed(2) + ' sn)' : 'imleç ' + sn(p.imlec / SR)) : 'yok';
     if (p && p.L.length) { var st = Motor.istatistik(p.L, SR); $('#dSes').textContent = 'zemin ' + st.zeminDb.toFixed(0) + ' dB   konuşma ' + st.konusmaDb.toFixed(0) + ' dB   tepe ' + st.tepeDb.toFixed(1) + ' dB'; } else $('#dSes').textContent = '—';
+    $('#sBas').textContent = p && p.sec ? sn(p.sec[0] / SR) : '—'; $('#sSon').textContent = p && p.sec ? sn(p.sec[1] / SR) : '—';
     $('#zaman').textContent = sn(p ? ((S.cal && S.calP === p) ? S.imlecCal : p.imlec) / SR : 0);
   }
   window.addEventListener('resize', function () { S.pen.forEach(function (p) { var mx = Math.max(0, p.L.length - gW(p) * p.spp); if (p.bas > mx) p.bas = mx; ciz(p); }); });
@@ -194,7 +195,8 @@
     var s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); var t0 = c.currentTime + 0.03; s.start(t0);
     S.cal = s; S.calP = p || null; S.imlecCal = bas; oynatIk(1);
     s.onended = function () { if (S.cal === s) { S.cal = null; var pp = S.calP; S.calP = null; oynatIk(0); if (pp) ciz(pp); guncelle(); if (onBitti) onBitti(); } };
-    (function raf() { if (S.cal !== s) return; S.imlecCal = bas + Math.max(0, c.currentTime - t0) * SR; if (p) { if (S.takip !== false && S.imlecCal > p.bas + gW(p) * p.spp) { p.bas = Math.min(Math.max(0, p.L.length - gW(p) * p.spp), S.imlecCal - 20 * p.spp); } ciz(p); } $('#zaman').textContent = sn(S.imlecCal / SR); requestAnimationFrame(raf); })();
+    (function raf() { if (S.cal !== s) return; S.imlecCal = bas + Math.max(0, c.currentTime - t0) * SR; if (p) { if (S.takip !== false && S.imlecCal > p.bas + gW(p) * p.spp) { p.bas = Math.min(Math.max(0, p.L.length - gW(p) * p.spp), S.imlecCal - 20 * p.spp); } ciz(p); } $('#sBas').textContent = p && p.sec ? sn(p.sec[0] / SR) : '—'; $('#sSon').textContent = p && p.sec ? sn(p.sec[1] / SR) : '—';
+    $('#zaman').textContent = sn(S.imlecCal / SR); requestAnimationFrame(raf); })();
   }
   function calPencere(p) {
     if (!p) return toast('Önce bir pencere açın');
@@ -539,9 +541,9 @@
     var n = S.pen.length; if (!n) return; var w = alan.clientWidth, h = alan.clientHeight;
     S.pen.forEach(function (p, i) {
       var e = p.el;
-      if (tip === 'alt') { var yh = Math.max(170, Math.floor((h - 8 - (n - 1) * 6) / n)); e.style.left = '40px'; e.style.width = (w - 80) + 'px'; e.style.top = (4 + i * (yh + 6)) + 'px'; e.style.height = yh + 'px'; }
+      if (tip === 'alt') { var yh = Math.max(170, Math.floor((h - 8 - (n - 1) * 6) / n)); e.style.left = '72px'; e.style.width = (w - 144) + 'px'; e.style.top = (4 + i * (yh + 6)) + 'px'; e.style.height = yh + 'px'; }
       else if (tip === 'yan') { var gw = Math.floor((w - 8) / n); e.style.left = (4 + i * gw) + 'px'; e.style.width = (gw - 4) + 'px'; e.style.top = '4px'; e.style.height = (h - 8) + 'px'; }
-      else { e.style.left = (40 + (i % 6) * 28) + 'px'; e.style.top = (8 + (i % 6) * 28) + 'px'; e.style.width = Math.max(420, w - 80 - 28 * 5) + 'px'; e.style.height = Math.max(150, Math.floor((h - 32) / 3)) + 'px'; }
+      else { e.style.left = (72 + (i % 6) * 28) + 'px'; e.style.top = (8 + (i % 6) * 28) + 'px'; e.style.width = Math.max(420, w - 144 - 28 * 5) + 'px'; e.style.height = Math.max(200, Math.floor((h - 32) / 3) + 22) + 'px'; }
       ciz(p);
     });
   }
@@ -820,7 +822,7 @@
   /* ---------- İkonlar ve araç çubuğu (Sound Forge tarzı) ---------- */
   var IK = {
     yeni: '<rect class="f" x="3" y="5" width="18" height="14"/><path d="M3 9h18"/><path class="g" d="M12 11.5v5M9.5 14h5"/>',
-    ac: '<path class="y" d="M3 7h6l2 2h10v10H3z"/>',
+    ac: '<path class="y" d="M3 5h6l2 2h8v3H3z"/><path class="y2" d="M2 20l3-9h17l-3 9z"/>',
     disa: '<path class="f" d="M5 3h11l3 3v15H5z"/><rect class="fb" x="8" y="3" width="7" height="5"/><rect class="f" x="8" y="13" width="8" height="8"/>',
     kes: '<circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.5 16 17 4M15.5 16 7 4"/>',
     kopyala: '<rect class="f" x="8" y="8" width="11" height="13"/><path d="M5 16V3h11"/>',
@@ -892,21 +894,27 @@
   function kom(ad) { for (var i = 0; i < M.length; i++) for (var j = 0; j < M[i][1].length; j++) { var m = M[i][1][j]; if (m !== '-' && m[0] === ad) return m; } console.warn('Komut yok:', ad); return null; }
   /* [ikon, komut adı, (ek: id | açık-kapalı anahtarı)] ; '|' ayırıcı */
   var ARAC = [
-    [['yeni', 'Yeni pencere', 'yeniBtn'], ['ac', 'Dosya yükle…', 'sesAc'], ['disa', 'Dışa aktar…']],
-    [['kes', 'Kes'], ['kopyala', 'Kopyala'], ['yapistir', 'Yapıştır'], ['ustune', 'Üzerine yapıştır'], ['karistir', 'Karıştırarak yapıştır…']],
-    [['geri', 'Geri al'], ['yinele', 'Yinele']],
-    [['tumu', 'Hepsini seç'], ['kirp', 'Seçimi tut, gerisini at'], ['sil', 'Seçimi sil'], ['sessiz', 'Seçimi sessiz yap'], ['sessizEkle', 'Sessizlik ekle (imlece)…']],
-    [['kayit', 'Mikrofonla kayıt', 'kayitBtn'], ['dongu', 'Döngü (seçimi sürekli çal)', null, 'dongu'], ['oynat', 'Oynat / Durdur', 'oynatBtn'], ['dur', 'Durdur'], ['basa', 'Başa dön', 'basaBtn'], ['gerisar', 'Geri sar (2 sn)'], ['ilerisar', 'İleri sar (2 sn)'], ['sona', 'Sona git']],
-    [['zin', 'Zamanı yakınlaştır'], ['zout', 'Zamanı uzaklaştır'], ['zsec', 'Seçime yakınlaş'], ['ztum', 'Tamamını göster'], ['lin', 'Seviyeyi büyüt'], ['lout', 'Seviyeyi küçült'], ['takip', 'Çalarken dalgayı takip et', null, 'takip']],
-    [['normal', 'Normalleştir (gürlüğe göre)…'], ['gainup', '+1 dB'], ['gaindown', '−1 dB'], ['fin', 'Yumuşak giriş (fade in)'], ['fout', 'Yumuşak çıkış (fade out)'], ['ters', 'Ters çevir (geriye doğru)'], ['faz', 'Fazı ters çevir'], ['mono', 'Mono’ya çevir'], ['takas', 'Kanalları değiştir'], ['otokirp', 'Baş ve sondaki sessizliği kırp']],
-    [['dip', 'Dip sesi temizle'], ['nr', 'Gürültü azaltma…'], ['hammer', 'Wave Hammer (kompresör + limiter)…'], ['gate', 'Noise Gate (sessizlikte sesi kıs)…'], ['eq', 'Ses rengi (EQ)…'], ['filtre', 'Filtre (alçak / yüksek geçiren)…']],
-    [['reverb', 'Reverb (oda yankısı)…'], ['eko', 'Eko (gecikme)…'], ['chorus', 'Chorus…'], ['flanger', 'Flanger…'], ['vibrato', 'Vibrato…'], ['tremolo', 'Tremolo…'], ['bozulma', 'Distortion…'], ['perde', 'Perde değiştir…'], ['sure', 'Süreyi değiştir…'], ['telefon', 'Telefon'], ['megafon', 'Megafon'], ['robot', 'Robot…']],
-    [['mik', 'Radyo spikeri sesi'], ['gunes', 'Sıcak spiker sesi'], ['parlak', 'Parlak spiker sesi'], ['yildiz', 'Temizle + radyo sesi + seviye']],
-    [['istat', 'İstatistik…'], ['diz', 'Alt alta diz'], ['yan', 'Yan yana diz'], ['seri', 'Basamak düzeni']]
+    [
+      [['yeni', 'Yeni pencere', 'yeniBtn'], ['ac', 'Dosya yükle…', 'sesAc'], ['disa', 'Dışa aktar…']],
+      [['kes', 'Kes'], ['kopyala', 'Kopyala'], ['yapistir', 'Yapıştır'], ['ustune', 'Üzerine yapıştır'], ['karistir', 'Karıştırarak yapıştır…']],
+      [['geri', 'Geri al'], ['yinele', 'Yinele']],
+      [['tumu', 'Hepsini seç'], ['kirp', 'Seçimi tut, gerisini at'], ['sil', 'Seçimi sil'], ['sessiz', 'Seçimi sessiz yap'], ['sessizEkle', 'Sessizlik ekle (imlece)…']],
+      [['normal', 'Normalleştir (gürlüğe göre)…'], ['gainup', '+1 dB'], ['gaindown', '−1 dB'], ['fin', 'Yumuşak giriş (fade in)'], ['fout', 'Yumuşak çıkış (fade out)'], ['ters', 'Ters çevir (geriye doğru)'], ['faz', 'Fazı ters çevir'], ['mono', 'Mono’ya çevir'], ['takas', 'Kanalları değiştir'], ['otokirp', 'Baş ve sondaki sessizliği kırp']],
+      [['mik', 'Radyo spikeri sesi'], ['gunes', 'Sıcak spiker sesi'], ['parlak', 'Parlak spiker sesi'], ['yildiz', 'Temizle + radyo sesi + seviye']],
+      [['istat', 'İstatistik…'], ['diz', 'Alt alta diz'], ['yan', 'Yan yana diz'], ['seri', 'Basamak düzeni']]
+    ],
+    [
+      [['kayit', 'Mikrofonla kayıt', 'kayitBtn'], ['dongu', 'Döngü (seçimi sürekli çal)', null, 'dongu'], ['oynat', 'Oynat / Durdur', 'oynatBtn'], ['dur', 'Durdur'], ['basa', 'Başa dön', 'basaBtn'], ['gerisar', 'Geri sar (2 sn)'], ['ilerisar', 'İleri sar (2 sn)'], ['sona', 'Sona git']],
+      [['zin', 'Zamanı yakınlaştır'], ['zout', 'Zamanı uzaklaştır'], ['zsec', 'Seçime yakınlaş'], ['ztum', 'Tamamını göster'], ['lin', 'Seviyeyi büyüt'], ['lout', 'Seviyeyi küçült'], ['takip', 'Çalarken dalgayı takip et', null, 'takip']],
+      [['dip', 'Dip sesi temizle'], ['nr', 'Gürültü azaltma…'], ['hammer', 'Wave Hammer (kompresör + limiter)…'], ['gate', 'Noise Gate (sessizlikte sesi kıs)…'], ['eq', 'Ses rengi (EQ)…'], ['filtre', 'Filtre (alçak / yüksek geçiren)…']],
+      [['reverb', 'Reverb (oda yankısı)…'], ['eko', 'Eko (gecikme)…'], ['chorus', 'Chorus…'], ['flanger', 'Flanger…'], ['vibrato', 'Vibrato…'], ['tremolo', 'Tremolo…'], ['bozulma', 'Distortion…'], ['perde', 'Perde değiştir…'], ['sure', 'Süreyi değiştir…'], ['telefon', 'Telefon'], ['megafon', 'Megafon'], ['robot', 'Robot…']]
+    ]
   ];
   (function aracKur() {
     var kap = $('#aracSol');
-    ARAC.forEach(function (g) {
+    ARAC.forEach(function (sira) {
+      var sr = document.createElement('div'); sr.className = 'sira'; kap.appendChild(sr);
+      sira.forEach(function (g) {
       var gd = document.createElement('div'); gd.className = 'grup';
       g.forEach(function (t) {
         var m = kom(t[1]); if (!m) return;
@@ -916,7 +924,8 @@
         if (t[3]) b.classList.toggle('on', t[3] === 'takip' ? S.takip !== false : !!S[t[3]]);
         gd.appendChild(b);
       });
-      kap.appendChild(gd);
+      sr.appendChild(gd);
+      });
     });
     oynatIk(0);
   })();

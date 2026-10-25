@@ -197,3 +197,18 @@ body.st .ust nav a,body.st .sag{font-size:13px}
 .pen .zb .ay{margin:0 5px;background:#c6c4be}
 .pen .zb .bir{font-size:10.5px;font-weight:600;color:#3b4656}
 .pen .zb .sure{font-size:12px}
+
+/* v10 */
+.aracSol{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.sira{display:flex;justify-content:space-between;align-items:center}
+.sira .grup:first-child{padding-left:0}
+.ik svg .y2{fill:#f8dc8a;stroke:#8a6d12}
+.aracSag{width:370px}
+.ustSatir{display:flex;gap:4px}
+.ustSatir .led{flex:1}
+.alanlar{display:flex;flex-direction:column;gap:2px;width:96px}
+.alanlar div{display:flex;align-items:center;justify-content:space-between;background:#0b0d10;border:1px solid #6d6a63;border-radius:2px;padding:0 6px;height:16px}
+.alanlar small{font-size:9.5px;color:#8a95a3}
+.alanlar b{font-family:'Barlow Condensed',monospace;font-size:13px;color:#3dff85;font-weight:500;letter-spacing:.04em}
+.alan{overflow-y:auto}
+.bankaKutu,.otoKutu,.otoSayfa{padding-left:72px;padding-right:72px}

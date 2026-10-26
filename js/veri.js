@@ -87,6 +87,7 @@
       if (tur === 'santral') return n + 'Merhaba, firmamızı aradığınız için teşekkür ederiz. Yetkili arkadaşlarımız şu anda diğer görüşmelerde. Lütfen hatta kalın, en kısa sürede size dönüş yapacağız.';
       return n + 'Fırsatı kaçırmayın! Seçili ürünlerde yüzde yirmiye varan indirim, sadece bu hafta sonu. Detaylar için mağazamızı ziyaret edin ya da bizi arayın. Sesinizi duyuran marka: Ses Efekti.';
     },
+    jingleUret: async function () { throw new Error('Otomatik jingle bu denemede kapalı.'); },
     siparisVer: async function (s) { var o = await demo.oturum(), l = LS.oku('siparisler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, durum: 'yeni', sonuc_url: '', created_at: new Date().toISOString() }, s); l.push(k); LS.yaz('siparisler', l); return k; },
     siparislerim: async function () { var o = await demo.oturum(); return LS.oku('siparisler', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
     siparisTum: async function () { return LS.oku('siparisler', []).reverse(); },
@@ -149,6 +150,13 @@
       var r = await sb.functions.invoke('swift-service', { body: { mesajlar: mesajlar, tur: tur } });
       if (r.error) throw new Error('Yapay zeka bağlantısı henüz kurulmadı ya da yanıt vermedi.');
       if (r.data && r.data.hata) throw new Error(r.data.hata); return (r.data && r.data.yanit) || 'Yanıt alınamadı.';
+    },
+    jingleUret: async function (soz) {
+      var r = await sb.functions.invoke('jingle-uret', { body: { soz: soz } });
+      if (r.error) throw new Error('Jingle şu an üretilemedi.');
+      if (r.data && r.data.hata) throw new Error(r.data.hata);
+      if (!r.data || !r.data.ses) throw new Error('Jingle şu an üretilemedi.');
+      return 'data:' + (r.data.mime || 'audio/mpeg') + ';base64,' + r.data.ses;
     },
     siparisVer: async function (s) { var o = await canliApi.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); return hata(await sb.from('siparisler').insert(Object.assign({ user_id: o.id }, s)).select().single()); },
     siparislerim: async function () { var o = await canliApi.oturum(); return hata(await sb.from('siparisler').select('*').eq('user_id', o.id).order('created_at', { ascending: false })); },

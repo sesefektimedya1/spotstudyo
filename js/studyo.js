@@ -1431,6 +1431,7 @@
   /* ---------- Yapay zeka modu (ücretli) ---------- */
   var YZ = { mesajlar: [], mesgul: false, tur: 'reklam' };
   var YZ_AD = { reklam: 'Reklam metni', jingle: 'Jingle sözü', santral: 'Santral anonsu' };
+  var YZ_JINGLE_OTO = false; /* Gemini ile otomatik jingle üretimi hazır olunca true yapılır */
   var YZ_ONERI = {
     reklam: ['30 saniyelik spot yaz', '20 saniyelik spot yaz', 'Daha kısa yap', 'Daha samimi ve daha kısa yap'],
     jingle: ['15 saniyelik jingle sözü yaz', 'Daha neşeli ve ritimli yap', 'Daha kısa yap'],
@@ -1445,7 +1446,7 @@
   }
   function yzCiz() {
     $$('#yzTurler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.yzt === YZ.tur); });
-    $('#yzOneri').innerHTML = '<button class="chip yzVurgu" data-yz="jingleYapSon">Bu metni jingle yap</button>' + YZ_ONERI[YZ.tur].map(function (t) { return '<button class="chip" data-yz="oneri">' + esc(t) + '</button>'; }).join('');
+    $('#yzOneri').innerHTML = '<button class="chip yzVurgu" data-yz="jingleOto">Bu metni bana jingle yap</button><button class="chip yzVurgu" data-yz="jingleYapSon">Jingle siparişi ver</button>' + YZ_ONERI[YZ.tur].map(function (t) { return '<button class="chip" data-yz="oneri">' + esc(t) + '</button>'; }).join('');
     var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Üstten türü seçin, aşağıya isteğinizi yazın.</span></div>'; return; }
     k.innerHTML = YZ.mesajlar.map(function (m, i) {
       var ek = '';
@@ -1454,6 +1455,7 @@
         if (m.tur !== 'jingle') ek += '<button class="btn kucuk yzVurgu" data-yz="jingleCevir" data-i="' + i + '">Jingle sözüne çevir</button>';
         ek += '<button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bize gönder’e aktar</button></div>';
       }
+      if (m.ses) ek = '<audio controls src="' + m.ses + '" style="width:100%;max-width:420px"></audio><div class="yzEylem"><a class="btn kucuk" download="jingle.mp3" href="' + m.ses + '">İndir</a><button class="btn kucuk" data-yz="jingleYapSon">Beğenmedim, bize gönder</button></div>';
       return '<div class="yzM ' + m.r + '">' + (m.tur && m.r === 'ben' ? '<small class="yzEtiket">' + esc(YZ_AD[m.tur]) + '</small>' : '') + '<div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + ek + '</div>';
     }).join('');
     k.scrollTop = k.scrollHeight;
@@ -1475,6 +1477,15 @@
     var b = e.target.closest ? e.target.closest('[data-yz]') : null; if (!b) return;
     var m = YZ.mesajlar[+b.dataset.i], v = b.dataset.yz;
     if (v === 'jingleSon') { var t1 = yzSonMetin(); if (!t1) return toast('Önce bir metin yazdırın ya da kutuya metninizi yapıştırın'); YZ.tur = 'jingle'; yzGonder('Bu metni kısa, akılda kalıcı ve ritimli bir jingle sözüne çevir (kıta ve nakarat olsun):\n\n' + t1, 'jingle'); return; }
+    if (v === 'jingleOto') {
+      var t3 = yzSonMetin(); if (!t3) return toast('Önce bir metin yazdırın ya da kutuya metninizi yapıştırın');
+      if (!YZ_JINGLE_OTO) { $('#bizeMetin').value = t3; $('#bTur').value = 'Jingle'; if ($('#bNot') && !$('#bNot').value) $('#bNot').value = 'Jingle siparişi: bu sözlerle jingle yapılsın'; sekme('bize'); toast('Otomatik jingle üretimi henüz açık değil. Metniniz sipariş sayfasına aktarıldı, gönderirseniz jingle’ı biz hazırlarız.'); return; }
+      if (YZ.mesgul) return; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ai', t: 'Jingle hazırlanıyor, bu bir dakika kadar sürebilir…', hata: true }); yzCiz();
+      Veri.jingleUret(t3).then(function (ses) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: 'Jingle hazır. Dinleyin; beğenmezseniz bize gönderin, biz yapalım.', ses: ses, tur: 'jingle' }; })
+        .catch(function (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: (e && e.message ? e.message : 'Jingle üretilemedi') + ' Siparişi bize gönderirseniz jingle’ı biz hazırlarız.', hata: true }; })
+        .then(function () { YZ.mesgul = false; yzCiz(); });
+      return;
+    }
     if (v === 'jingleYapSon') { var t2 = yzSonMetin(); if (!t2) return toast('Önce bir metin yazdırın ya da kutuya metninizi yapıştırın'); $('#bizeMetin').value = t2; $('#bTur').value = 'Jingle'; if ($('#bNot') && !$('#bNot').value) $('#bNot').value = 'Jingle siparişi: bu sözlerle jingle yapılsın'; sekme('bize'); toast('Metin “Bize gönder” sayfasına aktarıldı. Jingle olarak işaretlendi.'); return; }
     if (v === 'oneri') yzGonder(b.textContent);
     else if (v === 'kopya') { try { navigator.clipboard.writeText(m.t); toast('Kopyalandı'); } catch (x) { toast('Kopyalanamadı'); } }

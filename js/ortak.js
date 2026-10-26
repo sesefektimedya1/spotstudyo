@@ -31,7 +31,7 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 64, gosterildi = false;
+      var SURUM = 65, gosterildi = false;
       function serit() {
         if (gosterildi || document.getElementById('yeniSurum')) return; gosterildi = true;
         var d = document.createElement('div'); d.id = 'yeniSurum';
@@ -81,11 +81,12 @@
     if (oturum) {
       h += '<a href="studyo"' + (aktif === 'studyo' ? ' class="acik"' : '') + '>Stüdyo</a><a href="panel"' + (aktif === 'panel' ? ' class="acik"' : '') + '>Panelim</a>';
     }
+    h += '<a href="paketler"' + (aktif === 'paketler' ? ' class="acik"' : '') + '>Paketler</a>';
     h += '</nav><div class="sag">';
     h += '<div class="dilSec" role="group" aria-label="Dil / Language"><button data-dil="tr" class="' + (window.DIL !== 'en' ? 'acik' : '') + '">TR</button><button data-dil="en" class="' + (window.DIL === 'en' ? 'acik' : '') + '">EN</button></div>';
     if (oturum) {
       var d = await Veri.hakDurumu(), lim = d.limit > 0 ? d.limit : '∞';
-      h += '<span class="plan' + (Veri.isPro(oturum.plan) ? ' pr' : '') + '">' + (Veri.isPro(oturum.plan) ? Veri.planAd(oturum.plan) : Veri.planAd('ucretsiz') + ' plan') + '</span>';
+      h += '<a class="plan' + (Veri.isPro(oturum.plan) ? ' pr' : '') + '" href="paketler" title="Paketleri gör" style="text-decoration:none">' + (Veri.isPro(oturum.plan) ? Veri.planAd(oturum.plan) : Veri.planAd('ucretsiz') + ' plan') + '</a>';
       h += '<span class="kota" title="Bu ayki MP3 indirme hakkınız">Bu ay ' + d.kullanilan + ' / ' + lim + ' indirme</span>';
       h += '<button class="gbBtn" id="gbBtn" title="Bize görüşlerinizi yazın">Geri bildirim</button>';
       if (aktif === 'studyo') h += '<button class="ustDisa" id="ustDisa" title="MP3, WAV ya da santral dosyası olarak dışa aktar (Ctrl+E)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v3h16v-3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Dışa aktar</button>';
@@ -95,7 +96,7 @@
     h += '</header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
     $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });
-    if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; var tn = (aktif === '' || aktif === 'hakkimizda' || aktif === 'kvkk' || aktif === 'sozlesme' || aktif === 'iade'); ab.innerHTML = (tn ? '<a href="hakkimizda">Hakkımızda</a> · <a href="kvkk">Gizlilik ve KVKK</a> · <a href="sozlesme">Mesafeli satış sözleşmesi</a> · <a href="iade">İptal ve iade</a> · <a href="mailto:sesefektimedya@gmail.com">İletişim</a><br>' : '') + '© 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
+    if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; var tn = (aktif === '' || aktif === 'hakkimizda' || aktif === 'kvkk' || aktif === 'sozlesme' || aktif === 'iade' || aktif === 'paketler'); ab.innerHTML = (tn ? '<a href="hakkimizda">Hakkımızda</a> · <a href="kvkk">Gizlilik ve KVKK</a> · <a href="sozlesme">Mesafeli satış sözleşmesi</a> · <a href="iade">İptal ve iade</a> · <a href="mailto:sesefektimedya@gmail.com">İletişim</a><br>' : '') + '© 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
     var gb = $('#gbBtn'); if (gb) gb.onclick = function () { geriBildirimAc(aktif); };
     var c = $('#cikisBtn'); if (c) c.onclick = async function () { await Veri.cikis(); location.href = './'; };
   };

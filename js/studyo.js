@@ -935,7 +935,7 @@
     otoListeleri();
   }
   var BZ = { sesler: [], muzik: null, filtre: '', ay: {} };
-  Veri.ayarlar().then(function (a) { BZ.ay = a || {}; try { bankaCiz(); } catch (e) {} }).catch(function () {});
+  Veri.ayarlar().then(function (a) { BZ.ay = a || {}; try { bankaCiz(); } catch (e) {} try { yzCiz(); } catch (e) {} }).catch(function () {});
   function bankaCiz() {
     var ara = (($('#mAra') || {}).value || '').toLowerCase(), fl = BZ.filtre, turler = [];
     S.kut.muzikler.forEach(function (m) { var t = m.etiket || m.tur || 'Diğer'; if (turler.indexOf(t) < 0) turler.push(t); });
@@ -1469,7 +1469,7 @@
   function yzCiz() {
     $$('#yzTurler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.yzt === YZ.tur); });
     $('#yzGirdi').placeholder = ({ reklam: 'Örn: Ankara’daki kuaförüm için 30 saniyelik spot', jingle: 'Firma adı ve hava, ya da hazır jingle sözünüz', santral: 'Örn: Mesai dışı anonsu, firma adı, saatler' })[YZ.tur];
-    $('#yzOneri').innerHTML = '<button class="chip yzVurgu" data-yz="jingleOto">Bu metni bana jingle yap</button><button class="chip yzVurgu" data-yz="jingleYapSon">Jingle siparişi ver</button>';
+    $('#yzOneri').innerHTML = ((BZ.ay || {}).jingle_oto === '1' ? '<button class="chip yzVurgu" data-yz="jingleOto">Bu metni bana jingle yap</button>' : '') + '<button class="chip yzVurgu" data-yz="jingleYapSon">Jingle siparişi ver</button>';
     var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Aşağıdan türü seçin, isteğinizi yazın.</span></div>'; return; }
     k.innerHTML = YZ.mesajlar.map(function (m, i) {
       var ek = '';
@@ -1503,6 +1503,7 @@
     catch (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: e.message || 'Yanıt alınamadı.', hata: true }; }
     YZ.mesgul = false; yzCiz();
   }
+  $('#yzGirdi').addEventListener('focus', function () { if (telefonMu()) setTimeout(function () { try { $('#yzGirdi').scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }, 350); });
   $('#yzGonder').onclick = function () { yzGonder($('#yzGirdi').value); };
   $('#yzGirdi').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); yzGonder($('#yzGirdi').value); } });
   $('#yzTurler').addEventListener('click', function (e) { var b = e.target.closest('[data-yzt]'); if (!b) return; YZ.tur = b.dataset.yzt; yzCiz(); });
@@ -1511,6 +1512,7 @@
     var m = YZ.mesajlar[+b.dataset.i], v = b.dataset.yz;
     if (v === 'jingleSon') { var t1 = yzSonMetin(); if (!t1) return toast('Önce bir metin yazdırın ya da kutuya metninizi yapıştırın'); YZ.tur = 'jingle'; yzGonder('Bu metni kısa, akılda kalıcı ve ritimli bir jingle sözüne çevir (kıta ve nakarat olsun):\n\n' + t1, 'jingle'); return; }
     if (v === 'jingleOto') {
+      if ((BZ.ay || {}).jingle_oto !== '1') { var tj = yzSonMetin(); if (tj) { yzSiparis(tj); } return; }
       var t3 = yzSonMetin(); if (!t3) return toast('Önce kutuya metni yazın ya da yapay zekaya bir metin yazdırın');
       if (YZ.mesgul) return toast('Önceki cevap geliyor, birkaç saniye bekleyin');
       YZ.mesgul = true; $('#yzGirdi').value = ''; YZ.mesajlar.push({ r: 'ben', t: 'Bu metni jingle yap:\n' + t3, tur: 'jingle' }); YZ.mesajlar.push({ r: 'ai', t: 'Jingle hazırlanıyor, yaklaşık bir dakika sürer…', hata: true }); yzCiz();

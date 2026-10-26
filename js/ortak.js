@@ -31,7 +31,7 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 67, gosterildi = false;
+      var SURUM = 68, gosterildi = false;
       function serit() {
         if (gosterildi || document.getElementById('yeniSurum')) return; gosterildi = true;
         var d = document.createElement('div'); d.id = 'yeniSurum';

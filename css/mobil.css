@@ -82,7 +82,9 @@
   #altSekme .acik{color:#d83a2c}
   .otoSayfa{padding-bottom:1.5rem!important}
   .yzSayfa{padding:10px 10px 12px!important}
-  .yzSohbet{min-height:0!important;height:100%!important}
+  .yzSayfa{height:auto!important;min-height:100%}
+  .yzSohbet{min-height:calc(100dvh - 58px - 90px)!important;height:auto!important}
+  .yzMesajlar{min-height:150px;max-height:48dvh}
   .yzUst{padding:.7rem .9rem!important;gap:.5rem!important}.yzUst h2{font-size:1.2rem!important}.yzUst .yzAlt{display:none}
   .yzTurler{padding:.45rem .8rem .1rem!important;flex-wrap:nowrap!important;gap:.3rem!important}.yzTurler button{padding:.22rem .2rem!important;font-size:11.5px!important;white-space:nowrap}
   .yzOneri{padding:0 .8rem .7rem!important;gap:.4rem!important}.yzOneri .chip{font-size:12px!important;padding:.6rem .2rem!important;white-space:nowrap!important}

@@ -4,7 +4,7 @@
   var C = window.SPOT_CONFIG || {};
   var canli = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY && window.supabase);
   var sb = canli ? window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY) : null;
-  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', pro_aylik_limit: '30', pro_yillik_limit: '100', pro_aylik_fiyat: '1200', pro_yillik_fiyat: '7500', yz_mesaj_limiti: '100', whatsapp: '905331509890', paket_ucretsiz_ad: 'Ücretsiz', paket_aylik_ad: 'Pro Aylık', paket_yillik_ad: 'Pro Yıllık', paket_ucretsiz_md: '', paket_aylik_md: '', paket_yillik_md: '', banka_adi: '', hesap_sahibi: '', iban: '', odeme_notu: '', marka: C.marka || 'Ses Efekti Spot Stüdyo' };
+  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', pro_aylik_limit: '30', pro_yillik_limit: '100', pro_aylik_fiyat: '1200', pro_yillik_fiyat: '7500', yz_mesaj_limiti: '100', whatsapp: '905331509890', paket_ucretsiz_ad: 'Ücretsiz', paket_aylik_ad: 'Pro Aylık', paket_yillik_ad: 'Pro Yıllık', paket_ucretsiz_md: '', paket_aylik_md: '', paket_yillik_md: '', banka_adi: '', hesap_sahibi: '', iban: '', odeme_notu: '', hizmet_ucreti: '0', pay_yuzde: '100', kdv_notu: 'Fiyatlara KDV dahildir.', marka: C.marka || 'Ses Efekti Spot Stüdyo' };
   var PLAN_AD = { ucretsiz: 'Ücretsiz', pro_aylik: 'Pro Aylık', pro_yillik: 'Pro Yıllık' };
   var ADLAR = Object.assign({}, PLAN_AD);
   function adlariYukle(o) { ADLAR.ucretsiz = o.paket_ucretsiz_ad || PLAN_AD.ucretsiz; ADLAR.pro_aylik = o.paket_aylik_ad || PLAN_AD.pro_aylik; ADLAR.pro_yillik = o.paket_yillik_ad || PLAN_AD.pro_yillik; return o; }

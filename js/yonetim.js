@@ -42,15 +42,27 @@
     });
   }
   async function siparis() {
-    var L = await Veri.siparisTum();
-    ic.innerHTML = '<div class="kart">' + (L.length ? L.map(function (x) {
-      return '<div class="sipSatir" data-id="' + x.id + '" style="padding:.9rem 0;border-bottom:1px solid var(--cizgi)"><div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:baseline"><b>' + esc(x.ad || '') + '</b><span class="sol">' + esc(x.telefon || '') + ' · ' + esc(x.eposta || '') + '</span><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span><span class="etiket">' + esc(x.tur || '') + '</span></div>' +
-        '<div style="margin:.4rem 0;white-space:pre-wrap">' + esc(x.metin || '') + '</div><div class="sol" style="font-size:13px">Seslendirmen: ' + esc(x.ses_adi || '-') + ' · Müzik: ' + esc(x.muzik_adi || '-') + (x.notu ? ' · Not: ' + esc(x.notu) : '') + '</div>' +
-        '<div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap"><select class="dr" style="max-width:170px"><option value="yeni">Yeni</option><option value="hazirlaniyor">Hazırlanıyor</option><option value="tamamlandi">Tamamlandı</option></select><input type="text" class="su" placeholder="Hazır dosyanın indirme bağlantısı" value="' + esc(x.sonuc_url || '') + '" style="flex:1;min-width:240px"><button class="btn kucuk ana kyd">Kaydet</button></div></div>';
+    var L = await Veri.siparisTum(), hk = {};
+    L.forEach(function (x) { if (x.odeme_durum !== 'odendi') return; (x.kalemler || []).forEach(function (k) { if (k.tur === 'ses' && !k.odendi) hk[k.ses] = (hk[k.ses] || 0) + (+k.pay || 0); }); });
+    var hkSat = Object.keys(hk).map(function (n) { return '<tr><td>' + esc(n) + '</td><td style="text-align:right"><b>' + tl(hk[n]) + '</b></td></tr>'; }).join('');
+    var ust = '<div class="kart" style="margin-bottom:1rem"><h3 style="font-size:1.2rem;margin-bottom:.3rem">Seslendirmenlere ödenecek (ödemesi alınmış siparişlerden)</h3>' + (hkSat ? '<table style="max-width:420px;width:100%">' + hkSat + '</table>' : '<span class="sol">Şu an ödenecek hakediş yok.</span>') + '</div>';
+    ic.innerHTML = ust + '<div class="kart">' + (L.length ? L.map(function (x) {
+      var kod = 'SP-' + String(x.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase(), kl = x.kalemler || [];
+      var kSat = kl.length ? '<table style="margin:.4rem 0;width:100%;max-width:640px">' + kl.map(function (k, j) { return '<tr data-j="' + j + '"><td>' + esc(k.ad) + '</td><td style="text-align:right;white-space:nowrap">' + tl(k.fiyat) + '</td>' + (k.tur === 'ses' ? '<td style="white-space:nowrap">Seslendirmen payı <input type="number" class="py" value="' + (+k.pay || 0) + '" style="width:80px"> TL</td><td><label><input type="checkbox" class="od"' + (k.odendi ? ' checked' : '') + '> ödendi</label></td>' : '<td></td><td></td>') + '</tr>'; }).join('') + '<tr><td><b>Toplam</b></td><td style="text-align:right"><b>' + tl(x.toplam_tl) + '</b></td><td></td><td></td></tr></table>' : '';
+      return '<div class="sipSatir" data-id="' + x.id + '" style="padding:.9rem 0;border-bottom:1px solid var(--cizgi)"><div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:baseline"><b>' + esc(x.ad || '') + '</b><span class="etiket">' + kod + '</span><span class="sol">' + esc(x.telefon || '') + ' · ' + esc(x.eposta || '') + '</span><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span><span class="etiket">' + esc(x.tur || '') + '</span></div>' +
+        '<div style="margin:.4rem 0;white-space:pre-wrap">' + esc(x.metin || '') + '</div><div class="sol" style="font-size:13px">Seslendirmen: ' + esc(x.ses_adi || '-') + ' · Müzik: ' + esc(x.muzik_adi || '-') + (x.notu ? ' · Not: ' + esc(x.notu) : '') + '</div>' + kSat +
+        '<div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap"><select class="dr" style="max-width:170px"><option value="yeni">Yeni</option><option value="hazirlaniyor">Hazırlanıyor</option><option value="tamamlandi">Tamamlandı</option></select><select class="op" style="max-width:190px"><option value="bekliyor">Ödeme bekleniyor</option><option value="odendi">Ödeme alındı</option></select><input type="text" class="su" placeholder="Hazır dosyanın indirme bağlantısı" value="' + esc(x.sonuc_url || '') + '" style="flex:1;min-width:240px"><button class="btn kucuk ana kyd">Kaydet</button></div></div>';
     }).join('') : '<span class="sol">Henüz sipariş yok.</span>') + '</div>';
     $$('.sipSatir', ic).forEach(function (tr, i) {
-      tr.querySelector('.dr').value = L[i].durum;
-      tr.querySelector('.kyd').onclick = async function () { try { await Veri.siparisGuncelle(L[i].id, { durum: tr.querySelector('.dr').value, sonuc_url: tr.querySelector('.su').value.trim() }); toast('Kaydedildi'); } catch (e) { toast(e.message); } };
+      tr.querySelector('.dr').value = L[i].durum; tr.querySelector('.op').value = L[i].odeme_durum || 'bekliyor';
+      tr.querySelector('.kyd').onclick = async function () {
+        try {
+          var kl = (L[i].kalemler || []).map(function (k) { return Object.assign({}, k); });
+          $$('tr[data-j]', tr).forEach(function (r) { var k = kl[+r.dataset.j]; if (k && k.tur === 'ses') { k.pay = +r.querySelector('.py').value || 0; k.odendi = r.querySelector('.od').checked; } });
+          var d = { durum: tr.querySelector('.dr').value, sonuc_url: tr.querySelector('.su').value.trim(), odeme_durum: tr.querySelector('.op').value }; if (kl.length) d.kalemler = kl;
+          await Veri.siparisGuncelle(L[i].id, d); toast('Kaydedildi'); siparis();
+        } catch (e) { toast(e.message); }
+      };
     });
   }
 
@@ -132,10 +144,11 @@
       '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Ödeme bilgileri (IBAN)</h3><div class="sol" style="margin-bottom:1rem">Müşteri Pro pakete başvurunca bu bilgileri görür ve başvuru koduyla birlikte havale yapar. Boş bırakırsanız “WhatsApp’tan yazın” çıkar.</div>' +
       '<div class="izgara g3" style="gap:1rem">' + inp('o_banka', 'Banka adı', a.banka_adi) + inp('o_sahip', 'Hesap sahibi (ad / unvan)', a.hesap_sahibi) + inp('o_iban', 'IBAN', a.iban) + '</div>' +
       ta('o_not', 'Müşteriye ek not (isteğe bağlı)', a.odeme_notu, 'Örn: Havale açıklamasına başvuru kodunu yazmayı unutmayın.') + inp('o_wa', 'WhatsApp numarası (90 ile, boşluksuz)', a.whatsapp) + '</div>' +
+      '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Sipariş sepeti</h3><div class="sol" style="margin-bottom:1rem">Bize gönder sayfasındaki sepet. Seslendirmen fiyatı Kütüphane’de her sesin yanındaki fiyattan gelir.</div><div class="izgara g3" style="gap:1rem">' + inp('s_hz', 'Prodüksiyon hizmet bedeli (TL, 0 = yok)', a.hizmet_ucreti, 'number') + inp('s_py', 'Seslendirmenin payı (% — varsayılan, siparişte değiştirilebilir)', a.pay_yuzde, 'number') + inp('s_kdv', 'Fiyat notu', a.kdv_notu) + '</div></div>' +
       '<button class="btn ana" id="a-k" style="margin-top:1.2rem">Hepsini kaydet</button>';
     $('#a-k').onclick = async function () {
-      var M = { a1: 'ucretsiz_indirme_limiti', a2: 'pro_aylik_fiyat', a3: 'pro_aylik_limit', a4: 'pro_yillik_fiyat', a5: 'pro_yillik_limit', a6: 'yz_mesaj_limiti', a_u_ad: 'paket_ucretsiz_ad', a_a_ad: 'paket_aylik_ad', a_y_ad: 'paket_yillik_ad', a_u_md: 'paket_ucretsiz_md', a_a_md: 'paket_aylik_md', a_y_md: 'paket_yillik_md', o_banka: 'banka_adi', o_sahip: 'hesap_sahibi', o_iban: 'iban', o_not: 'odeme_notu', o_wa: 'whatsapp' };
-      var sayi = { a1: 1, a2: 1, a3: 1, a4: 1, a5: 1, a6: 1 };
+      var M = { a1: 'ucretsiz_indirme_limiti', a2: 'pro_aylik_fiyat', a3: 'pro_aylik_limit', a4: 'pro_yillik_fiyat', a5: 'pro_yillik_limit', a6: 'yz_mesaj_limiti', a_u_ad: 'paket_ucretsiz_ad', a_a_ad: 'paket_aylik_ad', a_y_ad: 'paket_yillik_ad', a_u_md: 'paket_ucretsiz_md', a_a_md: 'paket_aylik_md', a_y_md: 'paket_yillik_md', o_banka: 'banka_adi', o_sahip: 'hesap_sahibi', o_iban: 'iban', o_not: 'odeme_notu', o_wa: 'whatsapp', s_hz: 'hizmet_ucreti', s_py: 'pay_yuzde', s_kdv: 'kdv_notu' };
+      var sayi = { s_hz: 1, s_py: 1, a1: 1, a2: 1, a3: 1, a4: 1, a5: 1, a6: 1 };
       try { for (var k in M) { var d = $('#' + k).value; await Veri.ayarKaydet(M[k], sayi[k] ? (d || 0) : d.trim()); } toast('Kaydedildi'); } catch (e) { toast(e.message); }
     };
   }

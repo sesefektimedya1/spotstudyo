@@ -915,7 +915,7 @@
       hedefUygula(); $('#tarzAd').textContent = T.ad + (S.tarzNo >= Motor.TARZ.length ? ' (ince ayar)' : '');
       S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb;
       if (S.sonuc.zeminSonra > -62 && tm !== 'cokguclu') { /* dip ses hâlâ duyulur: daha güçlü ikinci tur */ S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: 'cokguclu' })); S.z.gurultu.iz = S.iz || iz || null; if (bt) S.z.muzik.bitis = bt; hedefUygula(); S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb; }
-      if (telefonMu() && S.sonuc) { try { var sz = sessizlikSifirla({ L: S.sonuc.L, R: S.sonuc.R }); if (sz) { S.sonuc.L = sz.L; S.sonuc.R = sz.R; } } catch (ez) {} } /* telefon: baştaki ve sondaki dip ses tam sessizlik */
+      if (telefonMu() && S.sonuc && !muzik) { try { var sz = sessizlikSifirla({ L: S.sonuc.L, R: S.sonuc.R }); if (sz) { S.sonuc.L = sz.L; S.sonuc.R = sz.R; } } catch (ez) {} } /* telefon: baştaki ve sondaki dip ses tam sessizlik */
       sonucCiz(); calDizi(S.sonuc.L, S.sonuc.R, null, 0);
       if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) { var sk = $('#cSonuc'); if (sk && sk.scrollIntoView) sk.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     } catch (e) { hata(e); }
@@ -934,42 +934,62 @@
     try { S.kut.sesler = await Veri.liste('sesler'); } catch (e) { S.kut.sesler = []; }
     otoListeleri();
   }
-  var BZ = { ses: null, muzik: null, filtre: '' };
+  var BZ = { sesler: [], muzik: null, filtre: '', ay: {} };
+  Veri.ayarlar().then(function (a) { BZ.ay = a || {}; try { bankaCiz(); } catch (e) {} }).catch(function () {});
   function bankaCiz() {
     var ara = (($('#mAra') || {}).value || '').toLowerCase(), fl = BZ.filtre, turler = [];
     S.kut.muzikler.forEach(function (m) { var t = m.etiket || m.tur || 'Diğer'; if (turler.indexOf(t) < 0) turler.push(t); });
     $('#mFiltre').innerHTML = ['Tümü'].concat(turler).map(function (t) { return '<button class="chip' + ((fl || 'Tümü') === t ? ' acik' : '') + '" data-b="mflt" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('');
     var ml = S.kut.muzikler.map(function (m, i) { return { m: m, i: i }; }).filter(function (z) { var t = z.m.etiket || z.m.tur || 'Diğer'; return (!fl || fl === 'Tümü' || t === fl) && (!ara || z.m.ad.toLowerCase().indexOf(ara) > -1); });
     $('#muzikListe').innerHTML = ml.length ? ml.map(function (z) { var s = BZ.muzik === z.i; return '<div class="spRow' + (s ? ' sec' : '') + '"><button class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="Dinle">▶</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(z.m.etiket || z.m.tur || '') + '</small></div><button class="btn kucuk' + (s ? ' ana' : '') + '" data-b="mekle" data-i="' + z.i + '">' + (s ? '✓ Seçildi' : '+ Ekle') + '</button></div>'; }).join('') : '<div class="bosNot">' + (S.kut.muzikler.length ? 'Aramaya uyan müzik yok.' : 'Henüz müzik eklenmemiş. Yönetim panelinden ekleyin.') + '</div>';
-    $('#sesListe').innerHTML = S.kut.sesler.length ? S.kut.sesler.map(function (m, i) { var s = BZ.ses === i; return '<div class="spRow' + (s ? ' sec' : '') + '"><button class="spPlay" data-b="cal" data-t="sesler" data-i="' + i + '" title="Dinle">▶</button><div class="spAd"><b>' + esc(m.ad) + '</b><small>' + esc(m.aciklama || m.tur || '') + (m.fiyat_tl ? ' · ' + m.fiyat_tl + ' TL' : '') + '</small></div><button class="btn kucuk' + (s ? ' ana' : '') + '" data-b="bsec" data-i="' + i + '">' + (s ? '✓ Seçildi' : 'Seç') + '</button></div>'; }).join('') : '<div class="bosNot">Henüz seslendirmen eklenmemiş.</div>';
-    var sm = S.kut.sesler[BZ.ses], mm = S.kut.muzikler[BZ.muzik];
-    $('#bSes').textContent = sm ? sm.ad : 'Seçilmedi'; $('#bMuz').textContent = mm ? mm.ad : 'Seçilmedi';
-    $('#bSes').parentNode.classList.toggle('dolu', !!sm); $('#bMuz').parentNode.classList.toggle('dolu', !!mm);
+    $('#sesListe').innerHTML = S.kut.sesler.length ? S.kut.sesler.map(function (m, i) { var s = BZ.sesler.indexOf(i) > -1; return '<div class="spRow' + (s ? ' sec' : '') + '"><button class="spPlay" data-b="cal" data-t="sesler" data-i="' + i + '" title="Dinle">▶</button><div class="spAd"><b>' + esc(m.ad) + '</b><small>' + esc(m.aciklama || m.tur || '') + (m.fiyat_tl ? ' · ' + m.fiyat_tl + ' TL' : '') + '</small></div><button class="btn kucuk' + (s ? ' ana' : '') + '" data-b="bsec" data-i="' + i + '">' + (s ? '✓ Sepette' : '+ Sepete ekle') + '</button></div>'; }).join('') : '<div class="bosNot">Henüz seslendirmen eklenmemiş.</div>';
+    var sl = BZ.sesler.map(function (i) { return S.kut.sesler[i]; }).filter(Boolean), mm = S.kut.muzikler[BZ.muzik];
+    $('#bSes').textContent = sl.length ? sl.map(function (z) { return z.ad; }).join(', ') : 'Seçilmedi'; $('#bMuz').textContent = mm ? mm.ad : 'Seçilmedi';
+    $('#bSes').parentNode.classList.toggle('dolu', !!sl.length); sepetCiz(); $('#bMuz').parentNode.classList.toggle('dolu', !!mm);
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-b]') : null; if (!b) return; var v = b.dataset.b;
-    if (v === 'bsec') { BZ.ses = BZ.ses === +b.dataset.i ? null : +b.dataset.i; bankaCiz(); }
+    if (v === 'bsec') { var bi = +b.dataset.i, bx = BZ.sesler.indexOf(bi); if (bx > -1) BZ.sesler.splice(bx, 1); else BZ.sesler.push(bi); bankaCiz(); }
     else if (v === 'mekle') { BZ.muzik = BZ.muzik === +b.dataset.i ? null : +b.dataset.i; bankaCiz(); }
     else if (v === 'mflt') { BZ.filtre = b.dataset.v; bankaCiz(); }
   });
   $('#mAra').addEventListener('input', bankaCiz);
+  function trl(n) { return Number(n || 0).toLocaleString('tr-TR') + ' TL'; }
+  function sepetKalem() {
+    var a = BZ.ay || {}, k = [], hz = +a.hizmet_ucreti || 0, yz = +a.pay_yuzde; if (!(yz >= 0)) yz = 100; if (a.pay_yuzde === '' || a.pay_yuzde == null) yz = 100;
+    if (hz > 0) k.push({ tur: 'hizmet', ad: 'Prodüksiyon hizmeti', fiyat: hz });
+    BZ.sesler.forEach(function (i) { var z = S.kut.sesler[i]; if (!z) return; var f = +z.fiyat_tl || 0; k.push({ tur: 'ses', ad: 'Seslendirmen: ' + z.ad, ses: z.ad, fiyat: f, pay: Math.round(f * yz) / 100, odendi: false }); });
+    return k;
+  }
+  function sepetCiz() {
+    var el = $('#sepet'); if (!el) return; var k = sepetKalem(), top = k.reduce(function (t, x) { return t + x.fiyat; }, 0), a = BZ.ay || {};
+    if (!k.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+    el.style.display = '';
+    el.innerHTML = '<h3>Sepetiniz</h3><table>' + k.map(function (x) { return '<tr><td>' + esc(x.ad) + '</td><td class="sag">' + (x.fiyat ? trl(x.fiyat) : 'fiyat sorunuz') + '</td></tr>'; }).join('') + '<tr class="top"><td>Toplam</td><td class="sag">' + trl(top) + '</td></tr></table>' + (BZ.sesler.length > 1 ? '<div class="sol">Seçtiğiniz her seslendirmen aynı metni okur. Farklı metinler için ayrı sipariş verin.</div>' : '') + (a.kdv_notu ? '<div class="sol">' + esc(a.kdv_notu) + '</div>' : '');
+  }
   $('#bizeGonder').onclick = async function () {
     var metin = $('#bizeMetin').value.trim(), ad = $('#bAd').value.trim(), tel = $('#bTel').value.trim(), em = $('#bMail').value.trim(), kut = $('#bizeSonuc');
     if (metin.length < 10) return toast('Önce spot metnini yazın');
     if (!ad) return toast('Adınızı yazın'); if (!tel && !em) return toast('Telefon ya da e-posta yazın');
-    var sm = S.kut.sesler[BZ.ses], mm = S.kut.muzikler[BZ.muzik];
-    var sip = { metin: metin, ses_adi: sm ? sm.ad : '', muzik_adi: mm ? mm.ad : '', tur: $('#bTur').value, ad: ad, telefon: tel, eposta: em, notu: $('#bNot').value.trim() };
+    var mm = S.kut.muzikler[BZ.muzik], kal = sepetKalem(), top = kal.reduce(function (t, x) { return t + x.fiyat; }, 0), sesAd = kal.filter(function (x) { return x.tur === 'ses'; }).map(function (x) { return x.ses; }).join(', ');
+    var sip = { metin: metin, ses_adi: sesAd, muzik_adi: mm ? mm.ad : '', tur: $('#bTur').value, ad: ad, telefon: tel, eposta: em, notu: $('#bNot').value.trim(), kalemler: kal, toplam_tl: top, odeme_durum: 'bekliyor' };
     var btn = $('#bizeGonder'); btn.disabled = true; btn.textContent = 'Gönderiliyor…';
     try {
       var kayit = await Veri.siparisVer(sip), eposta = false;
       try {
-        var r = await fetch('https://formsubmit.co/ajax/sesefektimedya@gmail.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ _subject: 'Yeni spot siparişi: ' + ad, _template: 'table', Ad: ad, Telefon: tel, Eposta: em, Seslendirmen: sip.ses_adi || '(seçilmedi)', Muzik: sip.muzik_adi || '(seçilmedi)', Cikis_turu: sip.tur, Metin: metin, Not: sip.notu, Siparis_no: kayit && kayit.id || '' }) });
+        var r = await fetch('https://formsubmit.co/ajax/sesefektimedya@gmail.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ _subject: 'Yeni spot siparişi: ' + ad, _template: 'table', Ad: ad, Telefon: tel, Eposta: em, Seslendirmen: sip.ses_adi || '(seçilmedi)', Toplam: trl(top), Kalemler: kal.map(function (x) { return x.ad + ' ' + trl(x.fiyat); }).join(' | '), Muzik: sip.muzik_adi || '(seçilmedi)', Cikis_turu: sip.tur, Metin: metin, Not: sip.notu, Siparis_no: kayit && kayit.id || '' }) });
         eposta = r.ok;
       } catch (x) {}
       var wa = 'Merhaba, yeni spot siparişi.\nAd: ' + ad + '\nTelefon: ' + tel + '\nSeslendirmen: ' + (sip.ses_adi || '-') + '\nMüzik: ' + (sip.muzik_adi || '-') + '\nÇıkış: ' + sip.tur + '\nMetin: ' + metin;
       kut.style.display = 'block';
-      kut.innerHTML = '<b>Siparişiniz alındı.</b> Hazır dosyayı <a href="panel">Panelim</a> sayfasında “Siparişlerim” bölümünden indirebilirsiniz.' + (eposta ? '' : '<div class="sol">E-posta bildirimi şu an gönderilemedi, siparişiniz sistemde kayıtlı.</div>') + '<div style="margin-top:.6rem"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/905331509890?text=' + encodeURIComponent(wa) + '">WhatsApp’tan da haber ver</a></div>';
+      var kod = 'SP-' + String(kayit && kayit.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase(), ay = BZ.ay || {}, odeme = '';
+      if (top > 0) {
+        var wa2 = 'https://wa.me/' + (ay.whatsapp || '905331509890') + '?text=' + encodeURIComponent('Merhaba, ' + kod + ' numaralı siparişin havalesini yaptım. Tutar: ' + trl(top) + ' (' + ad + ')');
+        odeme = '<div class="sepetOde"><b>Ödeme: ' + trl(top) + '</b>' + ((ay.banka_adi || ay.iban) ? '<table class="odT"><tr><td class="sol">Banka</td><td>' + esc(ay.banka_adi || '—') + '</td></tr><tr><td class="sol">Hesap sahibi</td><td>' + esc(ay.hesap_sahibi || '—') + '</td></tr><tr><td class="sol">IBAN</td><td><b id="sipIban">' + esc(ay.iban || '—') + '</b> <button class="btn kucuk" id="sipIbanK">Kopyala</button></td></tr><tr><td class="sol">Havale açıklaması</td><td><b>' + kod + '</b> <span class="sol">(bu kodu yazın)</span></td></tr></table>' : '<div class="sol">Ödeme bilgileri için WhatsApp’tan yazın. Sipariş kodunuz: <b>' + kod + '</b></div>') + (ay.odeme_notu ? '<div class="sol">' + esc(ay.odeme_notu) + '</div>' : '') + '<div class="sol">Havaleyi yapınca düğmeyle haber verin; ödemeyi gördüğümüzde üretime başlarız.</div><a class="btn ana kucuk" target="_blank" rel="noopener" href="' + wa2 + '">Havaleyi yaptım, haber ver</a></div>';
+      }
+      kut.innerHTML = '<b>Siparişiniz alındı. Kodunuz: ' + kod + '</b>' + odeme + '<div style="margin-top:.6rem"></div> Hazır dosyayı <a href="panel">Panelim</a> sayfasında “Siparişlerim” bölümünden indirebilirsiniz.' + (eposta ? '' : '<div class="sol">E-posta bildirimi şu an gönderilemedi, siparişiniz sistemde kayıtlı.</div>') + '<div style="margin-top:.6rem"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/905331509890?text=' + encodeURIComponent(wa) + '">WhatsApp’tan da haber ver</a></div>';
       toast('Sipariş gönderildi');
+      var kb2 = $('#sipIbanK'); if (kb2) kb2.onclick = function () { try { navigator.clipboard.writeText($('#sipIban').textContent.replace(/\s/g, '')); toast('IBAN kopyalandı'); } catch (x) { toast('Kopyalanamadı'); } };
     } catch (er) { hata(er); }
     btn.disabled = false; btn.textContent = 'Siparişi gönder';
   };
@@ -984,6 +1004,7 @@
 
   /* ---------- Sekmeler ---------- */
   function sekme(t) {
+    if (S.tab !== t) { try { durdur(); } catch (ed) {} } /* sekme değişince çalan ses kesilir */
     S.tab = t; $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
     ['#menu', '#arac', '.durum', '#mobSerit'].forEach(function (q) { $(q).style.display = t === 'manuel' ? '' : 'none'; });
     $$('#altSekme [data-t]').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); });

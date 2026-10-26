@@ -73,7 +73,7 @@
     return '<tr><td>' + esc(x.proje_adi) + '</td><td><span class="etiket">' + esc(x.tur) + '</span></td><td>' + new Date(x.created_at).toLocaleString('tr-TR') + '</td></tr>';
   }).join('') + '</table>' : 'Henüz indirme yok. Stüdyoda bir spot hazırlayıp MP3 olarak indirin.';
   var sp = await Veri.siparislerim(), DU = { yeni: 'Yeni', hazirlaniyor: 'Hazırlanıyor', tamamlandi: 'Tamamlandı' };
-  $('#siparisler').innerHTML = sp.length ? '<table><tr><th>Tarih</th><th>Metin</th><th>Seslendirmen / müzik</th><th>Durum</th><th></th></tr>' + sp.map(function (x) {
-    return '<tr><td>' + new Date(x.created_at).toLocaleString('tr-TR') + '</td><td style="max-width:320px">' + esc((x.metin || '').slice(0, 90)) + ((x.metin || '').length > 90 ? '…' : '') + '</td><td>' + esc(x.ses_adi || '-') + ' / ' + esc(x.muzik_adi || '-') + '</td><td><span class="etiket">' + esc(DU[x.durum] || x.durum) + '</span></td><td>' + (x.sonuc_url ? '<a class="btn kucuk ana" target="_blank" rel="noopener" href="' + esc(x.sonuc_url) + '">İndir</a>' : '') + '</td></tr>';
+  $('#siparisler').innerHTML = sp.length ? '<table><tr><th>Tarih</th><th>Metin</th><th>Seslendirmen / müzik</th><th>Tutar</th><th>Durum</th><th></th></tr>' + sp.map(function (x) {
+    return '<tr><td>' + new Date(x.created_at).toLocaleString('tr-TR') + '</td><td style="max-width:320px">' + esc((x.metin || '').slice(0, 90)) + ((x.metin || '').length > 90 ? '…' : '') + '</td><td>' + esc(x.ses_adi || '-') + ' / ' + esc(x.muzik_adi || '-') + '</td><td>' + (+x.toplam_tl ? tl(x.toplam_tl) + ' <span class="etiket">' + (x.odeme_durum === 'odendi' ? 'Ödendi' : 'Ödeme bekleniyor') + '</span>' : '-') + '</td><td><span class="etiket">' + esc(DU[x.durum] || x.durum) + '</span></td><td>' + (x.sonuc_url ? '<a class="btn kucuk ana" target="_blank" rel="noopener" href="' + esc(x.sonuc_url) + '">İndir</a>' : '') + '</td></tr>';
   }).join('') + '</table>' : 'Henüz sipariş yok.';
 })();

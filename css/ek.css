@@ -128,3 +128,8 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
   .yzGiris{padding:1rem 2rem 1.3rem}.yzGiris textarea{font-size:16px;padding:.8rem 1rem;min-height:64px}
   .yzGiris .btn{min-width:110px;font-size:16px}
 }
+
+.sepet{border:1px solid #2e9d57;background:#f4fbf6;border-radius:8px;padding:.6rem .9rem;margin-top:.9rem}
+.sepet h3{font-size:15px;margin:0 0 .35rem}.sepet table{width:100%;border-collapse:collapse}.sepet td{padding:.2rem 0;font-size:14px}.sepet td.sag{text-align:right;white-space:nowrap}
+.sepet tr.top td{border-top:1px solid #bcd9c6;font-weight:700;padding-top:.35rem}.sepet .sol{font-size:12px;margin-top:.3rem}
+.sepetOde{margin:.6rem 0;padding:.6rem .8rem;border:1px solid #cfd6de;border-radius:8px;background:#fff}.sepetOde .odT{width:100%;margin:.4rem 0}.sepetOde .odT td{padding:.15rem .4rem .15rem 0;font-size:14px}

@@ -1,0 +1,11 @@
+-- Ses Efekti Spot Stüdyo — SEPET + ÖDEME + SESLENDİRMEN HAKEDİŞİ
+-- Supabase > SQL Editor'e tamamını yapıştırıp RUN'a basın. Tekrar çalıştırmak zarar vermez.
+
+alter table public.siparisler add column if not exists kalemler jsonb;
+alter table public.siparisler add column if not exists toplam_tl numeric;
+alter table public.siparisler add column if not exists odeme_durum text not null default 'bekliyor';
+
+-- Ayarlar (sepet): yönetim panelinden değiştirilir
+insert into public.ayarlar (anahtar, deger) values
+  ('hizmet_ucreti','0'), ('pay_yuzde','100'), ('kdv_notu','Fiyatlara KDV dahildir.')
+on conflict (anahtar) do nothing;

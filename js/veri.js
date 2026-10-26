@@ -65,10 +65,10 @@
       var buAy = LS.oku('indirmeler', []).filter(function (x) { return x.user_id === o.id && x.t >= ayBasi(); }).length;
       return { kullanilan: buAy, limit: lim };
     },
-    basvuruYap: async function (paket, fatura) {
+    basvuruYap: async function (paket, fatura, yeniId) {
       var o = await demo.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); var a = await demo.ayarlar(), l = LS.oku('basvurular', []);
       if (l.some(function (x) { return x.user_id === o.id && x.durum === 'beklemede'; })) throw new Error('Bekleyen bir başvurunuz zaten var.');
-      var k = { id: uid(), user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || '', paket: paket, fiyat_tl: +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat), fatura: fatura || null, fatura_kesildi: false, fatura_no: '', durum: 'beklemede', created_at: new Date().toISOString(), islem_tarihi: null };
+      var k = { id: yeniId || uid(), user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || '', paket: paket, fiyat_tl: +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat), fatura: fatura || null, fatura_kesildi: false, fatura_no: '', durum: 'beklemede', created_at: new Date().toISOString(), islem_tarihi: null };
       l.push(k); LS.yaz('basvurular', l); return k;
     },
     basvurularim: async function () { var o = await demo.oturum(); return LS.oku('basvurular', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
@@ -133,10 +133,10 @@
     indirmeler: async function () { return hata(await sb.from('indirmeler').select('*').order('created_at', { ascending: false }).limit(200)); },
     indirmeHakki: async function (proje, tur) { var r = hata(await sb.rpc('indirme_hakki_al', { p_proje: proje, p_tur: tur })); return r; },
     hakDurumu: async function () { return hata(await sb.rpc('indirme_durumu')); },
-    basvuruYap: async function (paket, fatura) {
+    basvuruYap: async function (paket, fatura, yeniId) {
       var o = await canliApi.oturum(); if (!o) throw new Error('Giriş yapmalısınız.'); var a = await canliApi.ayarlar();
       var fy = +(paket === 'pro_yillik' ? a.pro_yillik_fiyat : a.pro_aylik_fiyat);
-      var r = await sb.from('paket_basvurulari').insert({ user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || null, paket: paket, fiyat_tl: fy, fatura: fatura || null }).select().single();
+      var r = await sb.from('paket_basvurulari').insert({ id: (yeniId && /^[0-9a-f-]{36}$/i.test(yeniId)) ? yeniId : undefined, user_id: o.id, ad: o.ad, eposta: o.email, telefon: o.telefon || null, paket: paket, fiyat_tl: fy, fatura: fatura || null }).select().single();
       if (r.error) { if (/duplicate|unique/i.test(r.error.message)) throw new Error('Bekleyen bir başvurunuz zaten var.'); throw new Error(r.error.message); }
       bildir('Paket başvurusu: ' + planAdi(paket), { Ad: o.ad || '', Eposta: o.email, Telefon: o.telefon || '(yok)', Paket: planAdi(paket), Fiyat: fy + ' TL', Fatura: fatura ? (fatura.tur === 'ticari' ? fatura.unvan + ' / VKN ' + fatura.vkn : fatura.ad + ' / TC ' + fatura.tc) : '' });
       return r.data;

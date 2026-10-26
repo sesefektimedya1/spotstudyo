@@ -16,8 +16,8 @@ C) ANAHTARI SUPABASE'E KOY
 
 D) FONKSİYONU OLUŞTUR
 1. Edge Functions > Deploy a new function > Via Editor.
-2. Fonksiyon adı: yz-sohbet  (tam olarak böyle)
-3. Editördeki hazır kodu silin, yz-sohbet-fonksiyonu.txt içindekinin hepsini yapıştırın.
+2. Fonksiyon adı: swift-service  (tam olarak böyle)
+3. Editördeki hazır kodu silin, swift-service-fonksiyonu.txt içindekinin hepsini yapıştırın.
 4. Deploy function. "Verify JWT" açık kalsın (varsayılan).
 
 E) DENE
@@ -27,5 +27,5 @@ E) DENE
 
 NOT
 - Günlük sınır: kişi başı 40 mesaj (admin sınırsız). Değiştirmek için fonksiyondaki GUNLUK_LIMIT satırı.
-- Hata verirse: Edge Functions > yz-sohbet > Logs sayfasındaki hatayı bana yazın.
+- Hata verirse: Edge Functions > swift-service > Logs sayfasındaki hatayı bana yazın.
 - Anahtarı yanlışlıkla paylaştıysanız Anthropic Console'dan silin, yenisini oluşturun.

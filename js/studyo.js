@@ -1445,14 +1445,14 @@
   }
   function yzCiz() {
     $$('#yzTurler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.yzt === YZ.tur); });
-    $('#yzOneri').innerHTML = YZ_ONERI[YZ.tur].map(function (t) { return '<button class="chip" data-yz="oneri">' + esc(t) + '</button>'; }).join('');
+    $('#yzOneri').innerHTML = '<button class="chip yzVurgu" data-yz="jingleYapSon">Bu metni jingle yap</button>' + YZ_ONERI[YZ.tur].map(function (t) { return '<button class="chip" data-yz="oneri">' + esc(t) + '</button>'; }).join('');
     var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Üstten türü seçin, aşağıya isteğinizi yazın.</span></div>'; return; }
     k.innerHTML = YZ.mesajlar.map(function (m, i) {
       var ek = '';
       if (m.r === 'ai' && !m.hata) {
         ek = '<div class="yzEylem"><button class="btn kucuk" data-yz="kopya" data-i="' + i + '">Kopyala</button>';
         if (m.tur !== 'jingle') ek += '<button class="btn kucuk yzVurgu" data-yz="jingleCevir" data-i="' + i + '">Jingle sözüne çevir</button>';
-        ek += '<button class="btn kucuk" data-yz="jingleYap" data-i="' + i + '">Jingle siparişi ver</button><button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bize gönder’e aktar</button></div>';
+        ek += '<button class="btn kucuk" data-yz="aktar" data-i="' + i + '">Bize gönder’e aktar</button></div>';
       }
       return '<div class="yzM ' + m.r + '">' + (m.tur && m.r === 'ben' ? '<small class="yzEtiket">' + esc(YZ_AD[m.tur]) + '</small>' : '') + '<div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + ek + '</div>';
     }).join('');

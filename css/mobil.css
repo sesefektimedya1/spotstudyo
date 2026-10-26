@@ -85,7 +85,7 @@
   .yzSohbet{min-height:0!important;height:100%!important}
   .yzUst{padding:.7rem .9rem!important;gap:.5rem!important}.yzUst h2{font-size:1.2rem!important}.yzUst .yzAlt{display:none}
   .yzTurler{padding:.5rem .8rem!important}.yzTurler button{padding:.3rem .75rem!important;font-size:13px!important}
-  .yzOneri{padding:.4rem .8rem 0!important;flex-wrap:nowrap!important;overflow-x:auto}.yzOneri .chip{white-space:nowrap;flex:0 0 auto}
+  .yzOneri{padding:0 .8rem .7rem!important}.yzOneri .chip{font-size:13px!important;padding:.6rem .4rem!important}
   .yzGiris{padding:.6rem .8rem!important}
   .yzM{max-width:92%!important}
   .bizeSayfa{padding-bottom:1.5rem!important}

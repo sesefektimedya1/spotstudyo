@@ -146,7 +146,7 @@
     geriBildirim: async function (g) { var o = await canliApi.oturum(); return hata(await sb.from('geri_bildirimler').insert(Object.assign({ user_id: o ? o.id : null, eposta: o ? o.email : null }, g)).select().single()); },
     geriBildirimTum: async function () { return hata(await sb.from('geri_bildirimler').select('*').order('created_at', { ascending: false })); },
     yzSor: async function (mesajlar, tur) {
-      var r = await sb.functions.invoke('yz-sohbet', { body: { mesajlar: mesajlar, tur: tur } });
+      var r = await sb.functions.invoke('swift-service', { body: { mesajlar: mesajlar, tur: tur } });
       if (r.error) throw new Error('Yapay zeka bağlantısı henüz kurulmadı ya da yanıt vermedi.');
       if (r.data && r.data.hata) throw new Error(r.data.hata); return (r.data && r.data.yanit) || 'Yanıt alınamadı.';
     },

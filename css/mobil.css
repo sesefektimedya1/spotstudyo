@@ -84,9 +84,9 @@
   .yzSayfa{padding:10px 10px 12px!important}
   .yzSohbet{min-height:0!important;height:100%!important}
   .yzUst{padding:.7rem .9rem!important;gap:.5rem!important}.yzUst h2{font-size:1.2rem!important}.yzUst .yzAlt{display:none}
-  .yzTurler{padding:.5rem .8rem!important}.yzTurler button{padding:.3rem .75rem!important;font-size:13px!important}
-  .yzOneri{padding:0 .8rem .7rem!important}.yzOneri .chip{font-size:13px!important;padding:.6rem .4rem!important}
-  .yzGiris{padding:.6rem .8rem!important}
+  .yzTurler{padding:.45rem .8rem .1rem!important;flex-wrap:nowrap!important;gap:.3rem!important}.yzTurler button{padding:.22rem .2rem!important;font-size:11.5px!important;white-space:nowrap}
+  .yzOneri{padding:0 .8rem .7rem!important;gap:.4rem!important}.yzOneri .chip{font-size:12px!important;padding:.6rem .2rem!important;white-space:nowrap!important}
+  .yzGiris{padding:.4rem .8rem .5rem!important;flex-direction:column!important;gap:.4rem!important}.yzGiris textarea{width:100%!important;min-height:112px!important;font-size:16px!important}.yzGiris .btn{width:100%!important}
   .yzM{max-width:92%!important}
   .bizeSayfa{padding-bottom:1.5rem!important}
   #kurBand{bottom:calc(68px + env(safe-area-inset-bottom,0px))}

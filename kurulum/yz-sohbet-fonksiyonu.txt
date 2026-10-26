@@ -46,6 +46,7 @@ Deno.serve(async (req) => {
       if (soz.length < 10) return j({ hata: "Jingle için söz bulunamadı." });
       const istek = "Create a 30-second Turkish radio jingle. Catchy, upbeat, professional commercial style, with a clear sung chorus and a short musical ending. Sing exactly these Turkish lyrics, in Turkish:\n\n" + soz;
       const ac = new AbortController(); const zm = setTimeout(() => ac.abort(), 120000);
+      const yonetici = p.role === "admin";
       let rr: Response;
       try {
         rr = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${JINGLE_MODEL}:generateContent`, {
@@ -53,8 +54,13 @@ Deno.serve(async (req) => {
           headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY")!, "content-type": "application/json" },
           body: JSON.stringify({ contents: [{ parts: [{ text: istek }] }] }),
         });
-      } finally { clearTimeout(zm); }
-      if (!rr.ok) { console.error("Lyria hata", rr.status, (await rr.text()).slice(0, 500)); return j({ hata: "Jingle şu an üretilemedi." }); }
+      } catch (e) { console.error("Lyria baglanti", String(e)); return j({ hata: "Jingle üretilemedi (süre doldu ya da bağlantı kurulamadı)." + (yonetici ? " Ayrıntı: " + String(e).slice(0, 120) : "") }); }
+      finally { clearTimeout(zm); }
+      if (!rr.ok) {
+        const metin = (await rr.text()).slice(0, 400); console.error("Lyria hata", rr.status, metin);
+        const neden = rr.status === 403 || rr.status === 429 ? "Google hesabında jingle üretimi için faturalandırma/kota gerekiyor." : rr.status === 404 ? "Jingle modeli bulunamadı." : "Jingle şu an üretilemedi.";
+        return j({ hata: neden + (yonetici ? " [Google " + rr.status + "] " + metin.replace(/\s+/g, " ").slice(0, 220) : "") });
+      }
       const dd = await rr.json();
       const parca = (dd?.candidates?.[0]?.content?.parts ?? []).find((x: any) => (x.inlineData ?? x.inline_data)?.data);
       const ses = parca ? (parca.inlineData ?? parca.inline_data) : null;

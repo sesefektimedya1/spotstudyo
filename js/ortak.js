@@ -31,7 +31,7 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 62, gosterildi = false;
+      var SURUM = 64, gosterildi = false;
       function serit() {
         if (gosterildi || document.getElementById('yeniSurum')) return; gosterildi = true;
         var d = document.createElement('div'); d.id = 'yeniSurum';
@@ -95,7 +95,7 @@
     h += '</header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
     $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });
-    if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; var tn = (aktif === '' || aktif === 'hakkimizda' || aktif === 'kvkk'); ab.innerHTML = (tn ? '<a href="hakkimizda">Hakkımızda</a> · <a href="kvkk">Gizlilik ve KVKK</a> · <a href="mailto:sesefektimedya@gmail.com">İletişim</a><br>' : '') + '© 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
+    if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; var tn = (aktif === '' || aktif === 'hakkimizda' || aktif === 'kvkk' || aktif === 'sozlesme' || aktif === 'iade'); ab.innerHTML = (tn ? '<a href="hakkimizda">Hakkımızda</a> · <a href="kvkk">Gizlilik ve KVKK</a> · <a href="sozlesme">Mesafeli satış sözleşmesi</a> · <a href="iade">İptal ve iade</a> · <a href="mailto:sesefektimedya@gmail.com">İletişim</a><br>' : '') + '© 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
     var gb = $('#gbBtn'); if (gb) gb.onclick = function () { geriBildirimAc(aktif); };
     var c = $('#cikisBtn'); if (c) c.onclick = async function () { await Veri.cikis(); location.href = './'; };
   };

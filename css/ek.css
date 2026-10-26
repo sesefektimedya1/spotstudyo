@@ -141,3 +141,4 @@ body.st .sekmeler{margin-top:.15rem;padding-top:.5rem}
 .yzOneri .chip{flex:1 1 0;padding:.7rem .6rem;font-size:15px;font-weight:700;border-radius:10px;text-align:center;cursor:pointer;white-space:normal}
 @media (min-width:821px){.yzOneri{padding:0 2rem 1.3rem!important}.yzGiris{padding-bottom:.8rem!important}.yzTurler{padding-left:2rem;padding-right:2rem}}
 .yzOneri .chip[data-yz=jingleYapSon]{background:#fff!important;color:#e03a2c!important;border:2px solid #e03a2c!important}
+.kartOde{margin-top:.7rem;padding-top:.6rem;border-top:1px dashed #cfd6de}.kartOde .btn{width:100%;font-size:16px;padding:.7rem}.kartOde .sol{text-align:center;margin-top:.3rem}

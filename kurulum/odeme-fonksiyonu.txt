@@ -1,0 +1,111 @@
+// KARTLA ÖDEME (iyzico) — Supabase Edge Function
+// Supabase'deki adı: clever-task  (sistem verdi; aşağıdaki FONKSIYON_ADI ile aynı olmalı)
+// ÖNEMLİ: Bu fonksiyonda "Verify JWT" (JWT doğrulama) seçeneği KAPALI olmalı; iyzico ödeme sonucunu giriş yapmadan bildirir.
+// Gizli anahtarlar (Edge Functions > Secrets):
+//   IYZICO_API_KEY      = iyzico API anahtarı
+//   IYZICO_SECRET_KEY   = iyzico gizli anahtarı
+//   IYZICO_BASE_URL     = https://api.iyzipay.com   (test hesabı için: https://sandbox-api.iyzipay.com) — boş bırakılırsa canlı adres
+// Önce v24-kartla-odeme-kurulum.txt (SQL) çalıştırılmış olmalı.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SITE = "https://sesefekti.com";
+const FONKSIYON_ADI = "clever-task";
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
+const URI_BASLAT = "/payment/iyzipos/checkoutform/initialize/auth/ecom";
+const URI_SONUC = "/payment/iyzipos/checkoutform/auth/ecom/detail";
+
+function j(o: unknown) { return new Response(JSON.stringify(o), { headers: { ...CORS, "content-type": "application/json" } }); }
+function para(n: number) { let s = n.toFixed(2).replace(/0+$/, ""); if (s.endsWith(".")) s += "0"; return s; }
+
+async function hmacHex(anahtar: string, veri: string) {
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(anahtar), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const s = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(veri));
+  return Array.from(new Uint8Array(s)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function iyzico(uri: string, govde: unknown) {
+  const apiKey = Deno.env.get("IYZICO_API_KEY")!, secret = Deno.env.get("IYZICO_SECRET_KEY")!;
+  const baz = (Deno.env.get("IYZICO_BASE_URL") || "https://api.iyzipay.com").replace(/\/$/, "");
+  const rnd = Date.now().toString() + Math.floor(Math.random() * 1e6).toString();
+  const body = JSON.stringify(govde);
+  const imza = await hmacHex(secret, rnd + uri + body);
+  const yetki = "IYZWSv2 " + btoa("apiKey:" + apiKey + "&randomKey:" + rnd + "&signature:" + imza);
+  const r = await fetch(baz + uri, { method: "POST", headers: { "Authorization": yetki, "x-iyzi-rnd": rnd, "Content-Type": "application/json", "Accept": "application/json" }, body });
+  return await r.json();
+}
+
+function yonlendir(sonuc: string) { return new Response(null, { status: 302, headers: { Location: SITE + "/panel?odeme=" + sonuc } }); }
+
+async function sonuc(req: Request) {
+  try {
+    const f = await req.formData();
+    const token = String(f.get("token") ?? "");
+    if (!token) return yonlendir("hata");
+    const d = await iyzico(URI_SONUC, { locale: "tr", conversationId: "sonuc", token });
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const id = String(d?.basketId ?? d?.conversationId ?? "");
+    const { data: sip } = await sb.from("siparisler").select("id,toplam_tl,odeme_ref,odeme_durum").eq("id", id).maybeSingle();
+    if (!sip || sip.odeme_ref !== token) { console.error("odeme: siparis/token uyusmuyor", id); return yonlendir("hata"); }
+    const tutarTamam = Number(d?.paidPrice ?? 0) + 0.005 >= Number(sip.toplam_tl ?? 0);
+    if (d?.status === "success" && d?.paymentStatus === "SUCCESS" && tutarTamam) {
+      await sb.from("siparisler").update({ odeme_durum: "odendi", odeme_yontem: "kart" }).eq("id", id);
+      return yonlendir("ok");
+    }
+    console.error("odeme basarisiz", JSON.stringify({ s: d?.status, p: d?.paymentStatus, e: d?.errorMessage }));
+    return yonlendir("hata");
+  } catch (e) { console.error("odeme sonuc hata", String(e)); return yonlendir("hata"); }
+}
+
+async function baslat(req: Request) {
+  try {
+    const auth = req.headers.get("Authorization");
+    if (!auth) return j({ hata: "Giriş gerekli." });
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
+    const { data: u } = await sb.auth.getUser();
+    if (!u?.user) return j({ hata: "Giriş gerekli." });
+    const yon = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    const { data: ay } = await yon.from("ayarlar").select("deger").eq("anahtar", "kart_odeme").maybeSingle();
+    if (ay?.deger !== "1") return j({ hata: "Kartla ödeme henüz açık değil. Havale ile ödeyebilirsiniz." });
+    if (!Deno.env.get("IYZICO_API_KEY") || !Deno.env.get("IYZICO_SECRET_KEY")) return j({ hata: "Kartla ödeme henüz kurulmadı." });
+
+    const { siparis_id } = await req.json();
+    const { data: s } = await sb.from("siparisler").select("*").eq("id", siparis_id).maybeSingle();   // yalnızca kendi siparişi görünür
+    if (!s) return j({ hata: "Sipariş bulunamadı." });
+    if (s.odeme_durum === "odendi") return j({ hata: "Bu sipariş zaten ödenmiş." });
+    const toplam = Number(s.toplam_tl ?? 0);
+    if (!(toplam > 0)) return j({ hata: "Bu siparişte ödenecek tutar yok." });
+
+    const kalemler: any[] = Array.isArray(s.kalemler) ? s.kalemler : [];
+    let urunler = kalemler.filter((k) => Number(k.fiyat) > 0).map((k, i) => ({ id: "K" + (i + 1), name: String(k.ad ?? "Hizmet").slice(0, 80), category1: "Ses prodüksiyon", itemType: "VIRTUAL", price: para(Number(k.fiyat)) }));
+    const kt = kalemler.reduce((t, k) => t + (Number(k.fiyat) || 0), 0);
+    if (!urunler.length || Math.abs(kt - toplam) > 0.001) urunler = [{ id: "K1", name: "Ses prodüksiyon siparişi", category1: "Ses prodüksiyon", itemType: "VIRTUAL", price: para(toplam) }];
+
+    const ad = String(s.ad ?? "Müşteri").trim(), parca = ad.split(/\s+/), isim = parca[0] || "Müşteri", soyisim = parca.slice(1).join(" ") || "-";
+    let tel = String(s.telefon ?? "").replace(/\D/g, ""); if (tel.startsWith("0")) tel = "9" + tel; if (tel.length === 10) tel = "90" + tel;
+    const gsm = tel.length >= 12 ? "+" + tel : "+905000000000";
+    const ip = (req.headers.get("x-forwarded-for") ?? "85.34.78.112").split(",")[0].trim();
+    const adres = { contactName: ad, city: "Istanbul", country: "Turkey", address: "Dijital hizmet - adres gerekmez", zipCode: "34000" };
+
+    const d = await iyzico(URI_BASLAT, {
+      locale: "tr", conversationId: s.id, price: para(toplam), paidPrice: para(toplam), currency: "TRY", basketId: s.id,
+      paymentGroup: "PRODUCT", callbackUrl: Deno.env.get("SUPABASE_URL") + "/functions/v1/" + FONKSIYON_ADI + "?sonuc=1", enabledInstallments: [1, 2, 3, 6],
+      buyer: { id: u.user.id, name: isim, surname: soyisim, gsmNumber: gsm, email: s.eposta || u.user.email, identityNumber: "11111111111", registrationAddress: adres.address, ip, city: adres.city, country: adres.country, zipCode: adres.zipCode },
+      shippingAddress: adres, billingAddress: adres, basketItems: urunler,
+    });
+    if (d?.status !== "success" || !(d?.paymentPageUrl || d?.checkoutFormContent)) {
+      console.error("iyzico baslat hata", JSON.stringify({ kod: d?.errorCode, mesaj: d?.errorMessage }));
+      const { data: p } = await yon.from("profiles").select("role").eq("id", u.user.id).maybeSingle();
+      return j({ hata: p?.role === "admin" ? "Ödeme başlatılamadı (iyzico): " + (d?.errorMessage ?? "bilinmeyen hata") : "Ödeme şu an başlatılamadı. Havale ile ödeyebilirsiniz." });
+    }
+    await yon.from("siparisler").update({ odeme_ref: d.token }).eq("id", s.id);
+    return j({ url: d.paymentPageUrl });
+  } catch (e) { console.error("odeme baslat hata", String(e)); return j({ hata: "Ödeme şu an başlatılamadı. Havale ile ödeyebilirsiniz." }); }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const url = new URL(req.url);
+  if (url.searchParams.get("sonuc")) return await sonuc(req);
+  return await baslat(req);
+});

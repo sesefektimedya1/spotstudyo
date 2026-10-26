@@ -1,0 +1,6 @@
+-- Ses Efekti Spot Stüdyo — KARTLA ÖDEME (iyzico) kurulumu. Supabase > SQL Editor'e yapıştırıp RUN. Tekrar çalıştırmak zarar vermez.
+alter table public.siparisler add column if not exists odeme_ref text;
+alter table public.siparisler add column if not exists odeme_yontem text;
+insert into public.ayarlar (anahtar, deger) values
+  ('kart_odeme','0'), ('sirket_adres',''), ('sirket_vd',''), ('sirket_vkn','')
+on conflict (anahtar) do nothing;

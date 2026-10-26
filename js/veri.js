@@ -4,7 +4,7 @@
   var C = window.SPOT_CONFIG || {};
   var canli = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY && window.supabase);
   var sb = canli ? window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY) : null;
-  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', pro_aylik_limit: '30', pro_yillik_limit: '100', pro_aylik_fiyat: '1200', pro_yillik_fiyat: '7500', yz_mesaj_limiti: '100', whatsapp: '905331509890', paket_ucretsiz_ad: 'Ücretsiz', paket_aylik_ad: 'Pro Aylık', paket_yillik_ad: 'Pro Yıllık', paket_ucretsiz_md: '', paket_aylik_md: '', paket_yillik_md: '', banka_adi: '', hesap_sahibi: '', iban: '', odeme_notu: '', hizmet_ucreti: '0', pay_yuzde: '100', kdv_notu: 'Fiyatlara KDV dahildir.', marka: C.marka || 'Ses Efekti Spot Stüdyo' };
+  var VARSAYILAN_AYAR = { ucretsiz_indirme_limiti: '5', pro_aylik_limit: '30', pro_yillik_limit: '100', pro_aylik_fiyat: '1200', pro_yillik_fiyat: '7500', yz_mesaj_limiti: '100', whatsapp: '905331509890', paket_ucretsiz_ad: 'Ücretsiz', paket_aylik_ad: 'Pro Aylık', paket_yillik_ad: 'Pro Yıllık', paket_ucretsiz_md: '', paket_aylik_md: '', paket_yillik_md: '', banka_adi: '', hesap_sahibi: '', iban: '', odeme_notu: '', hizmet_ucreti: '0', kart_odeme: '0', sirket_adres: '', sirket_vd: '', sirket_vkn: '', pay_yuzde: '100', kdv_notu: 'Fiyatlara KDV dahildir.', marka: C.marka || 'Ses Efekti Spot Stüdyo' };
   var PLAN_AD = { ucretsiz: 'Ücretsiz', pro_aylik: 'Pro Aylık', pro_yillik: 'Pro Yıllık' };
   var ADLAR = Object.assign({}, PLAN_AD);
   function adlariYukle(o) { ADLAR.ucretsiz = o.paket_ucretsiz_ad || PLAN_AD.ucretsiz; ADLAR.pro_aylik = o.paket_aylik_ad || PLAN_AD.pro_aylik; ADLAR.pro_yillik = o.paket_yillik_ad || PLAN_AD.pro_yillik; return o; }
@@ -88,6 +88,7 @@
       return n + 'Fırsatı kaçırmayın! Seçili ürünlerde yüzde yirmiye varan indirim, sadece bu hafta sonu. Detaylar için mağazamızı ziyaret edin ya da bizi arayın. Sesinizi duyuran marka: Ses Efekti.';
     },
     jingleUret: async function () { throw new Error('Otomatik jingle bu denemede kapalı.'); },
+    odemeBaslat: async function () { throw new Error('Kartla ödeme deneme modunda kapalı.'); },
     siparisVer: async function (s) { var o = await demo.oturum(), l = LS.oku('siparisler', []); var k = Object.assign({ id: uid(), user_id: o && o.id, durum: 'yeni', sonuc_url: '', created_at: new Date().toISOString() }, s); l.push(k); LS.yaz('siparisler', l); return k; },
     siparislerim: async function () { var o = await demo.oturum(); return LS.oku('siparisler', []).filter(function (x) { return o && x.user_id === o.id; }).reverse(); },
     siparisTum: async function () { return LS.oku('siparisler', []).reverse(); },
@@ -150,6 +151,13 @@
       var r = await Promise.race([sb.functions.invoke('swift-service', { body: { mesajlar: mesajlar, tur: tur } }), new Promise(function (_, no) { setTimeout(function () { no(new Error('Yapay zeka çok geç yanıt verdi. Lütfen tekrar deneyin.')); }, 60000); })]);
       if (r.error) throw new Error('Yapay zeka bağlantısı henüz kurulmadı ya da yanıt vermedi.');
       if (r.data && r.data.hata) throw new Error(r.data.hata); return (r.data && r.data.yanit) || 'Yanıt alınamadı.';
+    },
+    odemeBaslat: async function (siparisId) {
+      var r = await sb.functions.invoke('clever-task', { body: { siparis_id: siparisId } });
+      if (r.error) throw new Error('Kartla ödeme şu an başlatılamadı. Havale ile ödeyebilirsiniz.');
+      if (r.data && r.data.hata) throw new Error(r.data.hata);
+      if (!r.data || !r.data.url) throw new Error('Kartla ödeme şu an başlatılamadı.');
+      return r.data.url;
     },
     jingleUret: async function (soz) {
       var r = await sb.functions.invoke('swift-service', { body: { islem: 'jingle', soz: soz } });

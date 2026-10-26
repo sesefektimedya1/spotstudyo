@@ -147,12 +147,12 @@
     geriBildirim: async function (g) { var o = await canliApi.oturum(); return hata(await sb.from('geri_bildirimler').insert(Object.assign({ user_id: o ? o.id : null, eposta: o ? o.email : null }, g)).select().single()); },
     geriBildirimTum: async function () { return hata(await sb.from('geri_bildirimler').select('*').order('created_at', { ascending: false })); },
     yzSor: async function (mesajlar, tur) {
-      var r = await sb.functions.invoke('swift-service', { body: { mesajlar: mesajlar, tur: tur } });
+      var r = await Promise.race([sb.functions.invoke('swift-service', { body: { mesajlar: mesajlar, tur: tur } }), new Promise(function (_, no) { setTimeout(function () { no(new Error('Yapay zeka çok geç yanıt verdi. Lütfen tekrar deneyin.')); }, 60000); })]);
       if (r.error) throw new Error('Yapay zeka bağlantısı henüz kurulmadı ya da yanıt vermedi.');
       if (r.data && r.data.hata) throw new Error(r.data.hata); return (r.data && r.data.yanit) || 'Yanıt alınamadı.';
     },
     jingleUret: async function (soz) {
-      var r = await sb.functions.invoke('jingle-uret', { body: { soz: soz } });
+      var r = await sb.functions.invoke('swift-service', { body: { islem: 'jingle', soz: soz } });
       if (r.error) throw new Error('Jingle şu an üretilemedi.');
       if (r.data && r.data.hata) throw new Error(r.data.hata);
       if (!r.data || !r.data.ses) throw new Error('Jingle şu an üretilemedi.');

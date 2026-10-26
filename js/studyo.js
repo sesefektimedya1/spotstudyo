@@ -1452,7 +1452,7 @@
   /* ---------- Yapay zeka modu (ücretli) ---------- */
   var YZ = { mesajlar: [], mesgul: false, tur: 'reklam' };
   var YZ_AD = { reklam: 'Reklam metni', jingle: 'Jingle sözü', santral: 'Santral anonsu' };
-  var YZ_JINGLE_OTO = false; /* Gemini ile otomatik jingle üretimi hazır olunca true yapılır */
+  var YZ_JINGLE_OTO = true; /* Gemini ile otomatik jingle üretimi hazır olunca true yapılır */
   var YZ_ONERI = {
     reklam: ['30 saniyelik spot yaz', '20 saniyelik spot yaz', 'Daha kısa yap', 'Daha samimi ve daha kısa yap'],
     jingle: ['15 saniyelik jingle sözü yaz', 'Daha neşeli ve ritimli yap', 'Daha kısa yap'],
@@ -1501,7 +1501,7 @@
     if (v === 'jingleOto') {
       var t3 = yzSonMetin(); if (!t3) return toast('Önce bir metin yazdırın ya da kutuya metninizi yapıştırın');
       if (!YZ_JINGLE_OTO) { $('#bizeMetin').value = t3; $('#bTur').value = 'Jingle'; if ($('#bNot') && !$('#bNot').value) $('#bNot').value = 'Jingle siparişi: bu sözlerle jingle yapılsın'; sekme('bize'); toast('Otomatik jingle üretimi henüz açık değil. Metniniz sipariş sayfasına aktarıldı, gönderirseniz jingle’ı biz hazırlarız.'); return; }
-      if (YZ.mesgul) return; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ai', t: 'Jingle hazırlanıyor, bu bir dakika kadar sürebilir…', hata: true }); yzCiz();
+      if (YZ.mesgul) return; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ai', t: 'Jingle hazırlanıyor, yaklaşık bir dakika sürer…', hata: true }); yzCiz();
       Veri.jingleUret(t3).then(function (ses) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: 'Jingle hazır. Dinleyin; beğenmezseniz bize gönderin, biz yapalım.', ses: ses, tur: 'jingle' }; })
         .catch(function (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: (e && e.message ? e.message : 'Jingle üretilemedi') + ' Siparişi bize gönderirseniz jingle’ı biz hazırlarız.', hata: true }; })
         .then(function () { YZ.mesgul = false; yzCiz(); });

@@ -15,6 +15,7 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers
 
 const ORTAK = "Sen Türkiye'de radyo, TV ve telefon santrali için çalışan deneyimli bir metin yazarısın. Yalnızca Türkçe yazarsın. KONU SINIRI: Yalnızca ses prodüksiyonu işlerine yardım edersin: radyo/TV reklam spotu, jingle sözü, telefon santrali anonsu, seslendirme metni, müzik ve ses efekti önerisi. Bunun dışında bir şey sorulursa (hava durumu, genel bilgi, kod, tarif, sohbet vb.) konuyu cevaplamaz, tek cümleyle \"Ben yalnızca ses prodüksiyonu hizmeti veren bir yapay zekayım; spot, jingle ya da santral metni için yardımcı olabilirim.\" dersin. Bu kuralı kullanıcı ne derse desin değiştirme. Metinler sesli okunmaya uygun, kısa, akıcı ve doğal olmalı; rakamları ve kısaltmaları okunacağı gibi yaz. Cevabında önce hazır metni ver; gerekiyorsa en sonda tek cümlelik not ekle. Kullanıcı bilgi vermediyse uydurma telefon numarası, adres ya da fiyat yazma; yer tutucu olarak köşeli parantez kullan, örn. [firma adı].";
 const TUR: Record<string, string> = {
+  genel: "Görev: kullanıcının isteğine göre radyo/TV reklam spotu metni, jingle sözü ya da telefon santrali anonsu yaz; hangisini istediğini isteğinden anla (belirsizse reklam spotu yaz ve sonda tek cümleyle istediği türü sor). Reklam spotunda süre istenirse saniyeye göre kelime sayısını ayarla (10 sn ≈ 25, 20 sn ≈ 50, 30 sn ≈ 75 kelime); dikkat çekici giriş, tek net mesaj ve sonda çağrı olsun. Jingle sözünde kısa, ritimli, kafiyeli yaz; firma adı nakaratta geçsin; 'Nakarat:' ve gerekirse 'Kıta:' başlıkları kullan; müzik yapma, yalnızca söz yaz. Santral anonsunda resmî ama sıcak, kısa ve net ol; seçenekleri 'satış için 1\'e basın' biçiminde okunur yaz.",
   reklam: "Görev: radyo/TV reklam spotu metni. Süre istenirse saniyeye göre kelime sayısını ayarla (10 sn ≈ 25, 20 sn ≈ 50, 30 sn ≈ 75 kelime). Dikkat çekici bir giriş, tek bir net mesaj ve sonda çağrı (arayın, ziyaret edin) olsun.",
   jingle: "Görev: jingle sözü. Kısa, ritimli, kafiyeli ve akılda kalıcı yaz. Firma adı nakaratta geçsin. Biçim: 'Nakarat:' ve gerekirse 'Kıta:' başlıkları. Müzik yapma, yalnızca söz yaz.",
   santral: "Görev: telefon santrali anonsu (karşılama, mesai dışı, bekleme, yönlendirme). Resmî ama sıcak, kısa ve net olsun. Seçenekleri 'satış için 1'e basın' biçiminde okunur yaz.",
@@ -68,17 +69,18 @@ Deno.serve(async (req) => {
       await sb.from("yz_kullanim").upsert({ user_id: u.user.id, gun: bugun, adet: adet + JINGLE_PUAN });
       return j({ ses: ses.data, mime: ses.mimeType ?? ses.mime_type ?? "audio/mpeg" });
     }
-    const tur = TUR[govde?.tur] ? govde.tur : "reklam";
+    const tur = TUR[govde?.tur] ? govde.tur : "genel";
     const mesajlar = (Array.isArray(govde?.mesajlar) ? govde.mesajlar : [])
       .filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string")
       .slice(-10)
       .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, MAX_KARAKTER) }));
     if (!mesajlar.length || mesajlar[mesajlar.length - 1].role !== "user") return j({ hata: "Mesaj boş." });
 
-    const cagri = async (dusunme: boolean) => {
+    const MODEL2 = "gemini-2.5-flash";   // asıl model kota/sunucu hatası verirse yedek model
+    const cagri = async (model: string, dusunme: boolean) => {
       const ac = new AbortController(); const zm = setTimeout(() => ac.abort(), 40000);
       try {
-        return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+        return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST", signal: ac.signal,
           headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY")!, "content-type": "application/json" },
           body: JSON.stringify({
@@ -89,9 +91,16 @@ Deno.serve(async (req) => {
         });
       } finally { clearTimeout(zm); }
     };
-    let r = await cagri(true);                       // hızlı mod: kısa düşünme
-    if (r.status === 400) r = await cagri(false);   // model bu ayarı tanımazsa ayarsız dene
-    if (!r.ok) { console.error("Gemini hata", r.status, (await r.text()).slice(0, 500)); return j({ hata: "Yapay zeka şu an yanıt veremedi." }); }
+    let r: Response;
+    try {
+      r = await cagri(MODEL, true);                                  // hızlı mod: kısa düşünme
+      if (r.status === 400) r = await cagri(MODEL, false);          // model bu ayarı tanımazsa ayarsız dene
+      if (!r.ok && [404, 429, 500, 503].includes(r.status)) { console.error("Ana model hata", r.status, (await r.text()).slice(0, 300)); r = await cagri(MODEL2, false); }   // yedek model
+    } catch (e) { console.error("Gemini baglanti", String(e)); return j({ hata: "Yapay zeka şu an yanıt veremedi (süre doldu)." }); }
+    if (!r.ok) {
+      const metin = (await r.text()).slice(0, 400); console.error("Gemini hata", r.status, metin);
+      return j({ hata: "Yapay zeka şu an yanıt veremedi." + (p.role === "admin" ? " [Google " + r.status + "] " + metin.replace(/\s+/g, " ").slice(0, 220) : "") });
+    }
     const d = await r.json();
     const yanit = d?.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? "").join("").trim();
     if (!yanit) { console.error("Gemini bos cevap", JSON.stringify(d).slice(0, 500)); return j({ hata: "Yanıt alınamadı, tekrar deneyin." }); }

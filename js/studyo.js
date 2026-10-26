@@ -1451,8 +1451,8 @@
   });
 
   /* ---------- Yapay zeka modu (ücretli) ---------- */
-  var YZ = { mesajlar: [], mesgul: false, tur: 'reklam' };
-  var YZ_AD = { reklam: 'Reklam metni', jingle: 'Jingle sözü', santral: 'Santral anonsu' };
+  var YZ = { mesajlar: [], mesgul: false, tur: 'genel' };
+  var YZ_AD = { reklam: 'Reklam metni', jingle: 'Jingle sözü', santral: 'Santral anonsu', genel: '' };
   var YZ_JINGLE_OTO = true; /* Gemini ile otomatik jingle üretimi hazır olunca true yapılır */
   var YZ_ONERI = {
     reklam: ['30 saniyelik spot yaz', '20 saniyelik spot yaz', 'Daha kısa yap', 'Daha samimi ve daha kısa yap'],
@@ -1467,15 +1467,14 @@
     $('#yzKilit').style.display = acik ? 'none' : 'flex'; $('#yzSohbet').style.display = acik ? 'flex' : 'none';
   }
   function yzCiz() {
-    $$('#yzTurler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.yzt === YZ.tur); });
-    $('#yzGirdi').placeholder = ({ reklam: 'Örn: Ankara’daki kuaförüm için 30 saniyelik spot', jingle: 'Firma adı ve hava, ya da hazır jingle sözünüz', santral: 'Örn: Mesai dışı anonsu, firma adı, saatler' })[YZ.tur];
-    $('#yzOneri').innerHTML = ((BZ.ay || {}).jingle_oto === '1' ? '<button class="chip yzVurgu" data-yz="jingleOto">Bu metni bana jingle yap</button>' : '') + '<button class="chip yzVurgu" data-yz="jingleYapSon">Jingle siparişi ver</button>';
-    var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Ne hazırlamak istiyorsunuz?</b><span>Aşağıdan türü seçin, isteğinizi yazın.</span></div>'; return; }
+    $('#yzGirdi').placeholder = 'Hangi konuda metin yazdırmak istiyorsunuz? Reklam metni, jingle sözü ya da santral anonsu olabilir. Firma adınızı, süreyi ve ne istediğinizi buraya yazın.';
+    $('#yzOneri').innerHTML = '<button class="chip yzVurgu" data-yz="jingleYapSon">Bize sipariş ver</button>' + ((BZ.ay || {}).jingle_oto === '1' ? '<button class="chip yzVurgu" data-yz="jingleOto">Bu metni bana jingle yap</button>' : '');
+    var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Hangi konuda metin yazdıralım?</b><span>Reklam metni, jingle sözü ya da santral anonsu. Aşağıya yazın, Gönder’e basın.</span></div>'; return; }
     k.innerHTML = YZ.mesajlar.map(function (m, i) {
       var ek = '';
       if (m.ses) ek = '<audio controls src="' + m.ses + '" style="width:100%;max-width:420px"></audio><div class="yzEylem"><a class="btn kucuk" download="jingle.mp3" href="' + m.ses + '">İndir</a><button class="btn kucuk" data-yz="jingleYapSon" data-i="' + i + '">Beğenmedim, siz yapın</button></div>';
       if (m.wa) ek = '<div class="yzEylem"><a class="btn kucuk ana" target="_blank" rel="noopener" href="' + m.wa + '">WhatsApp’tan da haber ver</a></div>';
-      return '<div class="yzM ' + m.r + '">' + (m.tur && m.r === 'ben' ? '<small class="yzEtiket">' + esc(YZ_AD[m.tur]) + '</small>' : '') + '<div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + ek + '</div>';
+      return '<div class="yzM ' + m.r + '">' + (m.tur && m.r === 'ben' && YZ_AD[m.tur] ? '<small class="yzEtiket">' + esc(YZ_AD[m.tur]) + '</small>' : '') + '<div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + ek + '</div>';
     }).join('');
     k.scrollTop = k.scrollHeight;
   }
@@ -1497,7 +1496,7 @@
     metin = (metin || '').trim(); if (!metin) return; if (YZ.mesgul) return toast('Önceki cevap geliyor, birkaç saniye bekleyin'); tur = tur || YZ.tur; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ben', t: metin, tur: tur }); $('#yzGirdi').value = ''; yzCiz();
     YZ.mesajlar.push({ r: 'ai', t: 'Düşünüyorum…', hata: true }); yzCiz();
     try {
-      var c = await Veri.yzSor(YZ.mesajlar.filter(function (m) { return !m.hata && !m.sistem; }).map(function (m) { return { role: m.r === 'ben' ? 'user' : 'assistant', content: m.r === 'ben' ? '[' + YZ_AD[m.tur || tur] + '] ' + m.t : m.t }; }), tur);
+      var c = await Veri.yzSor(YZ.mesajlar.filter(function (m) { return !m.hata && !m.sistem; }).map(function (m) { return { role: m.r === 'ben' ? 'user' : 'assistant', content: m.t }; }), tur);
       YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: c, tur: tur };
     }
     catch (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: e.message || 'Yanıt alınamadı.', hata: true }; }
@@ -1506,13 +1505,12 @@
   $('#yzGirdi').addEventListener('focus', function () { if (telefonMu()) setTimeout(function () { try { $('#yzGirdi').scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }, 350); });
   $('#yzGonder').onclick = function () { yzGonder($('#yzGirdi').value); };
   $('#yzGirdi').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); yzGonder($('#yzGirdi').value); } });
-  $('#yzTurler').addEventListener('click', function (e) { var b = e.target.closest('[data-yzt]'); if (!b) return; YZ.tur = b.dataset.yzt; yzCiz(); });
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-yz]') : null; if (!b) return;
     var m = YZ.mesajlar[+b.dataset.i], v = b.dataset.yz;
     if (v === 'jingleSon') { var t1 = yzSonMetin(); if (!t1) return toast('Önce bir metin yazdırın ya da kutuya metninizi yapıştırın'); YZ.tur = 'jingle'; yzGonder('Bu metni kısa, akılda kalıcı ve ritimli bir jingle sözüne çevir (kıta ve nakarat olsun):\n\n' + t1, 'jingle'); return; }
     if (v === 'jingleOto') {
-      if ((BZ.ay || {}).jingle_oto !== '1') { var tj = yzSonMetin(); if (tj) { yzSiparis(tj); } return; }
+      if ((BZ.ay || {}).jingle_oto !== '1') { var tj = yzSonMetin(); if (tj) { $('#bizeMetin').value = tj; $('#bTur').value = 'Jingle'; sekme('bize'); } return; }
       var t3 = yzSonMetin(); if (!t3) return toast('Önce kutuya metni yazın ya da yapay zekaya bir metin yazdırın');
       if (YZ.mesgul) return toast('Önceki cevap geliyor, birkaç saniye bekleyin');
       YZ.mesgul = true; $('#yzGirdi').value = ''; YZ.mesajlar.push({ r: 'ben', t: 'Bu metni jingle yap:\n' + t3, tur: 'jingle' }); YZ.mesajlar.push({ r: 'ai', t: 'Jingle hazırlanıyor, yaklaşık bir dakika sürer…', hata: true }); yzCiz();
@@ -1524,7 +1522,7 @@
     if (v === 'jingleYapSon') {
       var t2 = b.dataset.i != null && b.dataset.i !== '' && YZ.mesajlar[+b.dataset.i] && YZ.mesajlar[+b.dataset.i].soz || yzSonMetin(); if (!t2) return toast('Önce kutuya metni yazın ya da yapay zekaya bir metin yazdırın');
       if (YZ.mesgul) return toast('Önceki cevap geliyor, birkaç saniye bekleyin');
-      yzSiparis(t2); return;
+      $('#bizeMetin').value = t2; var sb2 = ''; for (var qi = YZ.mesajlar.length - 1; qi >= 0; qi--) if (YZ.mesajlar[qi].r === 'ben') { sb2 = YZ.mesajlar[qi].t; break; } var ipucu = sb2 + ' ' + t2, kt = /jingle/i.test(ipucu) ? 'Jingle' : /santral|anons/i.test(ipucu) ? 'Santral' : 'Radyo'; $('#bTur').value = kt; sekme('bize'); toast('Metin “Bize gönder” sayfasına aktarıldı. İsterseniz değiştirin, sonra siparişi gönderin.'); return;
     }
   });
   yzCiz();

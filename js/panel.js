@@ -12,9 +12,9 @@
   var tl = function (n) { return Number(n).toLocaleString('tr-TR') + ' TL'; };
   function maddeler(md, varsayilan) { var L = (md || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); return L.length ? L : varsayilan; }
   var PK = [
-    { k: 'ucretsiz', ad: AY.paket_ucretsiz_ad, fy: '0 TL', md: maddeler(AY.paket_ucretsiz_md, ['Ayda ' + AY.ucretsiz_indirme_limiti + ' MP3 indirme', 'Otomatik ve manuel stüdyo', 'Bize gönder (seslendirme siparişi)']) },
-    { k: 'pro_aylik', ad: AY.paket_aylik_ad, fy: tl(AY.pro_aylik_fiyat) + ' / ay', md: maddeler(AY.paket_aylik_md, [(+AY.pro_aylik_limit ? 'Ayda ' + AY.pro_aylik_limit + ' MP3 indirme' : 'Sınırsız MP3 indirme'), 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)', 'Bize gönder (seslendirme siparişi)']) },
-    { k: 'pro_yillik', ad: AY.paket_yillik_ad, fy: tl(AY.pro_yillik_fiyat) + ' / yıl', md: maddeler(AY.paket_yillik_md, [(+AY.pro_yillik_limit ? 'Ayda ' + AY.pro_yillik_limit + ' MP3 indirme' : 'Sınırsız MP3 indirme'), 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)', 'Bize gönder (seslendirme siparişi)']) }
+    { k: 'ucretsiz', ad: AY.paket_ucretsiz_ad, fy: '0 TL', md: maddeler(AY.paket_ucretsiz_md, ['Ayda ' + AY.ucretsiz_indirme_limiti + ' MP3 indirme', 'Otomatik ve manuel stüdyo']) },
+    { k: 'pro_aylik', ad: AY.paket_aylik_ad, fy: tl(AY.pro_aylik_fiyat) + ' / ay', md: maddeler(AY.paket_aylik_md, [(+AY.pro_aylik_limit ? 'Ayda ' + AY.pro_aylik_limit + ' MP3 indirme' : 'Sınırsız MP3 indirme'), 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)']) },
+    { k: 'pro_yillik', ad: AY.paket_yillik_ad, fy: tl(AY.pro_yillik_fiyat) + ' / yıl', md: maddeler(AY.paket_yillik_md, [(+AY.pro_yillik_limit ? 'Ayda ' + AY.pro_yillik_limit + ' MP3 indirme' : 'Sınırsız MP3 indirme'), 'Yapay zeka modu (ayda ' + AY.yz_mesaj_limiti + ' mesaj)']) }
   ];
   var DB = { beklemede: 'Onay bekliyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
   function odemeKutusu(b) {

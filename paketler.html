@@ -7,9 +7,9 @@
  var AY=await Veri.ayarlar(),tl=function(n){return Number(n).toLocaleString('tr-TR')+' TL';};
  function md(m,v){var L=(m||'').split('\n').map(function(x){return x.trim();}).filter(Boolean);return L.length?L:v;}
  var PK=[
-  {k:'ucretsiz',ad:AY.paket_ucretsiz_ad,fy:'0 TL',md:md(AY.paket_ucretsiz_md,['Ayda '+AY.ucretsiz_indirme_limiti+' MP3 indirme','Otomatik ve manuel stüdyo','Bize gönder (seslendirme siparişi)'])},
-  {k:'pro_aylik',ad:AY.paket_aylik_ad,fy:tl(AY.pro_aylik_fiyat)+' / ay',md:md(AY.paket_aylik_md,[(+AY.pro_aylik_limit?'Ayda '+AY.pro_aylik_limit+' MP3 indirme':'Sınırsız MP3 indirme'),'Yapay zeka modu (ayda '+AY.yz_mesaj_limiti+' mesaj)','Bize gönder (seslendirme siparişi)'])},
-  {k:'pro_yillik',ad:AY.paket_yillik_ad,fy:tl(AY.pro_yillik_fiyat)+' / yıl',md:md(AY.paket_yillik_md,[(+AY.pro_yillik_limit?'Ayda '+AY.pro_yillik_limit+' MP3 indirme':'Sınırsız MP3 indirme'),'Yapay zeka modu (ayda '+AY.yz_mesaj_limiti+' mesaj)','Bize gönder (seslendirme siparişi)'])}];
+  {k:'ucretsiz',ad:AY.paket_ucretsiz_ad,fy:'0 TL',md:md(AY.paket_ucretsiz_md,['Ayda '+AY.ucretsiz_indirme_limiti+' MP3 indirme','Otomatik ve manuel stüdyo'])},
+  {k:'pro_aylik',ad:AY.paket_aylik_ad,fy:tl(AY.pro_aylik_fiyat)+' / ay',md:md(AY.paket_aylik_md,[(+AY.pro_aylik_limit?'Ayda '+AY.pro_aylik_limit+' MP3 indirme':'Sınırsız MP3 indirme'),'Yapay zeka modu (ayda '+AY.yz_mesaj_limiti+' mesaj)'])},
+  {k:'pro_yillik',ad:AY.paket_yillik_ad,fy:tl(AY.pro_yillik_fiyat)+' / yıl',md:md(AY.paket_yillik_md,[(+AY.pro_yillik_limit?'Ayda '+AY.pro_yillik_limit+' MP3 indirme':'Sınırsız MP3 indirme'),'Yapay zeka modu (ayda '+AY.yz_mesaj_limiti+' mesaj)'])}];
  var bekleyen=null;if(o){try{var B=await Veri.basvurularim();bekleyen=B.filter(function(x){return x.durum==='beklemede';})[0];}catch(e){}}
  var mevcut=o&&Veri.isPro(o.plan)?o.plan:'ucretsiz';
  document.getElementById('paketler').innerHTML=PK.map(function(x){

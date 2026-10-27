@@ -917,96 +917,62 @@
       if (S.sonuc.zeminSonra > -62 && tm !== 'cokguclu') { /* dip ses hâlâ duyulur: daha güçlü ikinci tur */ S.z = Motor.tarzUygula(S.z, Object.assign({}, T, { temizle: 'cokguclu' })); S.z.gurultu.iz = S.iz || iz || null; if (bt) S.z.muzik.bitis = bt; hedefUygula(); S.sonuc = Motor.uret(ham, SR, muzik, S.z); S.sonucAd = p.ad; S.sonuc.zeminOnce = zem; S.sonuc.zeminSonra = Motor.istatistik(S.sonuc.islenmis, SR).zeminDb; }
       if (telefonMu() && S.sonuc && !muzik) { try { var sz = sessizlikSifirla({ L: S.sonuc.L, R: S.sonuc.R }); if (sz) { S.sonuc.L = sz.L; S.sonuc.R = sz.R; } } catch (ez) {} } /* telefon: baştaki ve sondaki dip ses tam sessizlik */
       sonucCiz(); calDizi(S.sonuc.L, S.sonuc.R, null, 0);
-      if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) { var sk = $('#cSonuc'); if (sk && sk.scrollIntoView) sk.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      var sk = $('#otoSonuc'); if (sk && sk.scrollIntoView) sk.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) { hata(e); }
     S.mesgul = false; mesaj('');
   }
   function sonucCiz() {
-    var c = $('#cSonuc'), d = boyutla(c), g = c.getContext('2d'), W = c.width, H = c.height; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    var os = $('#otoSonuc'); if (os) os.style.display = S.sonuc ? '' : 'none';
+    var c = $('#cSonuc'), d = boyutla(c), g = c.getContext('2d'), W = c.width, H = c.height; g.fillStyle = '#f5f6f8'; g.fillRect(0, 0, W, H);
     $('#bosSonuc').style.display = S.sonuc ? 'none' : 'flex'; if (!S.sonuc) { $('#sonucBilgi').textContent = ''; return; }
-    var pk = Motor.tepeler(S.sonuc.L, Math.max(1, W)); g.fillStyle = '#2b2bff'; for (var i = 0; i < W; i++) { var y1 = H / 2 - pk[2 * i + 1] * H * 0.46, y2 = H / 2 - pk[2 * i] * H * 0.46; g.fillRect(i, y1, 1, Math.max(1, y2 - y1)); }
+    var pk = Motor.tepeler(S.sonuc.L, Math.max(1, W)); g.fillStyle = '#111827'; for (var i = 0; i < W; i++) { var y1 = H / 2 - pk[2 * i + 1] * H * 0.46, y2 = H / 2 - pk[2 * i] * H * 0.46; g.fillRect(i, y1, 1, Math.max(1, y2 - y1)); }
     $('#sonucBilgi').textContent = sn(S.sonuc.sure) + ' · ' + S.sonuc.lufs.toFixed(1) + ' LUFS · tepe ' + S.sonuc.tepeDb.toFixed(1) + ' dB · dip ses ' + S.sonuc.zeminOnce.toFixed(0) + ' dB → ' + S.sonuc.zeminSonra.toFixed(0) + ' dB' + (S.z.kesilen && (S.z.kesilen.bas > 0.02 || S.z.kesilen.son > 0.02) ? ' · baştan ' + S.z.kesilen.bas.toFixed(2) + ' sn, sondan ' + S.z.kesilen.son.toFixed(2) + ' sn kesildi' : '');
   }
 
   /* ---------- Bankalar ---------- */
   async function bankaYukle() {
     try { S.kut.muzikler = await Veri.liste('muzikler'); } catch (e) { S.kut.muzikler = []; }
-    try { S.kut.sesler = await Veri.liste('sesler'); } catch (e) { S.kut.sesler = []; }
     otoListeleri();
   }
-  var BZ = { sesler: [], muzik: null, filtre: '', ay: {} };
+  var BZ = { filtre: '', ay: {} };
   Veri.ayarlar().then(function (a) { BZ.ay = a || {}; try { bankaCiz(); } catch (e) {} try { yzCiz(); } catch (e) {} }).catch(function () {});
   function bankaCiz() {
-    var ara = (($('#mAra') || {}).value || '').toLowerCase(), fl = BZ.filtre, turler = [];
+    var l = $('#muzikListe'); if (!l) return;
+    var ara = (($('#mAra') || {}).value || '').toLowerCase(), fl = BZ.filtre, turler = [], sec = $('#otoMuzik').value;
     S.kut.muzikler.forEach(function (m) { var t = m.etiket || m.tur || 'Diğer'; if (turler.indexOf(t) < 0) turler.push(t); });
-    $('#mFiltre').innerHTML = ['Tümü'].concat(turler).map(function (t) { return '<button class="chip' + ((fl || 'Tümü') === t ? ' acik' : '') + '" data-b="mflt" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('');
+    $('#mFiltre').innerHTML = turler.length > 1 ? ['Tümü'].concat(turler).map(function (t) { return '<button type="button" class="chip' + ((fl || 'Tümü') === t ? ' acik' : '') + '" data-b="mflt" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') : '';
     var ml = S.kut.muzikler.map(function (m, i) { return { m: m, i: i }; }).filter(function (z) { var t = z.m.etiket || z.m.tur || 'Diğer'; return (!fl || fl === 'Tümü' || t === fl) && (!ara || z.m.ad.toLowerCase().indexOf(ara) > -1); });
-    $('#muzikListe').innerHTML = ml.length ? ml.map(function (z) { var s = BZ.muzik === z.i; return '<div class="spRow' + (s ? ' sec' : '') + '"><button class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="Dinle">▶</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(z.m.etiket || z.m.tur || '') + '</small></div><button class="btn kucuk' + (s ? ' ana' : '') + '" data-b="mekle" data-i="' + z.i + '">' + (s ? '✓ Seçildi' : '+ Ekle') + '</button></div>'; }).join('') : '<div class="bosNot">' + (S.kut.muzikler.length ? 'Aramaya uyan müzik yok.' : 'Henüz müzik eklenmemiş. Yönetim panelinden ekleyin.') + '</div>';
-    $('#sesListe').innerHTML = S.kut.sesler.length ? S.kut.sesler.map(function (m, i) { var s = BZ.sesler.indexOf(i) > -1; return '<div class="spRow' + (s ? ' sec' : '') + '"><button class="spPlay" data-b="cal" data-t="sesler" data-i="' + i + '" title="Dinle">▶</button><div class="spAd"><b>' + esc(m.ad) + '</b><small>' + esc(m.aciklama || m.tur || '') + (m.fiyat_tl ? ' · ' + m.fiyat_tl + ' TL' : '') + '</small></div><button class="btn kucuk' + (s ? ' ana' : '') + '" data-b="bsec" data-i="' + i + '">' + (s ? '✓ Sepette' : '+ Sepete ekle') + '</button></div>'; }).join('') : '<div class="bosNot">Henüz seslendirmen eklenmemiş.</div>';
-    var sl = BZ.sesler.map(function (i) { return S.kut.sesler[i]; }).filter(Boolean), mm = S.kut.muzikler[BZ.muzik];
-    $('#bSes').textContent = sl.length ? sl.map(function (z) { return z.ad; }).join(', ') : 'Seçilmedi'; $('#bMuz').textContent = mm ? mm.ad : 'Seçilmedi';
-    $('#bSes').parentNode.classList.toggle('dolu', !!sl.length); sepetCiz(); $('#bMuz').parentNode.classList.toggle('dolu', !!mm);
+    l.innerHTML = ml.length ? ml.map(function (z) { var sc = sec === 'k' + z.i; return '<div class="spRow' + (sc ? ' sec' : '') + '"><button type="button" class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="Dinle" aria-label="Dinle">▶</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(z.m.etiket || z.m.tur || '') + '</small></div><button type="button" class="btn kucuk spSec" data-b="mekle" data-i="' + z.i + '">' + (sc ? 'Seçildi' : 'Seç') + '</button></div>'; }).join('') : '<div class="bosListe">' + (S.kut.muzikler.length ? 'Aramanıza uyan müzik yok.' : 'Müzik kütüphanesi henüz boş.') + '</div>';
   }
+  function otoOzet() {
+    var a = $('#otoSes'), m = $('#otoMuzik'), t1 = $('#otoSesSecili'), t2 = $('#otoMuzikSecili'); if (!a || !m || !t1 || !t2) return;
+    var o1 = a.selectedOptions && a.selectedOptions[0], o2 = m.selectedOptions && m.selectedOptions[0];
+    var s1 = a.value && o1 ? o1.textContent.replace(/^Yüklü dosya: /, '') : '', s2 = m.value && o2 ? o2.textContent.replace(/^(Banka|Yüklü dosya): /, '') : '';
+    if (t1.textContent !== (s1 || 'Henüz ses yok')) { t1.textContent = s1 || 'Henüz ses yok'; t1.classList.toggle('dolu', !!s1); }
+    if (t2.textContent !== (s2 || 'Müziksiz')) { t2.textContent = s2 || 'Müziksiz'; t2.classList.toggle('dolu', !!s2); bankaCiz(); }
+    var tm = $('#mTemiz'); if (tm) tm.style.display = s2 ? '' : 'none';
+    a.style.display = a.options.length > 1 ? '' : 'none';
+  }
+  setInterval(otoOzet, 500);
   document.addEventListener('click', function (e) {
-    var b = e.target.closest ? e.target.closest('[data-b]') : null; if (!b) return; var v = b.dataset.b;
-    if (v === 'bsec') { var bi = +b.dataset.i, bx = BZ.sesler.indexOf(bi); if (bx > -1) BZ.sesler.splice(bx, 1); else BZ.sesler.push(bi); bankaCiz(); }
-    else if (v === 'mekle') { BZ.muzik = BZ.muzik === +b.dataset.i ? null : +b.dataset.i; bankaCiz(); }
+    var b = e.target.closest ? e.target.closest('[data-b="mekle"],[data-b="mflt"],[data-b="mtemiz"]') : null; if (!b) return; var v = b.dataset.b, sl = $('#otoMuzik');
+    if (v === 'mekle') { var k = 'k' + b.dataset.i; sl.value = sl.value === k ? '' : k; bankaCiz(); otoOzet(); }
     else if (v === 'mflt') { BZ.filtre = b.dataset.v; bankaCiz(); }
+    else { sl.value = ''; bankaCiz(); otoOzet(); }
   });
   $('#mAra').addEventListener('input', bankaCiz);
-  function trl(n) { return Number(n || 0).toLocaleString('tr-TR') + ' TL'; }
-  function sepetKalem() {
-    var a = BZ.ay || {}, k = [], hz = +a.hizmet_ucreti || 0, yz = +a.pay_yuzde; if (!(yz >= 0)) yz = 100; if (a.pay_yuzde === '' || a.pay_yuzde == null) yz = 100;
-    if (hz > 0) k.push({ tur: 'hizmet', ad: 'Prodüksiyon hizmeti', fiyat: hz });
-    BZ.sesler.forEach(function (i) { var z = S.kut.sesler[i]; if (!z) return; var f = +z.fiyat_tl || 0; k.push({ tur: 'ses', ad: 'Seslendirmen: ' + z.ad, ses: z.ad, fiyat: f, pay: Math.round(f * yz) / 100, odendi: false }); });
-    return k;
-  }
-  function sepetCiz() {
-    var el = $('#sepet'); if (!el) return; var k = sepetKalem(), top = k.reduce(function (t, x) { return t + x.fiyat; }, 0), a = BZ.ay || {};
-    if (!k.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
-    el.style.display = '';
-    el.innerHTML = '<h3>Sepetiniz</h3><table>' + k.map(function (x) { return '<tr><td>' + esc(x.ad) + '</td><td class="sag">' + (x.fiyat ? trl(x.fiyat) : 'fiyat sorunuz') + '</td></tr>'; }).join('') + '<tr class="top"><td>Toplam</td><td class="sag">' + trl(top) + '</td></tr></table>' + (BZ.sesler.length > 1 ? '<div class="sol">Seçtiğiniz her seslendirmen aynı metni okur. Farklı metinler için ayrı sipariş verin.</div>' : '') + (a.kdv_notu ? '<div class="sol">' + esc(a.kdv_notu) + '</div>' : '');
-  }
-  $('#bizeGonder').onclick = async function () {
-    var metin = $('#bizeMetin').value.trim(), ad = $('#bAd').value.trim(), tel = $('#bTel').value.trim(), em = $('#bMail').value.trim(), kut = $('#bizeSonuc');
-    if (metin.length < 10) return toast('Önce spot metnini yazın');
-    if (!ad) return toast('Adınızı yazın'); if (!tel && !em) return toast('Telefon ya da e-posta yazın');
-    var mm = S.kut.muzikler[BZ.muzik], kal = sepetKalem(), top = kal.reduce(function (t, x) { return t + x.fiyat; }, 0), sesAd = kal.filter(function (x) { return x.tur === 'ses'; }).map(function (x) { return x.ses; }).join(', ');
-    var sip = { metin: metin, ses_adi: sesAd, muzik_adi: mm ? mm.ad : '', tur: $('#bTur').value, ad: ad, telefon: tel, eposta: em, notu: $('#bNot').value.trim(), kalemler: kal, toplam_tl: top, odeme_durum: 'bekliyor' };
-    var btn = $('#bizeGonder'); btn.disabled = true; btn.textContent = 'Gönderiliyor…';
-    try {
-      var kayit = await Veri.siparisVer(sip), eposta = false;
-      try {
-        var r = await fetch('https://formsubmit.co/ajax/sesefektimedya@gmail.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ _subject: 'Yeni spot siparişi: ' + ad, _template: 'table', Ad: ad, Telefon: tel, Eposta: em, Seslendirmen: sip.ses_adi || '(seçilmedi)', Toplam: trl(top), Kalemler: kal.map(function (x) { return x.ad + ' ' + trl(x.fiyat); }).join(' | '), Muzik: sip.muzik_adi || '(seçilmedi)', Cikis_turu: sip.tur, Metin: metin, Not: sip.notu, Siparis_no: kayit && kayit.id || '' }) });
-        eposta = r.ok;
-      } catch (x) {}
-      var wa = 'Merhaba, yeni spot siparişi.\nAd: ' + ad + '\nTelefon: ' + tel + '\nSeslendirmen: ' + (sip.ses_adi || '-') + '\nMüzik: ' + (sip.muzik_adi || '-') + '\nÇıkış: ' + sip.tur + '\nMetin: ' + metin;
-      kut.style.display = 'block';
-      var kod = 'SP-' + String(kayit && kayit.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase(), ay = BZ.ay || {}, odeme = '';
-      if (top > 0) {
-        var wa2 = 'https://wa.me/' + (ay.whatsapp || '905331509890') + '?text=' + encodeURIComponent('Merhaba, ' + kod + ' numaralı siparişin havalesini yaptım. Tutar: ' + trl(top) + ' (' + ad + ')');
-        odeme = '<div class="sepetOde"><b>Ödeme: ' + trl(top) + '</b>' + ((ay.banka_adi || ay.iban) ? '<table class="odT"><tr><td class="sol">Banka</td><td>' + esc(ay.banka_adi || '—') + '</td></tr><tr><td class="sol">Hesap sahibi</td><td>' + esc(ay.hesap_sahibi || '—') + '</td></tr><tr><td class="sol">IBAN</td><td><b id="sipIban">' + esc(ay.iban || '—') + '</b> <button class="btn kucuk" id="sipIbanK">Kopyala</button></td></tr><tr><td class="sol">Havale açıklaması</td><td><b>' + kod + '</b> <span class="sol">(bu kodu yazın)</span></td></tr></table>' : '<div class="sol">Ödeme bilgileri için WhatsApp’tan yazın. Sipariş kodunuz: <b>' + kod + '</b></div>') + (ay.odeme_notu ? '<div class="sol">' + esc(ay.odeme_notu) + '</div>' : '') + '<div class="sol">Havaleyi yapınca düğmeyle haber verin; ödemeyi gördüğümüzde üretime başlarız.</div><a class="btn ana kucuk" target="_blank" rel="noopener" href="' + wa2 + '">Havaleyi yaptım, haber ver</a>' + (ay.kart_odeme === '1' ? '<div class="kartOde"><button class="btn ana" id="sipKart">Kartla öde · ' + trl(top) + '</button><div class="sol">🔒 Güvenli ödeme · iyzico ile 3D Secure</div></div>' : '') + '</div>';
-      }
-      kut.innerHTML = '<b>Siparişiniz alındı. Kodunuz: ' + kod + '</b>' + odeme + '<div style="margin-top:.6rem"></div> Hazır dosyayı <a href="panel">Panelim</a> sayfasında “Siparişlerim” bölümünden indirebilirsiniz.' + (eposta ? '' : '<div class="sol">E-posta bildirimi şu an gönderilemedi, siparişiniz sistemde kayıtlı.</div>') + '<div style="margin-top:.6rem"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/905331509890?text=' + encodeURIComponent(wa) + '">WhatsApp’tan da haber ver</a></div>';
-      toast('Sipariş gönderildi');
-      var kk = $('#sipKart'); if (kk) kk.onclick = async function () { kk.disabled = true; kk.textContent = 'Ödeme sayfası açılıyor…'; try { location.href = await Veri.odemeBaslat(kayit.id); } catch (ee) { kk.disabled = false; kk.textContent = 'Kartla öde · ' + trl(top); toast(ee.message); } };
-      var kb2 = $('#sipIbanK'); if (kb2) kb2.onclick = function () { try { navigator.clipboard.writeText($('#sipIban').textContent.replace(/\s/g, '')); toast('IBAN kopyalandı'); } catch (x) { toast('Kopyalanamadı'); } };
-    } catch (er) { hata(er); }
-    btn.disabled = false; btn.textContent = 'Siparişi gönder';
-  };
   document.addEventListener('click', async function (e) {
     var b = e.target.closest ? e.target.closest('[data-b]') : null; if (!b) return; var i = +b.dataset.i, v = b.dataset.b;
     try {
       if (v === 'cal') { var s = await bankaDizi(b.dataset.t, i); calDizi(s.L, s.R === s.L ? null : s.R, null, 0); }
       else if (v === 'ac') { var s2 = await bankaDizi('muzikler', i); pencereAc(S.kut.muzikler[i].ad, s2.L.slice(), s2.R === s2.L ? null : s2.R.slice(), 'ses'); otoListeleri(); sekme('manuel'); }
-      else if (v === 'oto') { await bankaDizi('muzikler', i); $('#otoMuzik').value = 'k' + i; sekme('oto'); toast('Müzik seçildi. Sesi seçip “Otomatik hazırla”ya basın'); }
     } catch (er) { hata(er); }
   });
 
   /* ---------- Sekmeler ---------- */
   function sekme(t) {
     if (S.tab !== t) { try { durdur(); } catch (ed) {} } /* sekme değişince çalan ses kesilir */
-    S.tab = t; $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
+    S.tab = t; document.body.classList.toggle('tManuel', t === 'manuel'); $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
     ['#menu', '#arac', '.durum', '#mobSerit'].forEach(function (q) { $(q).style.display = t === 'manuel' ? '' : 'none'; });
     $$('#altSekme [data-t]').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); });
     if (t === 'manuel') guncelle(); if (t === 'oto') { otoListeleri(); sonucCiz(); } if (t === 'yz') yzDurum();
@@ -1014,7 +980,7 @@
   $$('#sekmeler button').forEach(function (b) { b.onclick = function () { sekme(b.dataset.t); }; });
   (function () {
     var b = document.createElement('nav'); b.id = 'altSekme'; b.setAttribute('aria-label', 'Ana menü');
-    b.innerHTML = '<button data-t="oto"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 8v8M17 7v10M3 11v2M21 11v2"/></svg>Otomatik</button><button data-t="manuel"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Manuel</button><button data-t="yz"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg>Yapay zeka</button><button data-t="bize"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>Bize gönder</button><a href="panel"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4-6 8-6s7 2 8 6"/></svg>Panelim</a>';
+    b.innerHTML = '<button data-t="oto"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 8v8M17 7v10M3 11v2M21 11v2"/></svg>Otomatik</button><button data-t="manuel"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Manuel</button><button data-t="yz"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg>Yapay zeka</button><a href="panel"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4-6 8-6s7 2 8 6"/></svg>Panelim</a>';
     document.body.appendChild(b);
     $$('#altSekme [data-t]').forEach(function (x) { x.onclick = function () { sekme(x.dataset.t); }; });
   })();
@@ -1100,7 +1066,6 @@
       ['Farklı kaydet…', 'Ctrl+Shift+S', farkliKaydet, 'Yeni bir adla, istediğiniz yere (çalışma alanı, masaüstü ya da klasör) kaydeder'],
       ['Tümünü kaydet', '', tumunuKaydet, 'Açık bütün pencereleri çalışma alanına kaydeder'],
       '-',
-      ['Otomatiğe gönder', '', otoyaGonder, 'Bu penceredeki sesi (seçim varsa yalnız seçimi) Otomatik sekmesinde kaynak olarak seçer; masaüstüne kaydetmeniz gerekmez'],
       ['Dışa aktar…', 'Ctrl+E', I.disa, 'MP3, WAV ya da santral dosyası olarak hazırlar (MP3 ve santral indirme hakkından düşer)'],
       '-',
       ['Panelime dön', '', function () { var a = document.querySelector('header a[href="panel"]'); if (a) a.click(); else location.href = 'panel'; }, '']]],
@@ -1369,29 +1334,18 @@
   $('#otoBtn').onclick = function () { oto(false); }; $('#yenidenBtn').onclick = function () { oto(true); };
   $('#sonucDur').onclick = function () { durdur(); };
   $('#sonucCal').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); if (S.cal) durdur(); else calDizi(S.sonuc.L, S.sonuc.R, null, 0); };
-  $('#sonucManuel').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); sekme('manuel'); var p = pencereAc(S.sonucAd + ' (otomatik)', S.sonuc.L.slice(), S.sonuc.R.slice(), 'ses'); p.kirli = true; otoListeleri(); };
-  function otoyaGonder() {
-    var p = akt(); if (!p) return toast('Önce manuel stüdyoda bir pencere seçin');
-    if (p.bos) return toast('Bu pencere boş');
-    otoListeleri(); var id = p.id;
-    if (p.sec && p.sec[1] - p.sec[0] > SR * 0.2) { var q = panoAl(p), y = pencereAc(p.ad + ' (seçim)', q.L, q.R || q.L, 'ses'); id = y.id; otoListeleri(); kucult(y); }
-    sekme('oto'); $('#otoSes').value = 'p' + id; toast('“' + p.ad + '” Otomatik sekmesine kaynak olarak eklendi. “Otomatik hazırla”ya basın.');
-  }
   (function () {
     var sr = document.createElement('div'); sr.id = 'mobSerit';
-    sr.innerHTML = '<button class="mKayit" data-m="kayit">● Kayıt</button><button data-m="oynat">▶ Oynat</button><button data-m="dur">■ Durdur</button><button class="mSil" data-m="sil">✕ Sil</button><button data-m="kirp">Kırp</button><button data-m="geri">↶ Geri al</button><button data-m="efekt">Ses efekti</button><button data-m="dip">Dip sesi temizle</button><button class="mOto" data-m="oto">Otomatiğe gönder</button>';
+    sr.innerHTML = '<button class="mKayit" data-m="kayit">● Kayıt</button><button data-m="oynat">▶ Oynat</button><button data-m="dur">■ Durdur</button><button class="mSil" data-m="sil">✕ Sil</button><button data-m="kirp">Kırp</button><button data-m="geri">↶ Geri al</button><button data-m="efekt">Ses efekti</button><button data-m="dip">Dip sesi temizle</button>';
     $('#menu').insertAdjacentElement('afterend', sr);
     sr.addEventListener('click', function (e) {
       var b = e.target.closest('[data-m]'); if (!b) return; var m = b.dataset.m;
       if (m === 'kayit') kayitBasla(); else if (m === 'oynat') oynatToggle(); else if (m === 'dur') durdur();
       else if (m === 'sil') { var ps = akt(); if (ps && !ps.sec) return toast('Önce parmağınızla silinecek bölümü seçin (dalga üzerinde sürükleyin)'); I.sil(); } else if (m === 'kirp') { var pk = akt(); if (pk && !pk.sec) return toast('Önce tutulacak bölümü parmağınızla seçin'); I.kirp(); } else if (m === 'geri') I.geri();
-      else if (m === 'efekt') efektDegistir(); else if (m === 'dip') dipTemizle(); else if (m === 'oto') otoyaGonder();
+      else if (m === 'efekt') efektDegistir(); else if (m === 'dip') dipTemizle();
     });
     setInterval(function () { var k = sr.querySelector('.mKayit'); if (k) { var kk = !!kayit; k.textContent = kk ? '■ Kaydı bitir' : '● Kayıt'; k.classList.toggle('kayitta', kk); } }, 400);
   })();
-  (function () { var mn = $('#menu'), b = document.createElement('button'); b.id = 'otoyaGonder'; b.className = 'otoSekme'; b.title = 'Bu sesi Otomatik sekmesine kaynak olarak gönder (kaydetmeye gerek yok)'; b.textContent = 'Otomatiğe gönder'; b.onclick = otoyaGonder; mn.appendChild(b);
-    function esitle() { var r = $('#hzDip'); if (!r || !r.offsetWidth) return; b.style.width = r.offsetWidth + 'px'; b.style.height = r.offsetHeight + 'px'; var cs = getComputedStyle(r); b.style.fontSize = cs.fontSize; b.style.paddingLeft = b.style.paddingRight = '0'; b.style.marginRight = Math.max(0, Math.round((mn.getBoundingClientRect().right - parseFloat(getComputedStyle(mn).paddingRight) - r.getBoundingClientRect().right) * 10) / 10) + 'px'; }
-    esitle(); window.addEventListener('resize', esitle); setTimeout(esitle, 300); b.addEventListener('mouseenter', esitle); })();
   $('#sonucPaylas').onclick = paylas;
   $('#sonucDisa').onclick = function () { if (!S.sonuc) return toast('Önce “Otomatik hazırla”ya basın'); disaDlg('sonuc'); };
   document.addEventListener('dragover', function (e) { e.preventDefault(); if (S.tab === 'manuel') alan.classList.add('birak'); });
@@ -1468,7 +1422,7 @@
   }
   function yzCiz() {
     $('#yzGirdi').placeholder = 'Hangi konuda metin yazdırmak istiyorsunuz? Reklam metni, jingle sözü ya da santral anonsu olabilir. Firma adınızı, süreyi ve ne istediğinizi buraya yazın.';
-    $('#yzOneri').innerHTML = '<button class="chip yzVurgu" data-yz="jingleYapSon">Bize sipariş ver</button>' + ((BZ.ay || {}).jingle_oto === '1' ? '<button class="chip yzVurgu" data-yz="jingleOto">Bu metni bana jingle yap</button>' : '');
+    var yo = $('#yzOneri'); if (yo) { yo.innerHTML = ''; yo.style.display = 'none'; }
     var k = $('#yzMesajlar'); if (!YZ.mesajlar.length) { k.innerHTML = '<div class="yzBos"><b>Hangi konuda metin yazdıralım?</b><span>Reklam metni, jingle sözü ya da santral anonsu. Aşağıya yazın, Gönder’e basın.</span></div>'; return; }
     k.innerHTML = YZ.mesajlar.map(function (m, i) {
       var ek = '';
@@ -1477,20 +1431,6 @@
       return '<div class="yzM ' + m.r + '">' + (m.tur && m.r === 'ben' && YZ_AD[m.tur] ? '<small class="yzEtiket">' + esc(YZ_AD[m.tur]) + '</small>' : '') + '<div class="yzBalon">' + esc(m.t).replace(/\n/g, '<br>') + '</div>' + ek + '</div>';
     }).join('');
     k.scrollTop = k.scrollHeight;
-  }
-  async function yzSiparis(metin) {
-    var o = null; try { o = await Veri.oturum(); } catch (e) {}
-    if (!o || !(o.ad || '').trim() || !(o.email || o.telefon)) { $('#bizeMetin').value = metin; $('#bTur').value = 'Jingle'; sekme('bize'); return toast('Adınızı ve iletişim bilginizi yazıp gönderin'); }
-    YZ.mesgul = true; $('#yzGirdi').value = ''; YZ.mesajlar.push({ r: 'ben', t: 'Jingle siparişi ver:\n' + metin, tur: 'jingle' }); YZ.mesajlar.push({ r: 'ai', t: 'Siparişiniz gönderiliyor…', hata: true }); yzCiz();
-    var sip = { metin: metin, ses_adi: '', muzik_adi: '', tur: 'Jingle', ad: o.ad, telefon: o.telefon || '', eposta: o.email || '', notu: 'Yapay zeka sayfasından jingle siparişi: bu sözlerle jingle yapılsın', kalemler: [], toplam_tl: 0, odeme_durum: 'bekliyor' };
-    try {
-      var kayit = await Veri.siparisVer(sip), eposta = false;
-      try { var r = await fetch('https://formsubmit.co/ajax/sesefektimedya@gmail.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ _subject: 'Yeni JINGLE siparişi: ' + o.ad, _template: 'table', Ad: o.ad, Telefon: sip.telefon, Eposta: sip.eposta, Cikis_turu: 'Jingle', Metin: metin, Siparis_no: kayit && kayit.id || '' }) }); eposta = r.ok; } catch (x) {}
-      var kod = 'SP-' + String(kayit && kayit.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
-      var wa = 'https://wa.me/905331509890?text=' + encodeURIComponent('Merhaba, yeni jingle siparişi (' + kod + ').\nAd: ' + o.ad + '\nTelefon: ' + (sip.telefon || '-') + '\nSöz:\n' + metin);
-      YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: 'Jingle siparişiniz bize ulaştı. Sipariş kodunuz: ' + kod + '. Fiyat ve teslim için sizinle iletişime geçeceğiz; hazır dosya Panelim > Siparişlerim bölümünde görünür.' + (eposta ? '' : ' (E-posta bildirimi gönderilemedi, sipariş sistemde kayıtlı; WhatsApp düğmesiyle de haber verebilirsiniz.)'), sistem: true, wa: wa };
-    } catch (er) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: (er && er.message) || 'Sipariş gönderilemedi.', hata: true }; }
-    YZ.mesgul = false; yzCiz();
   }
   async function yzGonder(metin, tur) {
     metin = (metin || '').trim(); if (!metin) return; if (YZ.mesgul) return toast('Önceki cevap geliyor, birkaç saniye bekleyin'); tur = tur || YZ.tur; YZ.mesgul = true; YZ.mesajlar.push({ r: 'ben', t: metin, tur: tur }); $('#yzGirdi').value = ''; yzCiz();
@@ -1509,30 +1449,14 @@
     var b = e.target.closest ? e.target.closest('[data-yz]') : null; if (!b) return;
     var m = YZ.mesajlar[+b.dataset.i], v = b.dataset.yz;
     if (v === 'jingleSon') { var t1 = yzSonMetin(); if (!t1) return toast('Önce bir metin yazdırın ya da kutuya metninizi yapıştırın'); YZ.tur = 'jingle'; yzGonder('Bu metni kısa, akılda kalıcı ve ritimli bir jingle sözüne çevir (kıta ve nakarat olsun):\n\n' + t1, 'jingle'); return; }
-    if (v === 'jingleOto') {
-      if ((BZ.ay || {}).jingle_oto !== '1') { var tj = yzSonMetin(); if (tj) { $('#bizeMetin').value = tj; $('#bTur').value = 'Jingle'; sekme('bize'); } return; }
-      var t3 = yzSonMetin(); if (!t3) return toast('Önce kutuya metni yazın ya da yapay zekaya bir metin yazdırın');
-      if (YZ.mesgul) return toast('Önceki cevap geliyor, birkaç saniye bekleyin');
-      YZ.mesgul = true; $('#yzGirdi').value = ''; YZ.mesajlar.push({ r: 'ben', t: 'Bu metni jingle yap:\n' + t3, tur: 'jingle' }); YZ.mesajlar.push({ r: 'ai', t: 'Jingle hazırlanıyor, yaklaşık bir dakika sürer…', hata: true }); yzCiz();
-      Veri.jingleUret(t3).then(function (ses) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: 'Jingle hazır. Dinleyin; beğenmezseniz “Beğenmedim, siz yapın” deyin.', ses: ses, sistem: true, soz: t3 }; })
-        .catch(function (e) { YZ.mesajlar[YZ.mesajlar.length - 1] = { r: 'ai', t: (e && e.message ? e.message : 'Jingle üretilemedi.') + ' İsterseniz “Jingle siparişi ver” ile bize gönderin, biz hazırlayalım.', hata: true }; })
-        .then(function () { YZ.mesgul = false; yzCiz(); });
-      return;
-    }
-    if (v === 'jingleYapSon') {
-      var t2 = b.dataset.i != null && b.dataset.i !== '' && YZ.mesajlar[+b.dataset.i] && YZ.mesajlar[+b.dataset.i].soz || yzSonMetin(); if (!t2) return toast('Önce kutuya metni yazın ya da yapay zekaya bir metin yazdırın');
-      if (YZ.mesgul) return toast('Önceki cevap geliyor, birkaç saniye bekleyin');
-      $('#bizeMetin').value = t2; var sb2 = ''; for (var qi = YZ.mesajlar.length - 1; qi >= 0; qi--) if (YZ.mesajlar[qi].r === 'ben') { sb2 = YZ.mesajlar[qi].t; break; } var ipucu = sb2 + ' ' + t2, kt = /jingle/i.test(ipucu) ? 'Jingle' : /santral|anons/i.test(ipucu) ? 'Santral' : 'Radyo'; $('#bTur').value = kt; sekme('bize'); toast('Metin “Bize gönder” sayfasına aktarıldı. İsterseniz değiştirin, sonra siparişi gönderin.'); return;
-    }
+
   });
   yzCiz();
 
-  /* Bize gönder: kısayol, giriş yapan üyenin bilgileri, üst çubuktaki Dışa aktar */
-  $('#bizeGit').onclick = function () { sekme('bize'); };
-  Veri.oturum().then(function (o) { if (!o) return; if (!$('#bAd').value) $('#bAd').value = o.ad || ''; if (!$('#bMail').value) $('#bMail').value = o.email || ''; }).catch(function () {});
+  /* Üst çubuktaki Dışa aktar */
   document.addEventListener('click', function (e) {
     if (!(e.target.closest && e.target.closest('#ustDisa'))) return;
-    if (S.tab === 'oto' && S.sonuc) disaDlg('sonuc'); else if (S.tab === 'bize') toast('Dışa aktarmak için Manuel stüdyoda ya da Otomatik sekmesinde bir ses hazırlayın'); else disaDlg();
+    if (S.tab === 'oto' && S.sonuc) disaDlg('sonuc'); else disaDlg();
   });
   /* Sayfadan ayrılırken (Panelim, Çıkış, logo…) kaydedilmemiş her pencereyi tek tek sor */
   document.addEventListener('click', function (e) {

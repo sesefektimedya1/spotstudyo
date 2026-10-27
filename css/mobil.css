@@ -22,12 +22,7 @@
   .sekmeler .sagdurum{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1d2430;color:#fff;border-radius:99px;padding:.45rem 1.1rem;z-index:3000;margin:0;font-size:13px}
   .sekmeler .sagdurum:has(#dMesaj:empty){display:none}
   .menu{flex-wrap:wrap}.menu>div>button{padding:.4rem .55rem!important;font-size:13px!important}
-  .otoSayfa{grid-template-columns:1fr!important;padding:1rem 14px 2rem!important;gap:1.2rem}
   .bankaKutu,.otoKutu,.bizeSayfa{padding-left:14px!important;padding-right:14px!important}
-  .kartlar{display:grid!important;grid-template-columns:1fr!important;gap:.5rem}
-  .sonucEylem{display:grid!important;grid-template-columns:1fr 1fr;gap:.5rem}
-  .sonucEylem .btn{width:100%;min-height:44px;font-size:14px}
-  .sonucEylem #sonucPaylas,.sonucEylem #sonucDisa{grid-column:1 / -1}
   .btn{min-height:42px}
   .sayfa{padding:1rem 14px 3rem}
   .kart{padding:1rem}
@@ -80,7 +75,6 @@
   #altSekme button,#altSekme a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:58px;background:none;border:0;color:#6b7482;font-size:10.5px;font-weight:600;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}
   #altSekme svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   #altSekme .acik{color:#d83a2c}
-  .otoSayfa{padding-bottom:1.5rem!important}
   .yzSayfa{padding:10px 10px 12px!important}
   .yzSayfa{height:auto!important;min-height:100%}
   .yzSohbet{min-height:calc(100dvh - 58px - 90px)!important;height:auto!important}

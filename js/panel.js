@@ -69,7 +69,7 @@
     var B = await Veri.basvurularim().catch(function () { return []; }), bekleyen = B.filter(function (x) { return x.durum === 'beklemede'; })[0];
     var mevcut = Veri.isPro(o.plan) ? o.plan : 'ucretsiz';
     $('#paketler').innerHTML = PK.map(function (x) {
-      var btn = x.k === 'ucretsiz' ? '' : (x.k === mevcut ? '<button class="btn" disabled>Mevcut paketiniz</button>' : '<button class="btn ana" data-pk="' + x.k + '"' + (bekleyen ? ' disabled' : '') + '>' + (Veri.isPro(o.plan) ? 'Bu pakete geç' : 'Pro için başvur') + '</button>');
+      var btn = x.k === 'ucretsiz' ? '' : (x.k === mevcut ? '<button class="btn" disabled>Mevcut paketiniz</button>' : (mevcut === 'pro_yillik' ? '' : '<button class="btn ana" data-pk="' + x.k + '"' + (bekleyen ? ' disabled' : '') + '>' + (Veri.isPro(o.plan) ? 'Bu pakete geç' : 'Pro için başvur') + '</button>'));
       return '<div class="pk' + (x.k === mevcut ? ' mevcut' : '') + '"><h3>' + esc(x.ad) + '</h3><div class="fy">' + x.fy + '</div><ul>' + x.md.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>' + (x.k === 'ucretsiz' && mevcut === 'ucretsiz' ? '<button class="btn" disabled>Mevcut paketiniz</button>' : btn) + '</div>';
     }).join('');
     $('#pkMesaj').innerHTML = bekleyen ? '<div class="sol" style="margin:.4rem 0">Ödeme bekleyen başvurunuz var: ödeme bilgileri aşağıda.</div>' + odemeKutusu(bekleyen) : '';

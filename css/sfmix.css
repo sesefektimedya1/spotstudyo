@@ -114,3 +114,59 @@
 .sfOnay .sfOnayAlt{display:flex;gap:.5rem;justify-content:flex-end;padding:.6rem 1rem .9rem}
 .sfOnay .sfB{min-width:96px}
 @media(max-width:620px){.sfOnay .sfB{min-height:44px;flex:1}}
+
+.pen .renkN{width:10px;height:10px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.25)}
+.pen.aktif .bas .renkN{border-color:rgba(255,255,255,.8)}
+
+/* Volume, Graphic Fade, Graphic EQ, Paragraphic EQ */
+.sfGen .sfFw{display:grid;justify-items:center;gap:.25rem}
+.sfGen .sfFw output{font-variant-numeric:tabular-nums;font-size:12.5px;min-height:18px;text-align:center;color:#1a1a1a;line-height:1.25}
+.sfGen .sfFw .sfFader{width:34px;height:150px}
+.sfGen .sfFw .sfTrk{left:14px}.sfGen .sfFw .sfTh{left:6px}
+.sfGen .vlKap{display:grid;grid-template-columns:1fr;justify-items:center;gap:.4rem;background:#f6f6f6;border:1px solid #b6b9bf;padding:.6rem}
+.sfGen .vlF .sfFader{height:230px}
+.sfGen .vlF output{font-size:14px}
+.sfGen .vlAd{font-size:12px;text-align:center;color:#1a1a1a;line-height:1.3}
+.sfGen .vlAlt{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;font-size:12px;color:#333}.sfGen .vlAlt span{grid-column:1/-1}.sfGen .vlAlt i{text-align:center}
+.sfGen .vlAlt i{font-style:normal;border:1px solid #9aa0a8;background:#fff;padding:.1rem .4rem;font-variant-numeric:tabular-nums}
+.sfGen .gfCv{width:100%;height:auto;display:block;border:1px solid #8a8f98;background:#fff;cursor:crosshair}
+.sfGen .gfAlt{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;font-size:12.5px}
+.sfGen .gfMx{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap}
+.sfGen .gfDl{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.sfGen .gfIp{margin:0;color:#555;font-size:12px}
+.sfGen .geUst{display:grid;grid-template-columns:1fr 96px;gap:.6rem;align-items:start}
+.sfGen .geOrta{min-width:0}
+.sfGen .geSag{display:grid;justify-items:center;gap:.3rem}
+.sfGen .geSag .sfFader{height:240px}
+.sfGen .geBant{display:flex;gap:0;justify-content:space-between;overflow-x:auto;border:1px solid #8a8f98;background:#fff;padding:.5rem .3rem;min-height:300px;align-items:flex-start}
+.sfGen .geBant[hidden],.sfGen .gfCv[hidden]{display:none}
+.sfGen .geBK{display:grid;justify-items:center;gap:.15rem;min-width:0;flex:1 1 0}
+.sfGen .geBK .sfFader{height:210px;width:28px}.sfGen .geBK .sfTrk{left:11px}.sfGen .geBK .sfTh{left:3px}.sfGen .geBK .sfFw{width:100%}
+.sfGen .geBK output{font-size:9.5px;min-height:14px;letter-spacing:-.3px}
+.sfGen .geBK small{font-size:10.5px;color:#333}
+.sfGen .geAlt{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap}
+.sfGen .geSek{display:flex;gap:2px;border-bottom:1px solid #8a8f98}
+.sfGen .geSek button{font:inherit;padding:.3rem .9rem;background:#e4e4e4;border:1px solid #9aa0a8;border-bottom:0;border-radius:3px 3px 0 0;cursor:pointer;color:#1a1a1a}
+.sfGen .geSek button.on{background:#fff;font-weight:600}
+.sfGen .peUst{display:grid;grid-template-columns:70px 70px 1fr;gap:.5rem;align-items:start}
+.sfGen .peFd{display:grid;justify-items:center;gap:.3rem}
+.sfGen .peFd .sfFader{height:120px}
+.sfGen .peGrid{display:grid;grid-template-columns:170px repeat(4,1fr);gap:.4rem;align-items:start}
+.sfGen .peEt{display:grid;gap:.5rem;font-size:12px;color:#1a1a1a;align-content:start;padding-top:1.9rem;line-height:1.25}
+.sfGen .peEt div:first-child{height:140px}
+.sfGen .peEt div:nth-child(2){height:50px}
+.sfGen .peK{display:grid;justify-items:center;gap:.25rem;align-content:start}
+.sfGen .peK .sfFader{height:120px}
+.sfGen .peK output{font-size:12px;min-height:16px}
+.sfGen .peK.pasif .peH,.sfGen .peK.pasif .peNum,.sfGen .peK.pasif>output:not(:first-child){opacity:.55}
+.sfGen .peH{width:100%;min-height:0;padding:0;border:0;background:transparent;accent-color:#2f6fd0}
+.sfGen .peNum{width:70px;text-align:right}
+.sfGen .peRaf{display:grid;grid-template-columns:minmax(180px,1.4fr) 1fr 74px 1fr 64px;gap:.5rem;align-items:center;font-size:12.5px}
+.sfGen .peRaf.pasif .peH,.sfGen .peRaf.pasif .peNum{opacity:.55}
+@media(max-width:620px){
+  .sfGen .geUst{grid-template-columns:1fr}.sfGen .geSag{grid-template-columns:auto auto;justify-content:center}
+  .sfGen .peUst{grid-template-columns:1fr 1fr}.sfGen .peUst canvas{grid-column:1/3}
+  .sfGen .peGrid{grid-template-columns:repeat(4,1fr)}.sfGen .peEt{display:none}
+  .sfGen .peRaf{grid-template-columns:1fr 1fr}.sfGen .peRaf .sfCk{grid-column:1/3}
+  .sfGen .peNum{width:60px}
+}

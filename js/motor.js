@@ -74,6 +74,23 @@
     }
     return y;
   }
+
+  /* Frekans cevabi egrisine gore sifir faz filtre (Graphic EQ): Hann pencereli bindirmeli FFT */
+  function frekFiltre(x, sr, mag, N) {
+    N = N || 4096; var n = x.length; if (!n) return x;
+    var hop = N >> 1, H = new Float64Array(N / 2 + 1), k, i, s;
+    for (k = 0; k <= N / 2; k++) H[k] = mag(k * sr / N);
+    var win = new Float64Array(N); for (i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
+    var y = new Float32Array(n), re = new Float64Array(N), im = new Float64Array(N);
+    for (s = -hop; s < n; s += hop) {
+      for (i = 0; i < N; i++) { var ix = s + i; re[i] = (ix >= 0 && ix < n ? x[ix] : 0) * win[i]; im[i] = 0; }
+      fft(re, im, false);
+      for (k = 0; k < N; k++) { var h = H[k <= N / 2 ? k : N - k]; re[k] *= h; im[k] *= h; }
+      fft(re, im, true);
+      for (i = 0; i < N; i++) { var iy = s + i; if (iy >= 0 && iy < n) y[iy] += re[i]; }
+    }
+    return y;
+  }
   function genisligdenQ(bw) { var p = Math.pow(2, bw); return Math.sqrt(p) / (p - 1); }
 
   function eq(x, sr, bantlar) {
@@ -730,7 +747,7 @@
     efektUygula: efektUygula, miksle: miksle, seviyeAyarla: seviyeAyarla, sesIsle: sesIsle, uret: uret,
     lufs: lufs, tepeDb: tepeDb, rmsDb: rmsDb, istatistik: istatistik, tepeler: tepeler,
     kirp: kirp, sil: sil, sessizlikEkle: sessizlikEkle, sessizYap: sessizYap, fade: fade, kazan: kazan, normallestir: normallestir, dcSil: dcSil,
-    wav16: wav16, mp3Kodla: mp3Kodla, biquadKatsayi: biquadKatsayi, biquadUygula: biquadUygula
+    frekFiltre: frekFiltre, wav16: wav16, mp3Kodla: mp3Kodla, biquadKatsayi: biquadKatsayi, biquadUygula: biquadUygula
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Motor;
   kok.Motor = Motor;

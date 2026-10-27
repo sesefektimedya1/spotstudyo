@@ -47,8 +47,10 @@
     alan.appendChild(el); p.el = el; p.cv = $('.cv', el); p.ovc = $('.ov canvas', el); p.kay = $('.kay', el); p.th = $('.th', el);
     var w = alan.clientWidth, h = alan.clientHeight, n = S.pen.length;
     var gizli = !alan.clientHeight, pn = null; if (gizli) { pn = alan.closest('.panel'); if (pn) { pn.classList.add('acik'); w = alan.clientWidth; h = alan.clientHeight; } }
-    var MG = 110, yuk = 340, satir = 99, sol = n < satir ? MG : MG + ((n - satir) % 6 + 1) * 28, gen = Math.max(420, w - sol - MG);
-    el.style.width = gen + 'px'; el.style.height = yuk + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 8 + ((n - satir) % 6 + 1) * 28) + 'px';
+    var MG = 110, yuk = 340, satir = 2, k3 = (n - satir) % 8, sol = n < satir ? MG : MG + (k3 + 1) * 30, gen = Math.max(420, w - sol - MG);
+    el.style.width = gen + 'px'; el.style.height = (n < satir ? yuk : 300) + 'px'; el.style.left = sol + 'px'; el.style.top = (n < satir ? 8 + n * (yuk + 8) : 24 + (k3 + 1) * 34) + 'px';
+    var RENKLER = ['#d83a2c', '#2f6fd0', '#2e9d57', '#e08a00', '#8a4fd0', '#0f9aa8', '#c2368f', '#6b7480']; p.renk = RENKLER[(p.id - 1) % RENKLER.length];
+    (function () { var bs = $('.bas', el), nk = document.createElement('i'); nk.className = 'renkN'; nk.style.background = p.renk; bs.insertBefore(nk, bs.firstChild); bs.style.borderLeft = '4px solid ' + p.renk; })();
     if (gizli && pn && S.tab !== 'manuel') pn.classList.remove('acik');
     S.pen.push(p); kenarlar(p); $('.bas b', el).textContent = ad; alan.scrollTop = Math.max(0, parseInt(el.style.top, 10) - 8);
     baglaPencere(p); odak(p); tumuGoster(p); $('#bosAlan').style.display = 'none'; guncelle(); mobDiz();
@@ -83,7 +85,7 @@
   }
   function kucult(p) {
     p.el.style.display = 'none'; p.kucuk = true; if (S.aktif === p.id) { var d = S.pen.filter(function (q) { return !q.kucuk; })[0]; if (d) odak(d); }
-    var c = document.createElement('button'); c.className = 'dockChip'; c.title = 'Eski boyuta getir: ' + p.ad; c.innerHTML = '<span class="nokta"></span>' + esc(p.ad); p.chip = c;
+    var c = document.createElement('button'); c.className = 'dockChip'; c.title = 'Eski boyuta getir: ' + p.ad; c.innerHTML = '<span class="nokta"></span>' + esc(p.ad); p.chip = c; c.firstChild.style.background = p.renk || '';
     c.onclick = function () { p.el.style.display = ''; p.kucuk = false; c.remove(); p.chip = null; odak(p); ciz(p); };
     $('#dock').appendChild(c);
   }
@@ -231,6 +233,12 @@
 
   /* ---------- Seçim ---------- */
   function x2s(p, ev) { var r = p.cv.getBoundingClientRect(); return Math.max(0, Math.min(p.L.length, Math.round(p.bas + (ev.clientX - r.left) * p.spp))); }
+  /* Seçilen parçayı boş yere bırakınca yeni pencere olarak açar (orijinal değişmez) */
+  function yeniParca(p, e) {
+    var sc = p.sec, L = p.L.slice(sc[0], sc[1]), R = p.R === p.L ? null : p.R.slice(sc[0], sc[1]);
+    p.parcaN = (p.parcaN || 0) + 1; var temel = p.ad.replace(/\.[^.]+$/, ''), q = pencereAc(temel + ' (parça' + (p.parcaN > 1 ? ' ' + p.parcaN : '') + ')', L, R, 'ses'); q.kirli = true;
+    odak(q); ciz(q); toast('Seçilen parça yeni pencerede açıldı (' + sn(L.length / SR) + ' sn)');
+  }
   /* Sürüklerken bırakılacak yeri gösteren mavi blok (Sound Forge gibi) */
   var blok = null;
   function blokKaldir() { if (blok) { blok.remove(); blok = null; } }
@@ -259,8 +267,8 @@
     window.addEventListener('mousemove', function (e) {
       if (!surukle) return;
       if (mod === 'tasi') {
-        if (!tasi.dolu && Math.hypot(e.clientX - tasi.x, e.clientY - tasi.y) > 8) { tasi.dolu = true; tasi.g = document.createElement('div'); tasi.g.className = 'tasiGhost'; tasi.g.textContent = 'Seçimi bırak: karıştırarak yapıştır'; document.body.appendChild(tasi.g); }
-        if (tasi.g) { tasi.g.style.left = (e.clientX + 12) + 'px'; tasi.g.style.top = (e.clientY + 12) + 'px'; hedefBlok(p, e); }
+        if (!tasi.dolu && Math.hypot(e.clientX - tasi.x, e.clientY - tasi.y) > 8) { tasi.dolu = true; tasi.g = document.createElement('div'); tasi.g.className = 'tasiGhost'; tasi.g.textContent = 'Başka pencereye bırak: karıştırır · Boş yere bırak: yeni pencere'; document.body.appendChild(tasi.g); }
+        if (tasi.g) { tasi.g.style.left = (e.clientX + 12) + 'px'; tasi.g.style.top = (e.clientY + 12) + 'px'; hedefBlok(p, e); var ee = document.elementFromPoint(e.clientX, e.clientY), bos = ee && ee.closest && ee.closest('#alan') && !ee.closest('.pen'); tasi.g.textContent = bos ? 'Bırak: seçilen parça yeni pencerede açılır' : 'Başka pencerenin üstüne bırak: karıştırır'; }
         return;
       }
       var s2 = x2s(p, e);
@@ -272,7 +280,9 @@
         if (tasi && tasi.g) {
           tasi.g.remove(); blokKaldir(); var el = document.elementFromPoint(e.clientX, e.clientY), pe = el && el.closest ? el.closest('.pen') : null;
           var q = pe ? S.pen.filter(function (z) { return z.el === pe; })[0] : null;
-          if (q && q !== p) { var pos = x2s(q, e), sc = p.sec; S.pano = { L: p.L.slice(sc[0], sc[1]), R: p.R === p.L ? null : p.R.slice(sc[0], sc[1]), ad: p.ad }; if (!S.pano.R) S.pano.R = S.pano.L; odak(q); karistirDlg(q, pos); }
+          var bosYer = !pe && el && el.closest && el.closest('#alan');
+          if (bosYer && p.sec && p.sec[1] - p.sec[0] > 100) { yeniParca(p, e); }
+          else if (q && q !== p) { var pos = x2s(q, e), sc = p.sec; S.pano = { L: p.L.slice(sc[0], sc[1]), R: p.R === p.L ? null : p.R.slice(sc[0], sc[1]), ad: p.ad }; if (!S.pano.R) S.pano.R = S.pano.L; odak(q); karistirDlg(q, pos); }
         } else { p.sec = null; p.imlec = x2s(p, e); }
         tasi = null; guncelle();
       }
@@ -356,6 +366,8 @@
         if (seviye > tepe || Date.now() - tepeT > 1200) { tepe = seviye; tepeT = Date.now(); }
         p.L = p.R = buf.subarray(0, n); var span = gW(p) * p.spp; p.bas = Math.max(0, n - span * 0.9); p.imlec = n;
         if (p.el.isConnected && p.el.offsetParent) { ciz(p); kayitUst(p, seviye, tepe, K.duraklat); }
+        if (otodan && n / SR >= (S.kayitUyari || 120) && !K.uyari) { K.uyari = true; toast('Radyo spotu için bu süre uzun. Kaydı bitirebilirsiniz. 3 dakikada kayıt kendiliğinden durur.'); }
+        if (otodan && n / SR >= (S.kayitDurdur || 180) && alive) { toast('Kayıt 3 dakikada kendiliğinden durdu.'); K.bitir(); return; }
         kayitPanel(true, n / SR, seviye, K.duraklat);
         $('#zaman').textContent = sn(n / SR);
         requestAnimationFrame(olc);
@@ -482,7 +494,7 @@
     var ONK = 'sfOn:' + baslik;
     function onOku() { try { return JSON.parse(localStorage.getItem(ONK) || '{}') || {}; } catch (e) { return {}; } }
     function onYaz(x) { try { localStorage.setItem(ONK, JSON.stringify(x)); } catch (e) {} }
-    var h = '<div class="pencere sfMix sfGen" role="dialog" aria-modal="true"><div class="sfBas"><span>' + esc(baslik) + '</span><button type="button" class="sfKapat" id="dg-x" aria-label="Kapat">✕</button></div>';
+    var h = '<div class="pencere sfMix sfGen" role="dialog" aria-modal="true"' + (o.genis ? ' style="width:min(' + o.genis + ',100%)"' : '') + '><div class="sfBas"><span>' + esc(baslik) + (o.ad ? ' – ' + esc(o.ad) : '') + '</span><button type="button" class="sfKapat" id="dg-x" aria-label="Kapat">✕</button></div>';
     h += '<div class="sfGovde"><div class="sfSol"><div class="sfOn"><label for="dg-on">Ön ayar:</label><select id="dg-on"></select><input id="dg-onAd" class="sfOnAd" placeholder="Ön ayar adı yazıp Enter\'a basın" autocomplete="off" hidden>' +
       '<button type="button" id="dg-onKay" class="sfIk" title="Ön ayarı kaydet" aria-label="Ön ayarı kaydet">💾</button><button type="button" id="dg-onSil" class="sfIk sil" title="Ön ayarı sil" aria-label="Ön ayarı sil">✕</button></div><div class="sfPan">';
     var fh = '', dh = '';
@@ -498,6 +510,7 @@
     if (o.ekHtml) h += o.ekHtml;
     h += '</div></div><div class="sfBt"><button type="button" class="sfB ana" id="dg-tamam">Tamam</button><button type="button" class="sfB" id="dg-iptal">İptal</button>' +
       (o.onizle ? '<button type="button" class="sfB" id="dg-on-izle">' + (o.onizleAd || 'Önizleme') + '</button><label class="sfCk"><input type="checkbox" id="dg-bypass"> Atla <small>(önizlemede orijinal)</small></label>' : '') +
+      (o.gercek ? '<label class="sfCk"><input type="checkbox" id="dg-gz" checked> Gerçek zamanlı <small>(çalarken ayar değişince önizleme yenilenir)</small></label>' : '') +
       (o.iz ? '<button type="button" class="sfB" id="dg-iz">Gürültü izi al (seçimden)</button>' : '') +
       (o.not ? '<button type="button" class="sfB sfDaha" id="dg-daha" aria-expanded="false">Daha fazla…</button>' : '') + '</div></div>' +
       (o.not ? '<div class="sfEk" id="dg-ek" hidden><p class="not">' + o.not + '</p></div>' : '') + '</div>';
@@ -529,13 +542,13 @@
     p.addEventListener('change', function (e) {
       if (e.target.id !== 'dg-on') return; var v = e.target.value; if (!v) return;
       if (v.charAt(0) === 's') { o.onayUygula(v.slice(2), d); }
-      else { var a = onOku()[v.slice(2)]; if (a) Object.keys(a).forEach(function (k) { d[k] = a[k]; }); }
+      else { var a = onOku()[v.slice(2)]; if (a) { if (o.ver) o.ver(a); else Object.keys(a).forEach(function (k) { d[k] = a[k]; }); } }
       yaz(); if (o.degisince) o.degisince(d, p);
     });
     onListe(o.onayarSec ? 's:' + o.onayarSec : '');
     $('#dg-onKay', p).onclick = function () { var ad = $('#dg-onAd', p); if (ad.hidden) { ad.hidden = false; $('#dg-on', p).hidden = true; ad.value = ''; ad.focus(); } else ad.dispatchEvent(new Event('change')); };
     function adBit() { $('#dg-onAd', p).hidden = true; $('#dg-on', p).hidden = false; }
-    $('#dg-onAd', p).addEventListener('change', function () { var a = this.value.trim(); if (!a) return adBit(); oku(); var u = onOku(); u[a] = JSON.parse(JSON.stringify(d)); onYaz(u); adBit(); onListe('u:' + a); toast('Ön ayar kaydedildi: ' + a); });
+    $('#dg-onAd', p).addEventListener('change', function () { var a = this.value.trim(); if (!a) return adBit(); oku(); var u = onOku(); u[a] = JSON.parse(JSON.stringify(o.al ? o.al() : d)); onYaz(u); adBit(); onListe('u:' + a); toast('Ön ayar kaydedildi: ' + a); });
     $('#dg-onAd', p).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.dispatchEvent(new Event('change')); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); adBit(); } });
     $('#dg-onSil', p).onclick = function () { var v = $('#dg-on', p).value; if (!v) return toast('Silmek için önce kayıtlı bir ön ayar seçin'); if (v.charAt(0) === 's') return toast('Sistem ön ayarları silinemez'); var u = onOku(); delete u[v.slice(2)]; onYaz(u); onListe(''); toast('Ön ayar silindi'); };
     if (o.not) $('#dg-daha', p).onclick = function () { var ek = $('#dg-ek', p), ac_ = ek.hidden; ek.hidden = !ac_; this.setAttribute('aria-expanded', ac_ ? 'true' : 'false'); this.textContent = ac_ ? 'Daha az' : 'Daha fazla…'; };
@@ -608,6 +621,251 @@
       tamam: function (d) { calis('Kapı uygulanıyor', function () { bolgeUygula(p, function (sL, sR) { return isle(sL, sR, d); }); }); }
     });
   }
+  /* ===== Sound Forge tarzı pencereler: Volume, Graphic Fade, Graphic EQ, Paragraphic EQ ===== */
+  function dbM(v, n) { return v <= -99.9 ? '-Inf.' : v.toFixed(n == null ? 1 : n).replace('.', ','); }
+  function zmn(t) { var h = Math.floor(t / 3600), m = Math.floor((t - h * 3600) / 60), s = t - h * 3600 - m * 60; function i2(x) { return (x < 10 ? '0' : '') + x; } return i2(h) + ':' + i2(m) + ':' + (s < 10 ? '0' : '') + s.toFixed(2); }
+  function fdr(id, mn, mx, st, val, ad, cls) {
+    return '<div class="sfFw ' + (cls || '') + '"><output data-o="' + id + '"></output><div class="sfFader sfFv" tabindex="0" role="slider" aria-label="' + esc(ad) + '"><div class="sfTrk"></div><div class="sfTh"></div></div><input type="range" class="sfGiz" data-r="' + id + '" min="' + mn + '" max="' + mx + '" step="' + st + '" value="' + val + '"></div>';
+  }
+  function fdrGuncelle(q) { $$('.sfFw', q).forEach(function (w) { var r = w.querySelector('input[type=range]'), th = w.querySelector('.sfTh'), f = (+r.max - +r.min) ? (+r.value - +r.min) / (+r.max - +r.min) : 0; if (th) th.style.top = ((1 - Math.max(0, Math.min(1, f))) * 100) + '%'; }); }
+  function rv(q, id) { return +q.querySelector('[data-r="' + id + '"]').value; }
+  function rs(q, id, v) { q.querySelector('[data-r="' + id + '"]').value = v; }
+  function out(q, id, t) { var e = q.querySelector('[data-o="' + id + '"]'); if (e) e.innerHTML = t; }
+  function onizAr(p) { var a = p.sec ? p.sec[0] : p.imlec, b = p.sec ? p.sec[1] : p.L.length; if (b - a > SR * 12) b = a + SR * 12; if (b - a < 2048) { a = 0; b = Math.min(p.L.length, SR * 12); } return [a, b]; }
+  function parcaAl(p) { var r = onizAr(p), sL = p.L.slice(r[0], r[1]); return { a: r[0], L: sL, R: p.R === p.L ? sL : p.R.slice(r[0], r[1]) }; }
+  function kirpla(o) { function k(x) { for (var i = 0; i < x.length; i++) { if (x[i] > 1) x[i] = 1; else if (x[i] < -1) x[i] = -1; } } k(o.L); if (o.R !== o.L) k(o.R); return o; }
+  function canliYenile(q) { var g = q.querySelector('#dg-gz'); if (!g || !g.checked || !S.cal) return; clearTimeout(q._rt); q._rt = setTimeout(function () { var b = q.querySelector('#dg-on-izle'); if (b && q.isConnected) b.click(); }, 350); }
+  function tutamac(cv, ba, hareket, birak) {
+    cv.style.touchAction = 'none';
+    cv.addEventListener('pointerdown', function (e) { if (e.button) return; e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (x) {} var b = cv.getBoundingClientRect(); ba((e.clientX - b.left) * cv.width / b.width, (e.clientY - b.top) * cv.height / b.height); });
+    cv.addEventListener('pointermove', function (e) { var b = cv.getBoundingClientRect(); hareket((e.clientX - b.left) * cv.width / b.width, (e.clientY - b.top) * cv.height / b.height); });
+    cv.addEventListener('pointerup', birak); cv.addEventListener('pointercancel', birak);
+  }
+
+  /* --- Volume --- */
+  function volDlg() {
+    var p = aktifVar(); if (!p) return; var st = { db: 0 }, r = aralik(p), q;
+    function f2db(f) { f /= 1000; if (f < 0.01) return -120; return f >= 0.7 ? (f - 0.7) / 0.3 * 20 : -60 * (0.7 - f) / 0.7; }
+    function db2f(db) { if (db <= -99) return 0; return Math.round((db >= 0 ? 0.7 + db / 20 * 0.3 : 0.7 + db / 60 * 0.7) * 1000); }
+    function amp() { return st.db <= -99 ? 0 : Math.pow(10, st.db / 20); }
+    function goster() { out(q, 'v', (st.db > 0 ? '+' : '') + dbM(st.db, 2) + ' dB<br>(' + (amp() * 100).toFixed(2).replace('.', ',') + ' %)'); fdrGuncelle(q); }
+    function koy(db) { st.db = db; rs(q, 'v', db2f(db)); goster(); }
+    var VP = { m: -120, k12: -12, k6: -6, k3: -3, s0: 0, a3: 3, a6: 6, a12: 12 };
+    q = diyalog('Volume (ses seviyesi)', [], {}, {
+      ad: p.ad, genis: '470px', gercek: false,
+      ekHtml: '<div class="vlKap">' + fdr('v', 0, 1000, 10, 700, 'Kazanç', 'vlF') + '<div class="vlAd">Kazanç (Gain)<br>(-Inf. ile 20 dB)</div></div>' +
+        '<div class="vlAlt"><span>Önizleme sınırı: 00:00:10.00</span><i>' + zmn(r[0] / SR) + '</i><i>' + zmn(r[1] / SR) + '</i><i>' + zmn((r[1] - r[0]) / SR) + '</i></div>',
+      onayarlar: [['m', 'Sessiz (−Inf. dB)'], ['k12', '−12 dB'], ['k6', '−6 dB (yaklaşık yarı ses)'], ['k3', '−3 dB'], ['s0', '0 dB (değişmez)'], ['a3', '+3 dB'], ['a6', '+6 dB (yaklaşık iki kat)'], ['a12', '+12 dB']],
+      onayUygula: function (k) { koy(VP[k]); }, al: function () { return { db: st.db }; }, ver: function (a) { koy(a.db); },
+      degisince: function () { st.db = f2db(rv(q, 'v')); goster(); },
+      onizle: function () { var z = parcaAl(p), g = amp(); function m(x) { var y = new Float32Array(x.length); for (var i = 0; i < x.length; i++) y[i] = x[i] * g; return y; } var L = m(z.L); return kirpla({ L: L, R: z.R === z.L ? L : m(z.R) }); },
+      tamam: function () { var db = st.db; kanalIs(p, function (x, s, e) { return db <= -99 ? Motor.sessizYap(x, s, e) : Motor.kazan(x, s, e, db); }); toast('Ses seviyesi: ' + (db > 0 ? '+' : '') + dbM(db, 2) + ' dB'); }
+    });
+    $('.pencere', q).classList.add('sfVol'); goster();
+  }
+
+  /* --- Graphic Fade --- */
+  function grafikFadeDlg() {
+    var p = aktifVar(); if (!p) return; var r = aralik(p), mono = p.R === p.L, q, cv, st = { pts: [{ x: 0, y: 100 }, { x: 100, y: 100 }], mx: 200, dalga: 'mix' }, NC = 170, onb = {};
+    var G = { l: 52, t: 14, w: 760, h: 300 }; G.r = G.w - 14; G.b = G.h - 30; G.pw = G.r - G.l; G.ph = G.b - G.t;
+    function zirve() {
+      if (onb[st.dalga]) return onb[st.dalga]; var z = new Float32Array(NC), n = r[1] - r[0], i, c, a, b, m, v;
+      for (c = 0; c < NC; c++) { a = r[0] + Math.floor(c * n / NC); b = Math.max(a + 1, r[0] + Math.floor((c + 1) * n / NC)); m = 0; for (i = a; i < b && i < p.L.length; i += 1 + ((b - a) >> 6)) { v = st.dalga === 'r' ? Math.abs(p.R[i]) : st.dalga === 'l' ? Math.abs(p.L[i]) : Math.max(Math.abs(p.L[i]), Math.abs(p.R[i])); if (v > m) m = v; } z[c] = m; }
+      return (onb[st.dalga] = z);
+    }
+    function X(x) { return G.l + x / 100 * G.pw; } function Y(y) { return G.b - y / st.mx * G.ph; }
+    function ciz() {
+      var c = cv.getContext('2d'), i; c.fillStyle = '#fff'; c.fillRect(0, 0, G.w, G.h); c.fillStyle = '#0c0b66'; c.fillRect(G.l, G.t, G.pw, G.ph);
+      var z = zirve(); c.fillStyle = '#e9e9f6'; for (i = 0; i < NC; i++) c.fillRect(G.l + i * G.pw / NC, G.t, Math.max(1, G.pw / NC - 0.6), Math.min(1, z[i]) * G.ph * 0.5);
+      c.strokeStyle = '#6a6aa8'; c.lineWidth = 1; c.fillStyle = '#222'; c.font = '12px sans-serif'; c.textAlign = 'right';
+      for (i = 0; i <= st.mx; i += 100) { var yy = Math.round(Y(i)) + 0.5; c.beginPath(); c.moveTo(G.l, yy); c.lineTo(G.r, yy); c.stroke(); c.fillText(i + ' %', G.l - 5, yy + 4); }
+      c.textAlign = 'center'; [0, 25, 50, 75, 100].forEach(function (x) { var xx = Math.round(X(x)) + 0.5; c.beginPath(); c.moveTo(xx, G.t); c.lineTo(xx, G.b); c.stroke(); c.fillText(x + ' %', xx, G.b + 17); });
+      c.strokeStyle = '#ff2a2a'; c.lineWidth = 2; c.beginPath(); st.pts.forEach(function (n, k) { if (k) c.lineTo(X(n.x), Y(n.y)); else c.moveTo(X(n.x), Y(n.y)); }); c.stroke();
+      c.fillStyle = '#ff2a2a'; st.pts.forEach(function (n) { c.fillRect(X(n.x) - 4, Y(n.y) - 4, 8, 8); });
+    }
+    function degis() { ciz(); canliYenile(q); }
+    function bul(px, py) { for (var i = 0; i < st.pts.length; i++) { var n = st.pts[i]; if (Math.abs(X(n.x) - px) < 12 && Math.abs(Y(n.y) - py) < 12) return i; } return -1; }
+    function veri(px, py) { return { x: Math.max(0, Math.min(100, (px - G.l) / G.pw * 100)), y: Math.max(0, Math.min(st.mx, (G.b - py) / G.ph * st.mx)) }; }
+    var tut = -1;
+    function ui() { $$('input[name=gfm]', q).forEach(function (e) { e.checked = +e.value === st.mx; }); $('#gfDalga', q).value = st.dalga; }
+    function kazancAt(n, off, tot) { var g = new Float32Array(n), P = st.pts, j = 0, i, x, a, b, t; for (i = 0; i < n; i++) { x = tot > 1 ? (off + i) / (tot - 1) * 100 : 0; while (j < P.length - 2 && x > P[j + 1].x) j++; a = P[j]; b = P[j + 1]; t = b.x > a.x ? (x - a.x) / (b.x - a.x) : 0; t = Math.max(0, Math.min(1, t)); g[i] = (a.y + (b.y - a.y) * t) / 100; } return g; }
+    function uygulaK(x, g) { var y = new Float32Array(x.length); for (var i = 0; i < x.length; i++) y[i] = x[i] * g[i]; return y; }
+    var GP = {
+      giris: [100, [[0, 0], [100, 100]]], cikis: [100, [[0, 100], [100, 0]]], gc: [100, [[0, 0], [12, 100], [88, 100], [100, 0]]],
+      yum: [100, [[0, 0], [10, 8], [25, 30], [45, 68], [70, 94], [100, 100]]], duck: [100, [[0, 100], [25, 100], [35, 22], [65, 22], [75, 100], [100, 100]]],
+      yuksel: [400, [[0, 100], [25, 100], [65, 350], [100, 120]]], titre: [100, [[0, 100], [12, 40], [25, 100], [37, 40], [50, 100], [62, 40], [75, 100], [87, 40], [100, 100]]]
+    };
+    q = diyalog('Graphic Fade (grafikle fade)', [], {}, {
+      ad: p.ad, genis: '820px', gercek: true,
+      ekHtml: '<div class="gfKap"><canvas id="gfCv" width="' + G.w + '" height="' + G.h + '" class="gfCv" aria-label="Fade zarfı: noktaları sürükleyin, boş yere tıklayıp nokta ekleyin, çift tıklayıp silin"></canvas></div>' +
+        '<div class="gfAlt"><div class="gfMx">En yüksek kazanç (Maximum Gain): <label class="sfCk"><input type="radio" name="gfm" value="100"> %100 (0 dB)</label><label class="sfCk"><input type="radio" name="gfm" value="200"> %200 (+6 dB)</label><label class="sfCk"><input type="radio" name="gfm" value="400"> %400 (+12 dB)</label></div>' +
+        '<div class="gfDl"><label>Dalga (Show wave): <select id="gfDalga"><option value="mix">Kanalları karıştır</option>' + (mono ? '' : '<option value="l">Sol</option><option value="r">Sağ</option>') + '</select></label><button type="button" class="sfB" id="gfSifir">Zarfı sıfırla</button></div></div>' +
+        '<p class="gfIp">Noktaları sürükleyin. Boş yere tıklarsanız nokta eklenir, çift tıklarsanız silinir.</p>',
+      onayarlar: [['giris', 'Giriş (fade in)'], ['cikis', 'Çıkış (fade out)'], ['gc', 'Giriş ve çıkış'], ['yum', 'Yumuşak giriş (eğri)'], ['duck', 'Ortada çukur (konuşma için kıs)'], ['yuksel', 'Sona doğru yüksel (+11 dB)'], ['titre', 'Dalgalı (tremolo gibi)']],
+      onayUygula: function (k) { var a = GP[k]; st.mx = a[0]; st.pts = a[1].map(function (n) { return { x: n[0], y: n[1] }; }); ui(); ciz(); canliYenile(q); },
+      al: function () { return { pts: st.pts, mx: st.mx, dalga: st.dalga }; }, ver: function (a) { st.pts = a.pts.map(function (n) { return { x: n.x, y: n.y }; }); st.mx = a.mx; st.dalga = a.dalga; ui(); ciz(); canliYenile(q); },
+      degisince: function (d, qq) { var rr = $('input[name=gfm]:checked', q); if (rr) { st.mx = +rr.value; st.pts.forEach(function (n) { n.y = Math.min(n.y, st.mx); }); } st.dalga = $('#gfDalga', q).value; degis(); },
+      onizle: function () { var z = parcaAl(p), g = kazancAt(z.L.length, z.a - r[0], r[1] - r[0]), L = uygulaK(z.L, g); return kirpla({ L: L, R: z.R === z.L ? L : uygulaK(z.R, g) }); },
+      tamam: function () { calis('Fade uygulanıyor', function () { bolgeUygula(p, function (sL, sR) { var g = kazancAt(sL.length, 0, sL.length); var a = uygulaK(sL, g); return { L: a, R: sR === sL ? a : uygulaK(sR, g) }; }); }); }
+    });
+    cv = $('#gfCv', q); $('.pencere', q).classList.add('sfGraf');
+    tutamac(cv, function (px, py) {
+      var i = bul(px, py); if (i < 0) { var v = veri(px, py), k = 0; while (k < st.pts.length && st.pts[k].x < v.x) k++; if (k === 0) k = 1; if (k >= st.pts.length) k = st.pts.length - 1; st.pts.splice(k, 0, { x: Math.round(v.x * 10) / 10, y: Math.round(v.y) }); i = k; }
+      tut = i; ciz(); canliYenile(q);
+    }, function (px, py) {
+      if (tut < 0) return; var v = veri(px, py), n = st.pts[tut], P = st.pts;
+      if (tut === 0) n.x = 0; else if (tut === P.length - 1) n.x = 100; else n.x = Math.round(Math.max(P[tut - 1].x + 0.2, Math.min(P[tut + 1].x - 0.2, v.x)) * 10) / 10;
+      n.y = Math.round(v.y); degis();
+    }, function () { tut = -1; });
+    function sil(e) { var b = cv.getBoundingClientRect(), px = (e.clientX - b.left) * cv.width / b.width, py = (e.clientY - b.top) * cv.height / b.height, i = bul(px, py); if (i > 0 && i < st.pts.length - 1) { st.pts.splice(i, 1); degis(); } e.preventDefault(); }
+    cv.addEventListener('dblclick', sil); cv.addEventListener('contextmenu', sil);
+    $('#gfSifir', q).onclick = function () { st.pts = [{ x: 0, y: 100 }, { x: 100, y: 100 }]; degis(); };
+    ui(); ciz();
+  }
+
+  /* --- Graphic EQ --- */
+  function grafikEqDlg() {
+    var p = aktifVar(); if (!p) return; var q, cv, st = { pts: [{ f: 20, db: 0 }, { f: 20480, db: 0 }], mod: 'env', og: 0, dg: 'orta' };
+    var YL = [24, 12, 6, 3, 0, -3, -6, -12, -24], F0 = 20, F1 = 20480, LG = Math.log(F1 / F0), B10 = [], B20 = [], i;
+    for (i = 0; i < 10; i++) B10.push(Math.round(31.25 * Math.pow(2, i))); for (i = 0; i < 20; i++) B20.push(Math.round(25 * Math.pow(2, i / 2)));
+    var G = { l: 48, t: 12, w: 760, h: 300 }; G.r = G.w - 12; G.b = G.h - 24; G.pw = G.r - G.l; G.ph = G.b - G.t;
+    function dbY(db) { if (db <= -59) return 1; if (db >= 24) return 0; if (db <= -24) return (8 + (-24 - db) / 36) / 9; for (var k = 0; k < 8; k++) if (db <= YL[k] && db >= YL[k + 1]) return (k + (YL[k] - db) / (YL[k] - YL[k + 1])) / 9; return 0.5; }
+    function yDb(t) { t = Math.max(0, Math.min(1, t)); var u = t * 9, k = Math.min(8, Math.floor(u)), f = u - k; if (k === 8) { var d = -24 - f * 36; return d < -58 ? -120 : d; } return YL[k] + (YL[k + 1] - YL[k]) * f; }
+    function X(f) { return G.l + Math.log(f / F0) / LG * G.pw; } function Y(db) { return G.t + dbY(db) * G.ph; }
+    function resp(f) { var P = st.pts, n = P.length, k; if (f <= P[0].f) return P[0].db; if (f >= P[n - 1].f) return P[n - 1].db; for (k = 0; k < n - 1; k++) if (f <= P[k + 1].f) return P[k].db + (P[k + 1].db - P[k].db) * (Math.log(f / P[k].f) / Math.log(P[k + 1].f / P[k].f)); return 0; }
+    function mag(f) { var d = resp(f); return (d <= -90 ? 0 : Math.pow(10, d / 20)) * Math.pow(10, st.og / 20); }
+    function ciz() {
+      if (st.mod !== 'env') return; var c = cv.getContext('2d'), k; c.fillStyle = '#fff'; c.fillRect(0, 0, G.w, G.h); c.strokeStyle = '#555'; c.lineWidth = 1; c.fillStyle = '#222'; c.font = '12px sans-serif'; c.textAlign = 'right';
+      c.strokeRect(G.l + 0.5, G.t + 0.5, G.pw, G.ph);
+      var LB = ['+24', '+12', '+6', '+3', 'dB 0', '-3', '-6', '-12', '-24', '-Inf.'];
+      for (k = 0; k < 10; k++) { var yy = Math.round(G.t + k / 9 * G.ph) + 0.5; c.strokeStyle = k === 4 ? '#222' : '#9a9a9a'; c.beginPath(); c.moveTo(G.l, yy); c.lineTo(G.r, yy); c.stroke(); c.fillText(LB[k], G.l - 6, yy + 4); }
+      c.textAlign = 'center'; var FL = ['20', '40', '80', '160', '320', '640', '1.3k', '2.5k', '5.1k', '10k', '20k'];
+      for (k = 0; k <= 10; k++) { var xx = Math.round(G.l + k / 10 * G.pw) + 0.5; c.strokeStyle = '#9a9a9a'; c.beginPath(); c.moveTo(xx, G.t); c.lineTo(xx, G.b); c.stroke(); c.fillText(FL[k], Math.min(G.r - 8, Math.max(G.l + 6, xx)), G.b + 16); }
+      c.strokeStyle = '#000'; c.lineWidth = 1.6; c.beginPath(); for (k = 0; k < st.pts.length; k++) { var n = st.pts[k]; if (k) c.lineTo(X(n.f), Y(n.db)); else c.moveTo(X(n.f), Y(n.db)); } c.stroke();
+      c.fillStyle = '#fff'; c.strokeStyle = '#000'; st.pts.forEach(function (n) { c.fillRect(X(n.f) - 4, Y(n.db) - 4, 8, 8); c.strokeRect(X(n.f) - 3.5, Y(n.db) - 3.5, 7, 7); });
+    }
+    function etiket(f) { return f >= 1000 ? (f / 1000).toFixed(f % 1000 ? 1 : 0).replace('.', ',') + 'k' : String(f); }
+    function bandHtml(id, liste) { return liste.map(function (f, k) { return fdr(id + k, -240, 240, 5, 0, etiket(f) + ' Hz', 'geBF') + '<span class="geBE" hidden>' + etiket(f) + '</span>'; }).join(''); }
+    function bandKap(id, liste) { return '<div class="geBant" id="' + id + '" hidden>' + liste.map(function (f, k) { return '<div class="geBK">' + fdr(id + k, -240, 240, 5, 0, etiket(f) + ' Hz', 'geBF') + '<small>' + etiket(f) + '</small></div>'; }).join('') + '</div>'; }
+    function bandOku(id, liste) { var P = [], k; for (k = 0; k < liste.length; k++) P.push({ f: liste[k], db: rv(q, id + k) / 10 }); P.unshift({ f: F0, db: P[0].db }); P.push({ f: F1, db: P[P.length - 1].db }); st.pts = P; }
+    function bandYaz(id, liste) { for (var k = 0; k < liste.length; k++) rs(q, id + k, Math.round(Math.max(-24, Math.min(24, resp(liste[k]))) * 10 / 5) * 5); }
+    function goster() { out(q, 'og', (st.og > 0 ? '+' : '') + dbM(st.og, 1) + ' dB'); [['b10', B10], ['b20', B20]].forEach(function (a) { for (var k = 0; k < a[1].length; k++) out(q, a[0] + k, dbM(rv(q, a[0] + k) / 10, 1)); }); fdrGuncelle(q); }
+    function modGoster() { $$('.geSek button', q).forEach(function (b) { b.classList.toggle('on', b.dataset.m === st.mod); }); cv.hidden = st.mod !== 'env'; $('#b10', q).hidden = st.mod !== 'b10'; $('#b20', q).hidden = st.mod !== 'b20'; }
+    function modDegis(m) { if (st.mod === 'env' && m === 'b10') bandYaz('b10', B10); else if (st.mod === 'env' && m === 'b20') bandYaz('b20', B20); else if (m === 'b20' && st.mod === 'b10') { bandYaz('b20', B20); } else if (m === 'b10' && st.mod === 'b20') { bandYaz('b10', B10); } st.mod = m; modGoster(); if (m === 'b10') bandOku('b10', B10); else if (m === 'b20') bandOku('b20', B20); goster(); ciz(); canliYenile(q); }
+    function bul(px, py) { for (var k = 0; k < st.pts.length; k++) { var n = st.pts[k]; if (Math.abs(X(n.f) - px) < 11 && Math.abs(Y(n.db) - py) < 11) return k; } return -1; }
+    function veri(px, py) { return { f: F0 * Math.exp(Math.max(0, Math.min(1, (px - G.l) / G.pw)) * LG), db: yDb((py - G.t) / G.ph) }; }
+    function rd(d) { return d <= -100 ? -120 : Math.round(d * 2) / 2; }
+    var GP = {
+      duz: [[20, 0], [20480, 0]], ust3: [[20, 0], [2560, 0], [20480, 12]], alt3: [[20, 12], [160, 0], [20480, 0]],
+      bas: [[20, 0], [50, 6], [120, 5], [300, 0], [20480, 0]], konus: [[20, -24], [90, -24], [200, -3], [3000, 4], [7000, 2], [20480, -6]],
+      parlak: [[20, 0], [1500, 0], [5000, 4], [12000, 6], [20480, 6]], boguk: [[20, 0], [200, -3], [400, -4], [2500, 2], [8000, 2], [20480, 0]],
+      tel: [[20, -60], [300, -60], [450, 0], [3000, 0], [3600, -60], [20480, -60]]
+    };
+    function ptsYukle(a) { st.pts = a.map(function (n) { return { f: n[0], db: n[1] <= -59 ? -120 : n[1] }; }); }
+    var DG = { dusuk: 1024, orta: 4096, yuksek: 16384 };
+    function isle(sL, sR) { var N = DG[st.dg] || 4096; return kanalDo(sL, sR, function (x) { return Motor.frekFiltre(x, SR, mag, N); }); }
+    q = diyalog('Graphic EQ (grafik ekolayzer)', [], {}, {
+      ad: p.ad, genis: '860px', gercek: true,
+      ekHtml: '<div class="geUst"><div class="geOrta"><canvas id="geCv" width="' + G.w + '" height="' + G.h + '" class="gfCv" aria-label="Ekolayzer zarfı: noktaları sürükleyin"></canvas>' + bandKap('b10', B10) + bandKap('b20', B20) + '</div>' +
+        '<div class="geSag">' + fdr('og', -600, 200, 5, 0, 'Çıkış kazancı', 'geOg') + '<div class="vlAd">Çıkış kazancı<br>(-60 ile 20 dB)</div></div></div>' +
+        '<div class="geAlt"><label>Doğruluk (Accuracy): <select id="geDg"><option value="dusuk">Düşük (hızlı)</option><option value="orta" selected>Orta (orta ve tiz için iyi)</option><option value="yuksek">Yüksek (bas için doğru)</option></select></label><button type="button" class="sfB" id="geSifir">Sıfırla</button></div>' +
+        '<div class="geSek"><button type="button" data-m="env" class="on">Zarf</button><button type="button" data-m="b10">10 Bant</button><button type="button" data-m="b20">20 Bant</button></div>',
+      onayarlar: [['duz', 'Düz (hiç ses rengi yok)'], ['ust3', 'Üst üç oktavı yükselt'], ['alt3', 'Alt üç oktavı yükselt'], ['bas', 'Bası güçlendir'], ['konus', 'Konuşma netliği'], ['parlak', 'Sesi parlat'], ['boguk', 'Boğukluğu al'], ['tel', 'Telefon sesi']],
+      onayUygula: function (k) { ptsYukle(GP[k]); if (st.mod !== 'env') { st.mod = 'env'; modGoster(); } goster(); ciz(); canliYenile(q); },
+      al: function () { return { pts: st.pts, og: st.og, dg: st.dg }; }, ver: function (a) { st.pts = a.pts.map(function (n) { return { f: n.f, db: n.db }; }); st.og = a.og; st.dg = a.dg; st.mod = 'env'; rs(q, 'og', Math.round(st.og * 10)); $('#geDg', q).value = st.dg; modGoster(); goster(); ciz(); canliYenile(q); },
+      degisince: function (d, qq) { st.og = rv(q, 'og') / 10; st.dg = $('#geDg', q).value; if (st.mod === 'b10') bandOku('b10', B10); else if (st.mod === 'b20') bandOku('b20', B20); goster(); ciz(); canliYenile(q); },
+      onizle: function () { var z = parcaAl(p), o = isle(z.L, z.R); return kirpla(o); },
+      tamam: function () { calis('Graphic EQ uygulanıyor', function () { bolgeUygula(p, isle); }); }
+    });
+    cv = $('#geCv', q); st.dg = 'orta'; $('.pencere', q).classList.add('sfGraf');
+    var tut = -1;
+    tutamac(cv, function (px, py) {
+      var k = bul(px, py); if (k < 0) { var v = veri(px, py), j = 0; while (j < st.pts.length && st.pts[j].f < v.f) j++; if (j === 0) j = 1; if (j >= st.pts.length) j = st.pts.length - 1; st.pts.splice(j, 0, { f: Math.round(v.f), db: rd(v.db) }); k = j; }
+      tut = k; ciz(); canliYenile(q);
+    }, function (px, py) {
+      if (tut < 0) return; var v = veri(px, py), n = st.pts[tut], P = st.pts;
+      if (tut > 0 && tut < P.length - 1) n.f = Math.round(Math.max(P[tut - 1].f * 1.01, Math.min(P[tut + 1].f / 1.01, v.f)));
+      n.db = rd(v.db); ciz(); canliYenile(q);
+    }, function () { tut = -1; });
+    function sil(e) { var b = cv.getBoundingClientRect(), k = bul((e.clientX - b.left) * cv.width / b.width, (e.clientY - b.top) * cv.height / b.height); if (k > 0 && k < st.pts.length - 1) { st.pts.splice(k, 1); ciz(); canliYenile(q); } e.preventDefault(); }
+    cv.addEventListener('dblclick', sil); cv.addEventListener('contextmenu', sil);
+    $$('.geSek button', q).forEach(function (b) { b.onclick = function () { modDegis(b.dataset.m); }; });
+    $('#geSifir', q).onclick = function () { st.pts = [{ f: F0, db: 0 }, { f: F1, db: 0 }]; st.og = 0; rs(q, 'og', 0); [['b10', B10], ['b20', B20]].forEach(function (a) { for (var k = 0; k < a[1].length; k++) rs(q, a[0] + k, 0); }); goster(); ciz(); canliYenile(q); };
+    modGoster(); goster(); ciz();
+  }
+
+  /* --- Paragraphic EQ --- */
+  function paragrafikEqDlg() {
+    var p = aktifVar(); if (!p) return; var q, cv, st, i, son = null;
+    function bos() { return { dry: -120, wet: 0, b: [{ g: 0, w: 1, f: 100 }, { g: 0, w: 1, f: 300 }, { g: 0, w: 1, f: 1000 }, { g: 0, w: 1, f: 5000 }], ls: { on: 0, f: 200, g: 6 }, hs: { on: 0, f: 8000, g: 6 } }; }
+    st = bos();
+    function f2v(f) { return Math.round(1000 * Math.log(f / 20) / Math.log(750)); } function v2f(v) { return Math.round(20 * Math.pow(750, v / 1000)); }
+    var G = { l: 40, t: 8, w: 700, h: 190 }; G.r = G.w - 10; G.b = G.h - 20; G.pw = G.r - G.l; G.ph = G.b - G.t;
+    function bantlar() { var L = []; if (st.ls.on) L.push({ t: 'lowshelf', f: st.ls.f, g: st.ls.g <= -100 ? -60 : st.ls.g, q: 0.7071 }); st.b.forEach(function (b) { if (Math.abs(b.g) > 0.01) L.push({ t: 'peak', f: b.f, g: b.g, bw: b.w }); }); if (st.hs.on) L.push({ t: 'highshelf', f: st.hs.f, g: st.hs.g <= -100 ? -60 : st.hs.g, q: 0.7071 }); return L; }
+    function dryA() { return st.dry <= -99 ? 0 : Math.pow(10, st.dry / 20); } function wetA() { return Math.pow(10, st.wet / 20); }
+    function isle(sL, sR) { var bl = bantlar(), d = dryA(), w = wetA(); return kanalDo(sL, sR, function (x) { var e = bl.length ? Motor.eq(x, SR, bl) : x, y = new Float32Array(x.length); for (var k = 0; k < x.length; k++) y[k] = d * x[k] + w * e[k]; return y; }); }
+    function ciz() {
+      var c = cv.getContext('2d'), k; c.fillStyle = '#fff'; c.fillRect(0, 0, G.w, G.h);
+      function XX(f) { return G.l + Math.log(f / 20) / Math.log(1000) * G.pw; } function YY(db) { return G.t + (25 - Math.max(-25, Math.min(25, db))) / 50 * G.ph; }
+      var kat = bantlar().map(function (b) { return Motor.biquadKatsayi(b.t, SR, b.f, b.q || (function (bw) { var pp = Math.pow(2, bw); return Math.sqrt(pp) / (pp - 1); })(b.w), b.g || 0); }), d = dryA(), wt = wetA(), pts = [];
+      for (k = 0; k <= G.pw; k += 2) {
+        var f = 20 * Math.pow(1000, k / G.pw), w = 2 * Math.PI * f / SR, cw = Math.cos(w), sw = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w), hr = 1, hi = 0;
+        kat.forEach(function (a) { var nr = a.b0 + a.b1 * cw + a.b2 * c2, ni = -(a.b1 * sw + a.b2 * s2), dr = 1 + a.a1 * cw + a.a2 * c2, di = -(a.a1 * sw + a.a2 * s2), dd = dr * dr + di * di + 1e-12, qr = (nr * dr + ni * di) / dd, qi = (ni * dr - nr * di) / dd, tr = hr * qr - hi * qi; hi = hr * qi + hi * qr; hr = tr; });
+        var mr = d + wt * hr, mi = wt * hi, m = Math.sqrt(mr * mr + mi * mi); pts.push([G.l + k, YY(20 * Math.log10(m + 1e-9))]);
+      }
+      c.fillStyle = '#1f8a90'; c.beginPath(); c.moveTo(G.l, G.b); pts.forEach(function (a) { c.lineTo(a[0], a[1]); }); c.lineTo(G.r, G.b); c.closePath(); c.fill();
+      c.strokeStyle = '#8aa'; c.lineWidth = 1; c.fillStyle = '#222'; c.font = '11px sans-serif'; c.textAlign = 'center';
+      [20, 40, 80, 160, 320, 640, 1200, 2600, 5100, 10000, 20000].forEach(function (f, j) { var xx = Math.round(XX(f)) + 0.5; c.beginPath(); c.moveTo(xx, G.t); c.lineTo(xx, G.b); c.stroke(); c.fillText(f >= 1000 ? (f / 1000).toFixed(f === 1200 || f === 2600 || f === 5100 ? 1 : 0).replace('.0', '') + 'k' : f, Math.min(G.r - 8, Math.max(G.l + 8, xx)), G.b + 14); });
+      c.textAlign = 'right'; c.strokeStyle = '#222'; c.beginPath(); c.moveTo(G.l, Math.round(YY(0)) + 0.5); c.lineTo(G.r, Math.round(YY(0)) + 0.5); c.stroke(); c.fillText('+25', G.l - 5, G.t + 10); c.fillText('dB 0', G.l - 5, YY(0) + 4); c.fillText('-25', G.l - 5, G.b - 2);
+      c.strokeStyle = '#444'; c.strokeRect(G.l + 0.5, G.t + 0.5, G.pw, G.ph);
+    }
+    function ui() {
+      rs(q, 'dry', Math.round(Math.max(-600, st.dry * 10))); rs(q, 'wet', Math.round(st.wet * 10));
+      st.b.forEach(function (b, k) { rs(q, 'g' + k, Math.round(b.g * 10)); rs(q, 'w' + k, Math.round(b.w * 10)); rs(q, 'f' + k, f2v(b.f)); q.querySelector('[data-n="f' + k + '"]').value = b.f; });
+      ['ls', 'hs'].forEach(function (k) { q.querySelector('[data-c="' + k + '"]').checked = !!st[k].on; rs(q, k + 'f', f2v(st[k].f)); q.querySelector('[data-n="' + k + 'f"]').value = st[k].f; rs(q, k + 'g', Math.round(Math.max(-600, st[k].g * 10))); });
+      goster();
+    }
+    function oku() {
+      var d = rv(q, 'dry'); st.dry = d <= -600 ? -120 : d / 10; st.wet = rv(q, 'wet') / 10;
+      st.b.forEach(function (b, k) { b.g = rv(q, 'g' + k) / 10; b.w = rv(q, 'w' + k) / 10; var nf = v2f(rv(q, 'f' + k)); if (son === q.querySelector('[data-r="f' + k + '"]') && nf !== b.f) { b.f = nf; q.querySelector('[data-n="f' + k + '"]').value = nf; } });
+      ['ls', 'hs'].forEach(function (k) { st[k].on = q.querySelector('[data-c="' + k + '"]').checked ? 1 : 0; var nf = v2f(rv(q, k + 'f')); if (son === q.querySelector('[data-r="' + k + 'f"]') && nf !== st[k].f) { st[k].f = nf; q.querySelector('[data-n="' + k + 'f"]').value = nf; } var g = rv(q, k + 'g'); st[k].g = g <= -600 ? -120 : g / 10; });
+    }
+    function goster() {
+      out(q, 'dry', dbM(st.dry, 1) + ' dB'); out(q, 'wet', dbM(st.wet, 1) + ' dB');
+      st.b.forEach(function (b, k) { out(q, 'g' + k, dbM(b.g, 1) + ' dB'); out(q, 'w' + k, b.w.toFixed(1).replace('.', ',') + ' okt'); var kol = q.querySelector('[data-kol="' + k + '"]'); if (kol) kol.classList.toggle('pasif', Math.abs(b.g) < 0.01); });
+      ['ls', 'hs'].forEach(function (k) { out(q, k + 'g', dbM(st[k].g, 1) + ' dB'); var sat = q.querySelector('[data-sat="' + k + '"]'); if (sat) sat.classList.toggle('pasif', !st[k].on); });
+      fdrGuncelle(q); ciz();
+    }
+    function degis() { oku(); goster(); canliYenile(q); }
+    var kol = '<div class="peGrid"><div class="peEt"><div>Kazanç (Gain)<br>(-25 ile 25 dB):</div><div>Genişlik (Width)<br>(0,3 ile 2,5 okt.):</div><div>Orta frekans (Center)<br>(20 ile 15.000 Hz):</div></div>';
+    st.b.forEach(function (b, k) { kol += '<div class="peK" data-kol="' + k + '">' + fdr('g' + k, -250, 250, 5, 0, 'Bant ' + (k + 1) + ' kazancı', 'peF') + '<output data-o="w' + k + '"></output><input type="range" class="peH" data-r="w' + k + '" min="3" max="25" step="1" value="10" aria-label="Genişlik"><input type="range" class="peH" data-r="f' + k + '" min="0" max="1000" step="1" value="' + f2v(b.f) + '" aria-label="Orta frekans"><input class="peNum" data-n="f' + k + '" value="' + b.f + '" inputmode="numeric" aria-label="Orta frekans (Hz)"></div>'; });
+    kol += '</div>';
+    function raf(k, ad, f, g) { return '<div class="peRaf" data-sat="' + k + '"><label class="sfCk"><input type="checkbox" data-c="' + k + '"> ' + ad + ' (-Inf. ile 25 dB)</label><input type="range" class="peH" data-r="' + k + 'f" min="0" max="1000" step="1" value="' + f2v(f) + '" aria-label="Frekans"><input class="peNum" data-n="' + k + 'f" value="' + f + '" inputmode="numeric" aria-label="Frekans (Hz)"><input type="range" class="peH" data-r="' + k + 'g" min="-600" max="250" step="5" value="' + g * 10 + '" aria-label="Kazanç"><output data-o="' + k + 'g"></output></div>'; }
+    var PP = {
+      duz: function () { return bos(); },
+      fm: function () { var s = bos(); s.b[2] = { g: -12, w: 1, f: 4000 }; s.ls = { on: 1, f: 200, g: 6 }; s.hs = { on: 1, f: 8000, g: 6 }; return s; },
+      konus: function () { var s = bos(); s.b[0] = { g: -4, w: 1.2, f: 250 }; s.b[1] = { g: 3, w: 1, f: 3000 }; s.b[2] = { g: 2, w: 1.2, f: 6000 }; return s; },
+      radyo: function () { var s = bos(); s.ls = { on: 1, f: 120, g: 3 }; s.b[1] = { g: -2, w: 1, f: 300 }; s.b[2] = { g: 3, w: 1, f: 3000 }; s.hs = { on: 1, f: 10000, g: 3 }; return s; },
+      boguk: function () { var s = bos(); s.b[0] = { g: -3, w: 1, f: 160 }; s.b[1] = { g: -3.5, w: 1.2, f: 300 }; s.b[2] = { g: 2, w: 1, f: 2800 }; return s; },
+      yum: function () { var s = bos(); s.hs = { on: 1, f: 6000, g: -6 }; s.b[2] = { g: -2, w: 1.5, f: 4500 }; return s; },
+      cizirti: function () { var s = bos(); s.b[3] = { g: -6, w: 0.8, f: 7000 }; return s; }
+    };
+    q = diyalog('Paragraphic EQ', [], {}, {
+      ad: p.ad, genis: '860px', gercek: true,
+      ekHtml: '<div class="peUst"><div class="peFd">' + fdr('dry', -600, 250, 5, -600, 'Kuru çıkış', 'peF') + '<div class="vlAd">Kuru çıkış (Dry out)<br>(-Inf. ile 25 dB)</div></div><div class="peFd">' + fdr('wet', -250, 250, 5, 0, 'İşlenmiş çıkış', 'peF') + '<div class="vlAd">İşlenmiş çıkış (Wet out)<br>(-25 ile 25 dB)</div></div><canvas id="peCv" class="gfCv" width="' + G.w + '" height="' + G.h + '"></canvas></div>' +
+        kol + raf('ls', 'Alçak raf (low-shelf) aç', 200, 6) + raf('hs', 'Yüksek raf (high-shelf) aç', 8000, 6),
+      onayarlar: [['duz', 'Düz (hiç ses rengi yok)'], ['fm', 'Fletcher-Munson eğrisi (düşük ses telafisi)'], ['konus', 'Konuşma netliği'], ['radyo', 'Radyo spikeri'], ['boguk', 'Boğukluğu al'], ['yum', 'Tizi yumuşat'], ['cizirti', 'Cızırtıyı azalt (S harfi)']],
+      onayUygula: function (k) { st = PP[k](); ui(); canliYenile(q); },
+      al: function () { return st; }, ver: function (a) { st = JSON.parse(JSON.stringify(a)); ui(); canliYenile(q); },
+      degisince: function () { degis(); },
+      onizle: function () { var z = parcaAl(p); return kirpla(isle(z.L, z.R)); },
+      tamam: function () { calis('Paragraphic EQ uygulanıyor', function () { bolgeUygula(p, isle); }); }
+    });
+    cv = $('#peCv', q); $('.pencere', q).classList.add('sfGraf'); q.addEventListener('input', function (e) { son = e.target; }, true);
+    q.addEventListener('change', function (e) { var t = e.target; if (t.dataset && t.dataset.n) { var v = Math.max(20, Math.min(15000, parseFloat(String(t.value).replace(',', '.')) || 1000)); t.value = Math.round(v); rs(q, t.dataset.n, f2v(v)); var m = /^f(\d)$/.exec(t.dataset.n); if (m) st.b[+m[1]].f = Math.round(v); else st[t.dataset.n.slice(0, 2)].f = Math.round(v); goster(); canliYenile(q); } else if (t.dataset && t.dataset.c) degis(); });
+    ui();
+  }
+
   /* Efektler */
   function eqDlg() {
     var p = aktifVar(); if (!p) return;
@@ -1368,15 +1626,18 @@
       ['Döngü (seçimi sürekli çal)', '', I.dongu, 'Açık/kapalı. Seçili bölümü tekrar tekrar çalar'],
       ['Mikrofonla kayıt', 'Ctrl+R', function () { kayitBasla(); }, 'Başlat / bitir']]],
     ['İşlem', [
-      ['Ses seviyesi…', '', I.kazanc, 'Seçimi ya da pencerenin tamamını yükseltir veya alçaltır (dB)'],
+      ['Ses seviyesi (Volume)…', '', volDlg, 'Seçimi ya da pencerenin tamamını dikey çubukla yükseltir veya alçaltır'],
       ['+1 dB', '', function () { I.kazancHizli(1); }, 'Hızlıca biraz yükselt'],
       ['−1 dB', '', function () { I.kazancHizli(-1); }, 'Hızlıca biraz alçalt'],
       ['Normalleştir (tepe −1 dB)', '', I.normal, 'Bozmadan olabildiğince yükseltir'],
       ['Normalleştir (gürlüğe göre)…', '', gurlukNormalDlg, 'Radyo, TV ya da santral gürlüğüne ölçerek getirir'],
       '-',
+      ['Graphic Fade (grafikle fade)…', '', grafikFadeDlg, 'Fade eğrisini noktalarla kendiniz çizersiniz; sesi bölgede açıp kısabilirsiniz'],
       ['Yumuşak giriş (fade in)', '', I.giris, 'Seçimin başında sesi yavaş açar'],
       ['Yumuşak çıkış (fade out)', '', I.cikis, 'Seçimin sonunda sesi yavaş kısar'],
       '-',
+      ['Graphic EQ (grafik ekolayzer)…', '', grafikEqDlg, 'Zarf üzerindeki noktaları ya da 10 / 20 bant çubuklarını çekerek ses rengini ayarlarsınız'],
+      ['Paragraphic EQ…', '', paragrafikEqDlg, '4 ayarlı bant ve alçak/yüksek raf; kuru-ıslak karışım'],
       ['Ters çevir (geriye doğru)', '', I.ters, 'Seçimi baştan sona çevirir (özel efekt)'],
       ['Fazı ters çevir', '', I.faz, 'Dalgayı baş aşağı çevirir; fazı bozuk kayıtları düzeltir'],
       ['DC kaymasını sil', '', I.dc, 'Kayıttaki sabit ofseti temizler; kesim yerlerindeki “tık” sesini azaltır'],

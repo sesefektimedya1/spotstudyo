@@ -328,7 +328,8 @@
     catch (e) { hata(new Error('Bu dosya okunamadı. MP3, WAV veya M4A deneyin.')); }
   }
   var kayit = null, mikId = '', kayitNo = 0;
-  async function kayitBasla() {
+  async function kayitBasla(o) {
+    o = (o && o.otoEski !== undefined) ? o : {}; /* olay nesnesi gelirse yok say */
     if (kayit) return kayitDur();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast('Bu tarayıcı kaydı desteklemiyor. Chrome veya Edge kullanın.');
     var p = akt(), ad = 'Kayıt ' + (++kayitNo), yeniAcildi = false, eskiBos = false;
@@ -364,8 +365,9 @@
         $('#metre i').style.width = '0'; $('#kayitBtn').classList.remove('kayitta'); $('#kayitBtn').title = 'Mikrofonla kayıt  (Ctrl+R)'; $('#otoKayit').textContent = '● Mikrofonla kayıt al'; oynatIk(0);
         p.kayitta = false; kayit = null;
         if (Math.round(c.sampleRate) !== SR) { buf = yenidenOrnekle(buf.subarray(0, n), c.sampleRate); n = buf.length; }
-        if (n < SR * 0.1) { toast('Kayıt çok kısa, alınmadı'); if (p.el.isConnected) { p.L = p.R = new Float32Array(SR * 2); p.bos = true; p.ovC = null; tumuGoster(p); } guncelle(); return; }
-        p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (otodan) { $('#otoSes').value = 'p' + p.id; otoOzet(); toast('Sesiniz yüklendi. Müziği seçebilirsiniz.'); } guncelle();
+        if (n < SR * 0.1) { toast('Kayıt çok kısa, alınmadı. Önceki sesiniz yerinde duruyor.'); if (otodan && yeniAcildi) { kapat(p); return; } if (p.el.isConnected) { p.L = p.R = new Float32Array(SR * 2); p.bos = true; p.ovC = null; tumuGoster(p); } guncelle(); return; }
+        p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); if (otodan && o.otoEski && o.otoEski !== p && S.pen.indexOf(o.otoEski) >= 0) kapat(o.otoEski);
+        otoListeleri(); if (otodan) { $('#otoSes').value = 'p' + p.id; otoOzet(); toast(o.otoEski ? 'Yeni kaydınız yüklendi, önceki ses kaldırıldı.' : 'Sesiniz yüklendi. Müziği seçebilirsiniz.'); } guncelle();
       };
       kayit = K; $('#kayitBtn').classList.add('kayitta'); $('#kayitBtn').title = 'Kaydı bitir'; $('#otoKayit').textContent = '■ Kaydı bitir'; oynatIk(1);
       if (S.tab !== 'manuel' && S.tab !== 'oto') sekme('manuel');
@@ -373,6 +375,24 @@
       kayitPanel(false); kayit = null; p.kayitta = false; if (yeniAcildi) kapat(p); else if (eskiBos) { p.bos = true; p.L = p.R = new Float32Array(SR * 2); p.ovC = null; tumuGoster(p); ciz(p); } kayitNo--;
       toast(e.name === 'NotAllowedError' ? 'Mikrofon izni verilmedi. Adres çubuğundaki kilit simgesinden mikrofona izin verin.' : e.name === 'NotFoundError' ? 'Mikrofon bulunamadı. Mikrofonu takıp tekrar deneyin.' : 'Mikrofon açılamadı: ' + e.message);
     }
+  }
+  /* Otomatik: önceki sesi silme onayı */
+  function otoEskiSes() { var v = $('#otoSes').value; return v ? (S.pen.filter(function (z) { return 'p' + z.id === v; })[0] || null) : null; }
+  function onayDlg(baslik, metin, tamam, cb) {
+    var p = document.createElement('div'); p.className = 'perde';
+    p.innerHTML = '<div class="pencere sfMix sfOnay" role="alertdialog" aria-modal="true"><div class="sfBas"><span>' + esc(baslik) + '</span></div><div class="sfOnayGv"><p>' + esc(metin) + '</p></div><div class="sfOnayAlt"><button type="button" class="sfB ana" data-c="evet">' + esc(tamam) + '</button><button type="button" class="sfB" data-c="iptal">İptal</button></div></div>';
+    document.body.appendChild(p);
+    function bit(c) { document.removeEventListener('keydown', kd, true); p.remove(); if (c === 'evet') cb(); }
+    function kd(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); bit('iptal'); } }
+    document.addEventListener('keydown', kd, true);
+    $$('button', p).forEach(function (b) { b.onclick = function () { bit(b.dataset.c); }; });
+    $('[data-c=iptal]', p).focus();
+  }
+  var ESKI_MET = 'Önceki sesiniz silinecek ve yeni ses onun yerine geçecek. Devam edilsin mi?';
+  function otoKayitIste() {
+    if (kayit) return kayitDur();
+    var eski = otoEskiSes();
+    if (eski) onayDlg('Önceki ses silinecek', ESKI_MET, 'Devam et', function () { kayitBasla({ otoEski: eski }); }); else kayitBasla({ otoEski: null });
   }
   /* Otomatik sayfadaki kayıt paneli: süre, seviye, duraklat, bitir */
   function kayitPanel(ac_, sure, sev, dur, bekle) {
@@ -1209,7 +1229,7 @@
   /* ---------- Sekmeler ---------- */
   function sekme(t) {
     if (S.tab !== t) { try { durdur(); } catch (ed) {} } /* sekme değişince çalan ses kesilir */
-    S.tab = t; document.body.classList.toggle('tManuel', t === 'manuel'); $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
+    S.eskiSes = null; S.tab = t; document.body.classList.toggle('tManuel', t === 'manuel'); $$('#sekmeler button').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); }); $$('.panel').forEach(function (pn) { pn.classList.toggle('acik', pn.id === 'p-' + t); });
     ['#menu', '#arac', '.durum', '#mobSerit'].forEach(function (q) { $(q).style.display = t === 'manuel' ? '' : 'none'; });
     $$('#altSekme [data-t]').forEach(function (b) { b.classList.toggle('acik', b.dataset.t === t); });
     if (t === 'manuel') guncelle(); if (t === 'oto') { otoListeleri(); sonucCiz(); } if (t === 'yz') yzDurum();
@@ -1549,22 +1569,24 @@
   /* ---------- Düğmeler, dosya girişi, sürükle-bırak, kısayollar ---------- */
   $('#oynatBtn').onclick = oynatToggle;
   $('#basaBtn').onclick = function () { var p = akt(); durdur(); if (p) { p.imlec = 0; p.sec = null; p.bas = 0; guncelle(); } };
-  $('#kayitBtn').onclick = kayitBasla; $('#otoKayit').onclick = function () { kayitBasla(); }; $('#kayitBitir').onclick = kayitDur; $('#kayitDur').onclick = kayitDuraklat;
+  $('#kayitBtn').onclick = kayitBasla; $('#otoKayit').onclick = otoKayitIste; $('#kayitBitir').onclick = kayitDur; $('#kayitDur').onclick = kayitDuraklat;
   $('#otoMikSec').onclick = function () { mikSec(); };
-  $('#otoSesAc').onclick = function () { $('#dosyaSes').click(); }; $('#otoMuzikAc').onclick = function () { $('#dosyaMuzik').click(); };
+  $('#otoSesAc').onclick = function () { var eski = otoEskiSes(); if (eski) onayDlg('Önceki ses silinecek', ESKI_MET, 'Devam et', function () { S.eskiSes = eski; $('#dosyaSes').click(); }); else { S.eskiSes = null; $('#dosyaSes').click(); } }; $('#otoMuzikAc').onclick = function () { $('#dosyaMuzik').click(); };
   var sonAcilan = '';
-  $('#dosyaSes').onchange = async function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) { var p = await dosyadanAc(f, 'ses'); if (p && S.tab !== 'oto') sekme('manuel'); else if (p) { $('#otoSes').value = 'p' + p.id; } } };
+  $('#dosyaSes').onchange = async function (e) { var f = e.target.files[0]; e.target.value = ''; var eski = S.tab === 'oto' ? S.eskiSes : null; S.eskiSes = null; if (f) { var p = await dosyadanAc(f, 'ses'); if (p && S.tab !== 'oto') sekme('manuel'); else if (p) { if (eski && eski !== p && S.pen.indexOf(eski) >= 0) kapat(eski); otoListeleri(); $('#otoSes').value = 'p' + p.id; otoOzet(); toast(eski ? 'Yeni sesiniz yüklendi, önceki ses kaldırıldı.' : 'Sesiniz yüklendi. Müziği seçebilirsiniz.'); } } };
   $('#dosyaMuzik').onchange = async function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) { var p = await dosyadanAc(f, 'ses'); if (p) { if (S.tab === 'oto') $('#otoMuzik').value = 'p' + p.id; else sekme('manuel'); } } };
   $('#hedef').onchange = function () { hedefUygula(); };
   $$('#hedefKart button').forEach(function (b) { b.onclick = function () { $('#hedef').value = b.dataset.h; hedefUygula(); $$('#hedefKart button').forEach(function (x) { x.classList.toggle('secili', x === b); }); }; });
   function sesDosyasiMi(f) { return /^(audio|video)\//.test(f.type) || /\.(mp3|wav|m4a|aac|ogg|flac|aif|aiff|wma|mp4|mov|webm|mkv)$/i.test(f.name); }
-  async function birakIsle(files, secId) {
+  async function birakIsle(files, secId, onayli) {
     var l = Array.prototype.slice.call(files || []), gecerli = l.filter(sesDosyasiMi);
     if (!l.length) return; if (!gecerli.length) return toast('Bu dosya ses ya da video değil: ' + l[0].name);
+    var eski = null;
+    if (S.tab === 'oto' && secId === '#otoSes') { eski = otoEskiSes(); if (eski && !onayli) return onayDlg('Önceki ses silinecek', ESKI_MET, 'Devam et', function () { birakIsle(files, secId, true); }); }
     if (l.length > gecerli.length) toast((l.length - gecerli.length) + ' dosya ses olmadığı için atlandı');
     var ilk = null; for (var i = 0; i < gecerli.length; i++) { var p = await dosyadanAc(gecerli[i], 'ses'); if (p && !ilk) ilk = p; }
     if (!ilk) return;
-    if (S.tab === 'oto') { otoListeleri(); if (secId) $(secId).value = 'p' + ilk.id; toast('Yüklendi: ' + ilk.ad); } else sekme('manuel');
+    if (S.tab === 'oto') { if (eski && eski !== ilk && S.pen.indexOf(eski) >= 0) kapat(eski); otoListeleri(); if (secId) $(secId).value = 'p' + ilk.id; otoOzet(); toast(secId === '#otoSes' ? (eski ? 'Yeni sesiniz yüklendi, önceki ses kaldırıldı.' : 'Sesiniz yüklendi. Müziği seçebilirsiniz.') : 'Yüklendi: ' + ilk.ad); } else sekme('manuel');
   }
   function dzBagla(id, secId) { var el = $(id); ['dragenter', 'dragover'].forEach(function (ev) { el.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); el.classList.add('uzerinde'); }); }); el.addEventListener('dragleave', function () { el.classList.remove('uzerinde'); }); el.addEventListener('drop', function (e) { e.preventDefault(); e.stopPropagation(); el.classList.remove('uzerinde'); birakIsle(e.dataTransfer && e.dataTransfer.files, secId); }); }
   dzBagla('#dzSes', '#otoSes'); dzBagla('#dzMuzik', '#otoMuzik');
@@ -1577,7 +1599,7 @@
     $('#menu').insertAdjacentElement('afterend', sr);
     sr.addEventListener('click', function (e) {
       var b = e.target.closest('[data-m]'); if (!b) return; var m = b.dataset.m;
-      if (m === 'kayit') kayitBasla(); else if (m === 'oynat') oynatToggle(); else if (m === 'dur') durdur();
+      if (m === 'kayit') { if (S.tab === 'oto') otoKayitIste(); else kayitBasla(); } else if (m === 'oynat') oynatToggle(); else if (m === 'dur') durdur();
       else if (m === 'sil') { var ps = akt(); if (ps && !ps.sec) return toast('Önce parmağınızla silinecek bölümü seçin (dalga üzerinde sürükleyin)'); I.sil(); } else if (m === 'kirp') { var pk = akt(); if (pk && !pk.sec) return toast('Önce tutulacak bölümü parmağınızla seçin'); I.kirp(); } else if (m === 'geri') I.geri();
       else if (m === 'efekt') efektDegistir(); else if (m === 'dip') dipTemizle();
     });
@@ -1595,7 +1617,7 @@
     else if (c && k === 'z') { e.preventDefault(); I.geri(); } else if (c && k === 'y') { e.preventDefault(); I.yinele(); }
     else if (c && k === 'x') { e.preventDefault(); I.kes(); } else if (c && k === 'c') { e.preventDefault(); I.kopyala(); } else if (c && k === 'v') { e.preventDefault(); I.yapistir(); }
     else if (c && k === 'm') { e.preventDefault(); I.karistir(); } else if (c && k === 'a') { e.preventDefault(); I.tumu(); } else if (c && k === 't') { e.preventDefault(); I.kirp(); }
-    else if (c && k === 'm' && false) {} else if (c && k === 'o') { e.preventDefault(); $('#dosyaSes').click(); } else if (c && k === 'r') { e.preventDefault(); kayitBasla(); } else if (c && k === 'e') { e.preventDefault(); I.disa(); } else if (c && k === 's') { e.preventDefault(); if (e.shiftKey) farkliKaydet(); else kaydetAkt(); }
+    else if (c && k === 'm' && false) {} else if (c && k === 'o') { e.preventDefault(); $('#dosyaSes').click(); } else if (c && k === 'r') { e.preventDefault(); if (S.tab === 'oto') otoKayitIste(); else kayitBasla(); } else if (c && k === 'e') { e.preventDefault(); I.disa(); } else if (c && k === 's') { e.preventDefault(); if (e.shiftKey) farkliKaydet(); else kaydetAkt(); }
     else if (k === 'delete' || k === 'backspace') { e.preventDefault(); I.sil(); }
   });
   window.__studyo = { S: S, Motor: Motor, I: I, pencereAc: pencereAc, dosyadanAc: dosyadanAc, oto: oto, diz: diz, ciz: ciz, kapat: kapat, karistirDlg: karistirDlg, gurultuDlg: gurultuDlg, disaDlg: disaDlg, sekme: sekme, bolgeUygula: bolgeUygula, dipTemizle: dipTemizle };

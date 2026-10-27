@@ -108,3 +108,9 @@
 .sfGen .sfFv .sfTrk{left:14px}
 .sfGen .sfFv .sfTh{left:6px}
 .sfGen .sfGiz{display:none}
+.pencere.sfOnay{width:min(440px,100%)}
+.sfOnay .sfOnayGv{padding:1rem 1rem .4rem}
+.sfOnay .sfOnayGv p{margin:0;font-size:14px;line-height:1.55;color:#1a1a1a}
+.sfOnay .sfOnayAlt{display:flex;gap:.5rem;justify-content:flex-end;padding:.6rem 1rem .9rem}
+.sfOnay .sfB{min-width:96px}
+@media(max-width:620px){.sfOnay .sfB{min-height:44px;flex:1}}

@@ -332,7 +332,7 @@
     if (kayit) return kayitDur();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast('Bu tarayıcı kaydı desteklemiyor. Chrome veya Edge kullanın.');
     var p = akt(), ad = 'Kayıt ' + (++kayitNo), yeniAcildi = false, eskiBos = false;
-    durdur(); if (S.tab !== 'manuel') sekme('manuel');
+    durdur(); if (S.tab === 'yz') sekme('manuel'); var otodan = S.tab === 'oto'; kayitPanel(true, 0, -90, false, true);
     if (p && p.bos) { eskiBos = true; p.bos = false; p.ad = ad; $('.bas b', p.el).textContent = ad; } else { p = pencereAc(ad, new Float32Array(0), null, 'ses'); yeniAcildi = true; }
     var bekleK = { bekle: true, bitir: function () {} }; kayit = bekleK; p.L = p.R = new Float32Array(0); p.ovC = null; p.kayitta = true; p.spp = Math.max(1, SR * 8 / gW(p)); p.bas = 0; odak(p); ciz(p);
     (function (g, c2, d) { g.save(); g.font = 'bold ' + (14 * d) + 'px sans-serif'; g.fillStyle = '#1d2430'; g.fillText('Mikrofon açılıyor… Tarayıcı izin isterse “İzin ver”e basın', 30 * d, 40 * d); g.restore(); })(p.cv.getContext('2d'), p.cv, p.cv.width / (p.cv.clientWidth || p.cv.width));
@@ -354,24 +354,33 @@
         $('#metre i').style.width = Math.max(0, Math.min(100, (seviye + 60) / 60 * 100)) + '%';
         if (seviye > tepe || Date.now() - tepeT > 1200) { tepe = seviye; tepeT = Date.now(); }
         p.L = p.R = buf.subarray(0, n); var span = gW(p) * p.spp; p.bas = Math.max(0, n - span * 0.9); p.imlec = n;
-        if (p.el.isConnected) { ciz(p); kayitUst(p, seviye, tepe, K.duraklat); }
+        if (p.el.isConnected && p.el.offsetParent) { ciz(p); kayitUst(p, seviye, tepe, K.duraklat); }
+        kayitPanel(true, n / SR, seviye, K.duraklat);
         $('#zaman').textContent = sn(n / SR);
         requestAnimationFrame(olc);
       })();
       K.bitir = function () {
-        alive = false; try { sp.onaudioprocess = null; sp.disconnect(); src.disconnect(); } catch (e) {} stream.getTracks().forEach(function (t) { t.stop(); });
+        alive = false; kayitPanel(false); try { sp.onaudioprocess = null; sp.disconnect(); src.disconnect(); } catch (e) {} stream.getTracks().forEach(function (t) { t.stop(); });
         $('#metre i').style.width = '0'; $('#kayitBtn').classList.remove('kayitta'); $('#kayitBtn').title = 'Mikrofonla kayıt  (Ctrl+R)'; $('#otoKayit').textContent = '● Mikrofonla kayıt al'; oynatIk(0);
         p.kayitta = false; kayit = null;
         if (Math.round(c.sampleRate) !== SR) { buf = yenidenOrnekle(buf.subarray(0, n), c.sampleRate); n = buf.length; }
         if (n < SR * 0.1) { toast('Kayıt çok kısa, alınmadı'); if (p.el.isConnected) { p.L = p.R = new Float32Array(SR * 2); p.bos = true; p.ovC = null; tumuGoster(p); } guncelle(); return; }
-        p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (S.tab === 'oto' && S.aktif) $('#otoSes').value = 'p' + S.aktif; guncelle();
+        p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (otodan) { $('#otoSes').value = 'p' + p.id; otoOzet(); toast('Kayıt sesiniz olarak eklendi (' + sn(p.L.length / SR) + ' sn). “Otomatik hazırla”ya basabilirsiniz'); } guncelle();
       };
       kayit = K; $('#kayitBtn').classList.add('kayitta'); $('#kayitBtn').title = 'Kaydı bitir'; $('#otoKayit').textContent = '■ Kaydı bitir'; oynatIk(1);
       if (S.tab !== 'manuel' && S.tab !== 'oto') sekme('manuel');
     } catch (e) {
-      kayit = null; p.kayitta = false; if (yeniAcildi) kapat(p); else if (eskiBos) { p.bos = true; p.L = p.R = new Float32Array(SR * 2); p.ovC = null; tumuGoster(p); ciz(p); } kayitNo--;
+      kayitPanel(false); kayit = null; p.kayitta = false; if (yeniAcildi) kapat(p); else if (eskiBos) { p.bos = true; p.L = p.R = new Float32Array(SR * 2); p.ovC = null; tumuGoster(p); ciz(p); } kayitNo--;
       toast(e.name === 'NotAllowedError' ? 'Mikrofon izni verilmedi. Adres çubuğundaki kilit simgesinden mikrofona izin verin.' : e.name === 'NotFoundError' ? 'Mikrofon bulunamadı. Mikrofonu takıp tekrar deneyin.' : 'Mikrofon açılamadı: ' + e.message);
     }
+  }
+  /* Otomatik sayfadaki kayıt paneli: süre, seviye, duraklat, bitir */
+  function kayitPanel(ac_, sure, sev, dur, bekle) {
+    var dz = $('#dzSes'), pn = $('#kayitPanel'); if (!dz || !pn) return;
+    dz.classList.toggle('kayitta', !!ac_); pn.hidden = !ac_; if (!ac_) return;
+    $('#kayitSure').textContent = bekle ? 'Mikrofon açılıyor…' : sn(sure);
+    $('#kayitMetre').style.width = Math.max(0, Math.min(100, (sev + 60) / 60 * 100)) + '%';
+    $('#kayitDur').textContent = dur ? '▶ Devam et' : '❚❚ Duraklat'; pn.classList.toggle('dur', !!dur);
   }
   function kayitDur() { if (kayit) kayit.bitir(); }
   function kayitDuraklat() { if (!kayit || kayit.bekle) return; kayit.duraklat = !kayit.duraklat; oynatIk(kayit.duraklat ? 0 : 1); }
@@ -1540,7 +1549,7 @@
   /* ---------- Düğmeler, dosya girişi, sürükle-bırak, kısayollar ---------- */
   $('#oynatBtn').onclick = oynatToggle;
   $('#basaBtn').onclick = function () { var p = akt(); durdur(); if (p) { p.imlec = 0; p.sec = null; p.bas = 0; guncelle(); } };
-  $('#kayitBtn').onclick = kayitBasla; $('#otoKayit').onclick = function () { kayitBasla(); };
+  $('#kayitBtn').onclick = kayitBasla; $('#otoKayit').onclick = function () { kayitBasla(); }; $('#kayitBitir').onclick = kayitDur; $('#kayitDur').onclick = kayitDuraklat;
   $('#otoMikSec').onclick = function () { mikSec(); };
   $('#otoSesAc').onclick = function () { $('#dosyaSes').click(); }; $('#otoMuzikAc').onclick = function () { $('#dosyaMuzik').click(); };
   var sonAcilan = '';

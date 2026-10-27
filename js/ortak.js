@@ -31,23 +31,33 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 74, gosterildi = false;
+      var SURUM = 75, gosterildi = false, ilkKontrol = true;
+      async function yenile() {
+        try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) {}
+        try { if (navigator.serviceWorker) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.update(); })); } } catch (e) {}
+        var u = new URL(location.href); u.searchParams.set('y', Date.now()); location.replace(u.toString());
+      }
       function serit() {
         if (gosterildi || document.getElementById('yeniSurum')) return; gosterildi = true;
         var d = document.createElement('div'); d.id = 'yeniSurum';
         d.style.cssText = 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:99999;background:#e03a2c;color:#fff;font:600 15px/1.2 system-ui,sans-serif;padding:11px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer;max-width:92vw;text-align:center';
         d.textContent = 'Yeni sürüm hazır. Yenilemek için dokunun';
-        d.onclick = async function () {
-          d.textContent = 'Yenileniyor…';
-          try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) {}
-          try { if (navigator.serviceWorker) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.update(); })); } } catch (e) {}
-          var u = new URL(location.href); u.searchParams.set('y', Date.now()); location.replace(u.toString());
-        };
+        d.onclick = function () { d.textContent = 'Yenileniyor…'; yenile(); };
         document.body.appendChild(d);
       }
       function kontrol() {
         if (location.protocol === 'file:') return;
-        fetch('surum.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && +j.v > SURUM) serit(); }).catch(function () {});
+        var ilk = ilkKontrol; ilkKontrol = false;
+        fetch('surum.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          if (!j || !(+j.v > SURUM)) return;
+          /* Sayfa ilk açıldığında eski kalmışsa kendini bir kez sessizce yeniler (çalışma yokken); sonraki kontrollerde yalnızca şerit çıkar */
+          if (ilk) {
+            var an = 'yenilendi_' + j.v + '_' + location.pathname, yapildi = false;
+            try { yapildi = sessionStorage.getItem(an) === '1'; sessionStorage.setItem(an, '1'); } catch (e) { yapildi = true; }
+            if (!yapildi) { yenile(); return; }
+          }
+          serit();
+        }).catch(function () {});
       }
       kontrol(); setInterval(kontrol, 120000);
       document.addEventListener('visibilitychange', function () { if (!document.hidden) kontrol(); });

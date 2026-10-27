@@ -85,3 +85,26 @@
   .sfMix .sfAl{font-size:11.5px}
 }
 @media(max-width:620px){.sfMix .sfBt{position:sticky;bottom:0;background:#f0f0f0;padding:.5rem 0;border-top:1px solid #c9c9c9;z-index:2}}
+.dusBlok{position:absolute;background:rgba(30,60,255,.38);border:1px solid #1d3fd8;border-top:0;border-bottom:0;pointer-events:none;z-index:5;box-sizing:border-box;overflow:hidden}
+.dusBlok span{position:absolute;left:4px;top:3px;font:600 11px 'Segoe UI',Arial,sans-serif;color:#fff;background:rgba(10,30,150,.85);padding:1px 5px;border-radius:2px;white-space:nowrap}
+.sfMix .sfOn select{flex:1;min-width:0;font:inherit;padding:.2rem .3rem;min-height:28px}
+/* Genel efekt pencereleri (Reverb, Eko, EQ dışı vb.) — aynı Sound Forge düzeni */
+.pencere.sfGen{width:min(640px,100%)}
+.sfGen .sfPan{border:1px solid #b6b9bf;background:#f6f6f6;padding:.7rem .8rem;display:grid;gap:.55rem}
+.sfGen .sat{display:grid;grid-template-columns:minmax(120px,170px) 1fr 74px;gap:.6rem;align-items:center}
+.sfGen .sat label{margin:0;color:#1a1a1a;font-size:13px}
+.sfGen .sat output{text-align:right;font-variant-numeric:tabular-nums;color:#1a1a1a}
+.sfGen .sat input[type=range]{width:100%;min-height:0;padding:0;border:0;background:transparent;accent-color:#2f6fd0}
+.sfGen .sat select,.sfGen .sat input[type=text]{grid-column:2/4;width:100%}
+.sfGen .sfEk{margin-top:0}
+.sfGen .sfEk .not{color:#444;font-size:12.5px;line-height:1.5;margin:0}
+@media(max-width:620px){.sfGen .sat{grid-template-columns:1fr 64px;grid-template-areas:"a a" "b c"}.sfGen .sat label{grid-area:a}.sfGen .sat input[type=range]{grid-area:b;min-height:30px}.sfGen .sat output{grid-area:c}.sfGen .sat select,.sfGen .sat input[type=text]{grid-column:1/3}.sfGen .sfBt{flex-direction:row}}
+/* Dikey fader sütunları (efekt pencereleri) */
+.sfGen .sfFdSira{display:flex;gap:.2rem;justify-content:space-around;align-items:flex-start;overflow-x:auto;padding-bottom:.2rem}
+.sfGen .sfV{display:grid;justify-items:center;gap:.3rem;min-width:76px;flex:1 1 76px;max-width:130px}
+.sfGen .sfV output{font-variant-numeric:tabular-nums;font-size:12.5px;min-height:18px;text-align:center;color:#1a1a1a}
+.sfGen .sfV label{font-size:12px;text-align:center;line-height:1.25;color:#1a1a1a;margin:0}
+.sfGen .sfFv{width:34px;height:150px;margin:2px 0}
+.sfGen .sfFv .sfTrk{left:14px}
+.sfGen .sfFv .sfTh{left:6px}
+.sfGen .sfGiz{display:none}

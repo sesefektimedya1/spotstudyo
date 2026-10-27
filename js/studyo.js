@@ -5,7 +5,7 @@
   var SR = Motor.SR, A = Araclar, ctx = null;
   function ac() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SR }); if (ctx.state === 'suspended') ctx.resume(); return ctx; }
 
-  var S = { pen: [], aktif: null, sayac: 0, z0: 10, pano: null, iz: null, tab: 'manuel', mesgul: false, z: Motor.varsayilanZincir(), tarzNo: -1, sonuc: null, sonucAd: 'Spot', kut: { muzikler: [], sesler: [] }, cache: {}, cal: null, calP: null, imlecCal: 0 };
+  var S = { pen: [], aktif: null, sayac: 0, z0: 10, pano: null, iz: null, tab: 'oto', mesgul: false, z: Motor.varsayilanZincir(), tarzNo: -1, sonuc: null, sonucAd: 'Spot', kut: { muzikler: [], sesler: [] }, cache: {}, cal: null, calP: null, imlecCal: 0 };
   var alan = $('#alan');
 
   function mesaj(m) { $('#dMesaj').textContent = m || ''; }
@@ -210,7 +210,9 @@
     var t0 = p.bas / SR, tS = (p.bas + gW(p) * p.spp) / SR;
     for (var t = Math.ceil(t0 / adim) * adim; t <= tS; t += adim) { var x = (t * SR - p.bas) / p.spp * d; g.fillStyle = 'rgba(128,138,152,.28)'; g.fillRect(x, RH, 1, dz); g.fillStyle = '#555'; g.fillRect(x, RH - 7 * d, 1, 7 * d); g.fillStyle = '#222'; g.fillText(zamanFmt(t), x + 3 * d, RH / 2 - 1); }
     // imleç
-    var im = (S.calP === p && S.cal) ? S.imlecCal : p.imlec, x2 = (im - p.bas) / p.spp * d; if (x2 >= 0 && x2 <= W) { g.fillStyle = S.calP === p ? '#ff8a2a' : '#e0452f'; g.fillRect(x2, RH, Math.max(1, d), dz); if (S.calP !== p) { g.fillStyle = '#e0452f'; g.beginPath(); g.moveTo(x2 - 5 * d, RH); g.lineTo(x2 + 5 * d, RH); g.lineTo(x2, RH + 7 * d); g.fill(); } }
+    var calIyor = S.calP === p && S.cal, xm = (p.imlec - p.bas) / p.spp * d;
+    if (xm >= 0 && xm <= W) { g.fillStyle = '#e0452f'; g.fillRect(xm, RH, Math.max(1, d), dz); g.beginPath(); g.moveTo(xm - 5 * d, RH); g.lineTo(xm + 5 * d, RH); g.lineTo(xm, RH + 7 * d); g.fill(); }
+    if (calIyor) { var x2 = (S.imlecCal - p.bas) / p.spp * d; if (x2 >= 0 && x2 <= W) { g.fillStyle = '#ff8a2a'; g.fillRect(x2, RH, Math.max(1, d * 1.5), dz); } }
     if (p.durYer != null && !(S.calP === p && S.cal)) { if (p.durAnahtar !== p.imlec + '|' + (p.sec ? p.sec.join() : '')) p.durYer = null; else { var xd = (p.durYer - p.bas) / p.spp * d; if (xd >= 0 && xd <= W) { g.fillStyle = '#ff8a2a'; for (var yy = RH; yy < RH + dz; yy += 8 * d) g.fillRect(xd, yy, Math.max(1, d), 5 * d); g.beginPath(); g.moveTo(xd - 5 * d, RH); g.lineTo(xd + 5 * d, RH); g.lineTo(xd, RH + 7 * d); g.fill(); g.font = 'bold ' + (10.5 * d) + 'px Barlow,sans-serif'; g.fillStyle = '#c2510c'; g.fillText('Durdu ' + sn(p.durYer / SR), xd + 7 * d, RH + 14 * d); } } }
     ovCiz(p); kaydirCiz(p);
     $('.bas small', p.el).textContent = sn(p.L.length / SR) + (p.R !== p.L ? ' · stereo' : ' · mono');
@@ -229,6 +231,19 @@
 
   /* ---------- Seçim ---------- */
   function x2s(p, ev) { var r = p.cv.getBoundingClientRect(); return Math.max(0, Math.min(p.L.length, Math.round(p.bas + (ev.clientX - r.left) * p.spp))); }
+  /* Sürüklerken bırakılacak yeri gösteren mavi blok (Sound Forge gibi) */
+  var blok = null;
+  function blokKaldir() { if (blok) { blok.remove(); blok = null; } }
+  function hedefBlok(kaynakP, e) {
+    var el = document.elementFromPoint(e.clientX, e.clientY), pe = el && el.closest ? el.closest('.pen') : null;
+    var q = pe ? S.pen.filter(function (z) { return z.el === pe; })[0] : null;
+    if (!q || q === kaynakP || !kaynakP.sec) return blokKaldir();
+    var cr = q.cv.getBoundingClientRect(), host = q.cv.parentNode, hr = host.getBoundingClientRect(), len = kaynakP.sec[1] - kaynakP.sec[0];
+    var x0 = e.clientX - cr.left, w = len / q.spp, kalan = cr.width - x0;
+    if (!blok || blok.parentNode !== host) { blokKaldir(); blok = document.createElement('div'); blok.className = 'dusBlok'; blok.innerHTML = '<span></span>'; host.appendChild(blok); }
+    blok.style.left = (cr.left - hr.left + Math.max(0, x0)) + 'px'; blok.style.width = Math.max(3, Math.min(w, kalan)) + 'px'; blok.style.top = (cr.top - hr.top) + 'px'; blok.style.height = cr.height + 'px';
+    blok.firstChild.textContent = sn(x2s(q, e) / SR) + ' → ' + sn((x2s(q, e) + len) / SR) + (w > kalan ? ' (pencereyi uzatır)' : '');
+  }
   function secimBagla(p) {
     var c = p.cv, surukle = false, mod = 'yeni', sabit = 0, tasi = null;
     c.addEventListener('mousedown', function (e) {
@@ -245,7 +260,7 @@
       if (!surukle) return;
       if (mod === 'tasi') {
         if (!tasi.dolu && Math.hypot(e.clientX - tasi.x, e.clientY - tasi.y) > 8) { tasi.dolu = true; tasi.g = document.createElement('div'); tasi.g.className = 'tasiGhost'; tasi.g.textContent = 'Seçimi bırak: karıştırarak yapıştır'; document.body.appendChild(tasi.g); }
-        if (tasi.g) { tasi.g.style.left = (e.clientX + 12) + 'px'; tasi.g.style.top = (e.clientY + 12) + 'px'; }
+        if (tasi.g) { tasi.g.style.left = (e.clientX + 12) + 'px'; tasi.g.style.top = (e.clientY + 12) + 'px'; hedefBlok(p, e); }
         return;
       }
       var s2 = x2s(p, e);
@@ -255,7 +270,7 @@
       if (!surukle) return; surukle = false;
       if (mod === 'tasi') {
         if (tasi && tasi.g) {
-          tasi.g.remove(); var el = document.elementFromPoint(e.clientX, e.clientY), pe = el && el.closest ? el.closest('.pen') : null;
+          tasi.g.remove(); blokKaldir(); var el = document.elementFromPoint(e.clientX, e.clientY), pe = el && el.closest ? el.closest('.pen') : null;
           var q = pe ? S.pen.filter(function (z) { return z.el === pe; })[0] : null;
           if (q && q !== p) { var pos = x2s(q, e), sc = p.sec; S.pano = { L: p.L.slice(sc[0], sc[1]), R: p.R === p.L ? null : p.R.slice(sc[0], sc[1]), ad: p.ad }; if (!S.pano.R) S.pano.R = S.pano.L; odak(q); karistirDlg(q, pos); }
         } else { p.sec = null; p.imlec = x2s(p, e); }
@@ -435,29 +450,73 @@
   function diyalog(baslik, alanlar, deger, o) {
     o = o || {}; var d = JSON.parse(JSON.stringify(deger, function (k, v) { return k === 'iz' ? undefined : v; }));
     var p = document.createElement('div'); p.className = 'perde';
-    var h = '<div class="pencere" role="dialog" aria-modal="true"><h3>' + esc(baslik) + '</h3><div class="govde">';
-    if (o.not) h += '<p class="not">' + o.not + '</p>';
-    if (o.onayarlar) h += '<div class="sat"><label style="margin:0">Ön ayar</label><select id="dg-on" style="grid-column:2/4">' + o.onayarlar.map(function (a) { return '<option value="' + a[0] + '">' + esc(a[1]) + '</option>'; }).join('') + '</select></div>';
+    var ONK = 'sfOn:' + baslik;
+    function onOku() { try { return JSON.parse(localStorage.getItem(ONK) || '{}') || {}; } catch (e) { return {}; } }
+    function onYaz(x) { try { localStorage.setItem(ONK, JSON.stringify(x)); } catch (e) {} }
+    var h = '<div class="pencere sfMix sfGen" role="dialog" aria-modal="true"><div class="sfBas"><span>' + esc(baslik) + '</span><button type="button" class="sfKapat" id="dg-x" aria-label="Kapat">✕</button></div>';
+    h += '<div class="sfGovde"><div class="sfSol"><div class="sfOn"><label for="dg-on">Ön ayar:</label><select id="dg-on"></select><input id="dg-onAd" class="sfOnAd" placeholder="Ön ayar adı yazıp Enter\'a basın" autocomplete="off" hidden>' +
+      '<button type="button" id="dg-onKay" class="sfIk" title="Ön ayarı kaydet" aria-label="Ön ayarı kaydet">💾</button><button type="button" id="dg-onSil" class="sfIk sil" title="Ön ayarı sil" aria-label="Ön ayarı sil">✕</button></div><div class="sfPan">';
+    var fh = '', dh = '';
     alanlar.forEach(function (a) {
-      if (a.tur === 'onay') h += '<label style="color:var(--yazi);margin:0"><input type="checkbox" data-k="' + a.k + '"> ' + esc(a.ad) + '</label>';
-      else if (a.tur === 'sec') h += '<div class="sat"><label style="margin:0">' + esc(a.ad) + '</label><select data-k="' + a.k + '" style="grid-column:2/4">' + a.sec.map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + '</option>'; }).join('') + '</select></div>';
-      else if (a.tur === 'metin') h += '<div class="sat"><label style="margin:0">' + esc(a.ad) + '</label><input type="text" data-k="' + a.k + '" style="grid-column:2/4"></div>';
-      else h += '<div class="sat"><label style="margin:0">' + esc(a.ad) + '</label><input type="range" data-k="' + a.k + '" min="' + a.min + '" max="' + a.max + '" step="' + a.step + '"><output></output></div>';
+      if (a.tur === 'slider' || (!a.tur)) { fh += '<div class="sfV"><output></output><div class="sfFader sfFv" tabindex="0" role="slider" aria-label="' + esc(a.ad) + '"><div class="sfTrk"></div><div class="sfTh"></div></div><label>' + esc(a.ad) + '</label><input type="range" class="sfGiz" data-k="' + a.k + '" min="' + a.min + '" max="' + a.max + '" step="' + a.step + '"></div>'; return; }
+      var h0 = h; h = '';
+      if (a.tur === 'onay') h += '<label class="sfCk"><input type="checkbox" data-k="' + a.k + '"> ' + esc(a.ad) + '</label>';
+      else if (a.tur === 'sec') h += '<div class="sat"><label>' + esc(a.ad) + '</label><select data-k="' + a.k + '">' + a.sec.map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + '</option>'; }).join('') + '</select></div>';
+      else if (a.tur === 'metin') h += '<div class="sat"><label>' + esc(a.ad) + '</label><input type="text" data-k="' + a.k + '"></div>';
+      dh += h; h = h0;
     });
+    h += (fh ? '<div class="sfFdSira">' + fh + '</div>' : '') + dh;
     if (o.ekHtml) h += o.ekHtml;
-    h += '</div><div class="alt">' + (o.iz ? '<button class="btn sol-b" id="dg-iz">Gürültü izi al (seçimden)</button>' : '') + (o.onizle ? '<button class="btn" id="dg-on-izle">' + (o.onizleAd || 'Önizleme') + '</button>' : '') + '<button class="btn" id="dg-iptal">İptal</button><button class="btn ana" id="dg-tamam">Tamam</button></div></div>';
+    h += '</div></div><div class="sfBt"><button type="button" class="sfB ana" id="dg-tamam">Tamam</button><button type="button" class="sfB" id="dg-iptal">İptal</button>' +
+      (o.onizle ? '<button type="button" class="sfB" id="dg-on-izle">' + (o.onizleAd || 'Önizleme') + '</button><label class="sfCk"><input type="checkbox" id="dg-bypass"> Atla <small>(önizlemede orijinal)</small></label>' : '') +
+      (o.iz ? '<button type="button" class="sfB" id="dg-iz">Gürültü izi al (seçimden)</button>' : '') +
+      (o.not ? '<button type="button" class="sfB sfDaha" id="dg-daha" aria-expanded="false">Daha fazla…</button>' : '') + '</div></div>' +
+      (o.not ? '<div class="sfEk" id="dg-ek" hidden><p class="not">' + o.not + '</p></div>' : '') + '</div>';
     p.innerHTML = h; document.body.appendChild(p);
+    var sistem = o.onayarlar || [];
+    function onListe(sec) {
+      var u = onOku(), s = '<option value="">(Adsız)</option>';
+      sistem.forEach(function (a) { s += '<option value="s:' + a[0] + '">[Sistem] ' + esc(a[1]) + '</option>'; });
+      Object.keys(u).forEach(function (k) { s += '<option value="u:' + esc(k) + '">' + esc(k) + '</option>'; });
+      var se = $('#dg-on', p); se.innerHTML = s; se.value = sec || '';
+    }
     function oku() { $$('[data-k]', p).forEach(function (el) { var k = el.dataset.k; d[k] = el.type === 'checkbox' ? el.checked : (el.type === 'range' ? +el.value : el.value); }); }
     function yaz() {
-      $$('[data-k]', p).forEach(function (el) { var v = d[el.dataset.k]; if (el.type === 'checkbox') el.checked = !!v; else if (v != null) el.value = v; var out = el.parentNode.querySelector('output'); if (out && el.type === 'range') out.textContent = (+el.value) + (alanlar.filter(function (a) { return a.k === el.dataset.k; })[0].birim || ''); });
+      $$('[data-k]', p).forEach(function (el) { var v = d[el.dataset.k]; if (el.type === 'checkbox') el.checked = !!v; else if (v != null) el.value = v; var out = el.parentNode.querySelector('output'); if (out && el.type === 'range') out.textContent = String(+el.value).replace('.', ',') + (alanlar.filter(function (a) { return a.k === el.dataset.k; })[0].birim || ''); });
+      $$('.sfFv', p).forEach(function (fv) { var r = fv.parentNode.querySelector('input[type=range]'), mn = +r.min, mx = +r.max, f = (mx - mn) ? (+r.value - mn) / (mx - mn) : 0; fv.querySelector('.sfTh').style.top = ((1 - Math.max(0, Math.min(1, f))) * 100) + '%'; fv.setAttribute('aria-valuetext', r.value); });
     }
     yaz();
-    p.addEventListener('input', function (e) { if (e.target.id === 'dg-on') return; oku(); yaz(); if (o.degisince) o.degisince(d, p); });
-    p.addEventListener('change', function (e) { if (e.target.id === 'dg-on') { o.onayUygula(e.target.value, d); yaz(); } });
-    if (o.onayarSec) $('#dg-on', p).value = o.onayarSec;
-    $('#dg-iptal', p).onclick = function () { durdur(); p.remove(); };
+    $$('.sfFv', p).forEach(function (fv) {
+      var r = fv.parentNode.querySelector('input[type=range]'), trk = fv.querySelector('.sfTrk');
+      function koy(v) { var mn = +r.min, mx = +r.max, st = +r.step || 1; v = Math.round((Math.max(mn, Math.min(mx, v)) - mn) / st) * st + mn; v = Math.max(mn, Math.min(mx, +v.toFixed(6))); r.value = v; r.dispatchEvent(new Event('input', { bubbles: true })); }
+      function nokta(e) { var b = trk.getBoundingClientRect(), f = 1 - (e.clientY - b.top) / Math.max(1, b.height); koy(+r.min + Math.max(0, Math.min(1, f)) * (+r.max - +r.min)); }
+      fv.addEventListener('pointerdown', function (e) { e.preventDefault(); fv.focus(); try { fv.setPointerCapture(e.pointerId); } catch (x) {} fv.dataset.s = '1'; nokta(e); });
+      fv.addEventListener('pointermove', function (e) { if (fv.dataset.s === '1') nokta(e); });
+      fv.addEventListener('pointerup', function () { fv.dataset.s = '0'; }); fv.addEventListener('pointercancel', function () { fv.dataset.s = '0'; });
+      fv.addEventListener('keydown', function (e) { var st = (+r.step || 1) * (e.shiftKey ? 5 : 1), v = +r.value; if (e.key === 'ArrowUp' || e.key === 'ArrowRight') v += st; else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') v -= st; else if (e.key === 'Home') v = +r.max; else if (e.key === 'End') v = +r.min; else return; e.preventDefault(); koy(v); });
+      fv.addEventListener('wheel', function (e) { e.preventDefault(); koy(+r.value + (e.deltaY < 0 ? 1 : -1) * (+r.step || 1)); }, { passive: false });
+    });
+    p.addEventListener('input', function (e) { if (e.target.id === 'dg-on' || e.target.id === 'dg-onAd' || e.target.id === 'dg-bypass') return; oku(); yaz(); if (o.degisince) o.degisince(d, p); });
+    p.addEventListener('change', function (e) {
+      if (e.target.id !== 'dg-on') return; var v = e.target.value; if (!v) return;
+      if (v.charAt(0) === 's') { o.onayUygula(v.slice(2), d); }
+      else { var a = onOku()[v.slice(2)]; if (a) Object.keys(a).forEach(function (k) { d[k] = a[k]; }); }
+      yaz(); if (o.degisince) o.degisince(d, p);
+    });
+    onListe(o.onayarSec ? 's:' + o.onayarSec : '');
+    $('#dg-onKay', p).onclick = function () { var ad = $('#dg-onAd', p); if (ad.hidden) { ad.hidden = false; $('#dg-on', p).hidden = true; ad.value = ''; ad.focus(); } else ad.dispatchEvent(new Event('change')); };
+    function adBit() { $('#dg-onAd', p).hidden = true; $('#dg-on', p).hidden = false; }
+    $('#dg-onAd', p).addEventListener('change', function () { var a = this.value.trim(); if (!a) return adBit(); oku(); var u = onOku(); u[a] = JSON.parse(JSON.stringify(d)); onYaz(u); adBit(); onListe('u:' + a); toast('Ön ayar kaydedildi: ' + a); });
+    $('#dg-onAd', p).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.dispatchEvent(new Event('change')); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); adBit(); } });
+    $('#dg-onSil', p).onclick = function () { var v = $('#dg-on', p).value; if (!v) return toast('Silmek için önce kayıtlı bir ön ayar seçin'); if (v.charAt(0) === 's') return toast('Sistem ön ayarları silinemez'); var u = onOku(); delete u[v.slice(2)]; onYaz(u); onListe(''); toast('Ön ayar silindi'); };
+    if (o.not) $('#dg-daha', p).onclick = function () { var ek = $('#dg-ek', p), ac_ = ek.hidden; ek.hidden = !ac_; this.setAttribute('aria-expanded', ac_ ? 'true' : 'false'); this.textContent = ac_ ? 'Daha az' : 'Daha fazla…'; };
+    $('#dg-iptal', p).onclick = function () { durdur(); p.remove(); }; $('#dg-x', p).onclick = $('#dg-iptal', p).onclick;
     $('#dg-tamam', p).onclick = function () { oku(); durdur(); p.remove(); o.tamam(d); };
-    if (o.onizle) $('#dg-on-izle', p).onclick = async function () { oku(); mesaj('Önizleme hazırlanıyor…'); await bekle(); try { var r = o.onizle(d); mesaj(''); if (r) calDizi(r.L, r.R === r.L ? null : r.R, null, 0); } catch (e) { hata(e); } };
+    if (o.onizle) $('#dg-on-izle', p).onclick = async function () {
+      oku(); var by = $('#dg-bypass', p) && $('#dg-bypass', p).checked;
+      if (by) { var pe0 = akt(); if (pe0) { var q0 = onizParca(pe0); calDizi(q0.L, q0.R === q0.L ? null : q0.R, null, 0); return; } }
+      mesaj('Önizleme hazırlanıyor…'); await bekle(); try { var r = o.onizle(d); mesaj(''); if (r) calDizi(r.L, r.R === r.L ? null : r.R, null, 0); } catch (e) { hata(e); }
+    };
     if (o.iz) $('#dg-iz', p).onclick = function () {
       var pe = akt(); if (!pe || !pe.sec || pe.sec[1] - pe.sec[0] < 2048) return toast('Önce pencerede yalnızca gürültü olan bir yeri (en az 0,1 sn) seçin. Pencere arkada, onu seçip bu pencereyi tekrar açın');
       S.iz = pe.L.slice(pe.sec[0], pe.sec[1]); toast('Gürültü izi alındı (' + ((pe.sec[1] - pe.sec[0]) / SR).toFixed(1) + ' sn)');
@@ -690,19 +749,17 @@
       d.kDb = Math.max(-40, Math.min(6, hl - (+d.alt) - kl));
     }
     /* ---- hesap ---- */
+    function zarfF(i, m, fi, fo) { var g = 1; if (fi > 0 && i < fi) g *= egriF(i / fi, d.efi); if (fo > 0 && m - i <= fo) g *= egriF((m - i) / fo, d.efo); return g; }
     function mikla() {
       var m = uzunluk(), sL = kaynak.L.subarray(d.sb, d.ss), sR = kR.subarray(d.sb, d.ss), pz = d.pz, n = toplamUz(), i;
       var oL = new Float32Array(n), oR = (hedefMono && kaynakMono) ? null : new Float32Array(n), gd = kazancH(), gs = kazancK();
-      for (i = 0; i < p.L.length; i++) oL[i] = p.L[i] * gd;
-      if (oR) for (i = 0; i < p.R.length; i++) oR[i] = p.R[i] * gd;
-      if (d.mod === 'degistir') { for (i = pz; i < Math.min(n, pz + m); i++) { oL[i] = 0; if (oR) oR[i] = 0; } }
-      var fi = Math.min(m, Math.round(d.fi * SR / 1000)), fo = Math.min(m - fi, Math.round(d.fo * SR / 1000));
+      for (i = 0; i < p.L.length; i++) oL[i] = p.L[i];
+      if (oR) for (i = 0; i < p.R.length; i++) oR[i] = p.R[i];
+      var fi = Math.min(m, Math.round(d.fi * SR / 1000)), fo = Math.min(m - fi, Math.round(d.fo * SR / 1000)), degis = d.mod === 'degistir';
       for (i = 0; i < m && pz + i < n; i++) {
-        var g = gs;
-        if (fi > 0 && i < fi) g *= egriF(i / fi, d.efi);
-        if (fo > 0 && m - i <= fo) g *= egriF((m - i) / fo, d.efo);
-        oL[pz + i] += sL[i] * g;
-        if (oR) oR[pz + i] += sR[i] * g;
+        var z = zarfF(i, m, fi, fo), ho = degis ? gd * (1 - z) : 1 + (gd - 1) * z, k = pz + i;
+        if (k < p.L.length) { oL[k] *= ho; if (oR) oR[k] *= ho; }
+        oL[k] += sL[i] * gs * z; if (oR) oR[k] += sR[i] * gs * z;
       }
       return { L: oL, R: oR || oL };
     }
@@ -726,7 +783,8 @@
     perde.innerHTML =
       '<div class="pencere sfMix" role="dialog" aria-modal="true"><div class="sfBas"><span>Karıştır / Değiştir - ' + esc2(p.ad) + '</span><button type="button" class="sfKapat" aria-label="Kapat">✕</button></div>' +
       '<div class="sfGovde"><div class="sfSol">' +
-      '<div class="sfOn"><label for="sfOnAd">Ön ayar:</label><input id="sfOnAd" list="sfOnL" value="(Adsız)" autocomplete="off"><datalist id="sfOnL"></datalist>' +
+      '<div class="sfOn"><label for="sfOnSec">Ön ayar:</label><select id="sfOnSec"></select>' +
+      '<input id="sfOnAd" class="sfOnAd" placeholder="Ön ayar adı yazıp Enter\'a basın" autocomplete="off" hidden>' +
       '<button type="button" id="sfOnKay" class="sfIk" title="Ön ayarı kaydet" aria-label="Ön ayarı kaydet">💾</button><button type="button" id="sfOnSil" class="sfIk sil" title="Ön ayarı sil" aria-label="Ön ayarı sil">✕</button></div>' +
       '<div class="sfGrup">' + kolHtml('k', 'Kaynak', kaynak.ad || 'kopyalanan', kaynakMono) + kolHtml('h', 'Hedef', p.ad, hedefMono) + '</div>' +
       '<div class="sfAlt">' + '<div class="sfFdlar">' + fadeHtml('fi', 'Giriş (Fade In)') + fadeHtml('fo', 'Çıkış (Fade Out)') + '</div>' +
@@ -740,7 +798,20 @@
     document.body.appendChild(perde);
     function $q(s) { return perde.querySelector(s); }
     function $qa(s) { return Array.prototype.slice.call(perde.querySelectorAll(s)); }
-    function onListe() { var o = onOku(); $q('#sfOnL').innerHTML = Object.keys(o).map(function (k) { return '<option value="' + esc2(k) + '">'; }).join(''); }
+    var SISTEM = [
+      ['Hızlı kısma (-6 dB)', { kDb: 0, hDb: -6, fi: 50, fo: 50, efi: 'dogrusal', efo: 'dogrusal', mod: 'karistir', oran: false }],
+      ['Normal karışım (fade yok)', { kDb: 0, hDb: 0, fi: 0, fo: 0, mod: 'karistir', oran: false }],
+      ['Fade’li değiştir (%10)', { kDb: 0, hDb: 0, yuzde: 10, efi: 'dogrusal', efo: 'dogrusal', mod: 'degistir', oran: true }],
+      ['Fade’li değiştir (250 ms)', { kDb: 0, hDb: 0, fi: 250, fo: 250, efi: 'dogrusal', efo: 'dogrusal', mod: 'degistir', oran: false }],
+      ['Yavaş kısma (-6 dB)', { kDb: 0, hDb: -6, fi: 1500, fo: 1500, efi: 'yumusak', efo: 'yumusak', mod: 'karistir', oran: false }],
+      ['Seslendirme karışımı (müzik altta)', { kDb: 0, hDb: -12, fi: 500, fo: 1000, efi: 'yumusak', efo: 'yumusak', mod: 'karistir', oran: false }]
+    ];
+    function onListe(sec) {
+      var o = onOku(), h = '<option value="">(Adsız)</option>';
+      SISTEM.forEach(function (s, i) { h += '<option value="s' + i + '">[Sistem] ' + esc2(s[0]) + '</option>'; });
+      Object.keys(o).forEach(function (k) { h += '<option value="u:' + esc2(k) + '">' + esc2(k) + '</option>'; });
+      var se = $q('#sfOnSec'); se.innerHTML = h; se.value = sec || '';
+    }
     function ciz(odakEl) {
       d.hs = d.pz + uzunluk();
       $qa('[data-db]').forEach(function (el) { if (el !== odakEl) el.value = dbMetin(d[el.dataset.db]); });
@@ -772,26 +843,34 @@
     var canli = null;
     function onizDur() { if (canli) { var h = canli; canli = null; h.stop(); if (S.cal === h) { S.cal = null; oynatIk(0); } } var b = $q('#sfOniz'); if (b) b.textContent = 'Önizleme'; }
     function seviyeGuncelle() {
-      if (!canli) return; var t = ac().currentTime;
-      canli.gD.gain.setTargetAtTime(d.bypass ? 1 : kazancH(), t, 0.03); canli.gS.gain.setTargetAtTime(d.bypass ? 0 : kazancK(), t, 0.03);
+      if (!canli) return; var t = ac().currentTime, gd = kazancH(), degis = d.mod === 'degistir';
+      canli.g2.gain.setTargetAtTime(d.bypass ? 0 : (degis ? -gd : gd - 1), t, 0.03); canli.g3.gain.setTargetAtTime(d.bypass || !degis ? 0 : gd - 1, t, 0.03); canli.gS.gain.setTargetAtTime(d.bypass ? 0 : kazancK(), t, 0.03);
     }
     function onizBasla() {
       durdur(); var c = ac(), pz = d.pz, m = uzunluk(), uz = Math.min(m, SR * 30), bas = Math.max(0, pz - SR * 2), son = Math.min(p.L.length, pz + uz + SR * 2), dn = Math.max(SR, Math.max(son - bas, pz - bas + uz));
       var db = c.createBuffer(2, dn, SR), sb = c.createBuffer(2, uz, SR), i;
       var dl = db.getChannelData(0), dr = db.getChannelData(1);
-      for (i = 0; i < dn && bas + i < p.L.length; i++) { if (d.mod === 'degistir' && !d.bypass && bas + i >= pz && bas + i < pz + uz) continue; dl[i] = p.L[bas + i]; dr[i] = p.R[bas + i]; }
+      for (i = 0; i < dn && bas + i < p.L.length; i++) { dl[i] = p.L[bas + i]; dr[i] = p.R[bas + i]; }
       sb.getChannelData(0).set(kaynak.L.subarray(d.sb, d.sb + uz)); sb.getChannelData(1).set(kR.subarray(d.sb, d.sb + uz));
-      var gD = c.createGain(), gE = c.createGain(), gS = c.createGain(); gD.connect(c.destination); gE.connect(gS); gS.connect(c.destination);
-      gD.gain.value = d.bypass ? 1 : kazancH(); gS.gain.value = d.bypass ? 0 : kazancK();
-      var h = { gD: gD, gS: gS, live: true, s: [], onended: null, stop: function () { h.live = false; h.s.forEach(function (x) { try { x.onended = null; x.stop(); } catch (e) {} }); } };
-      canli = h; h.h = h; S.cal = h; S.calP = null; oynatIk(1); $q('#sfOniz').textContent = 'Durdur';
+      var g1 = c.createGain(), g2 = c.createGain(), g3 = c.createGain(), gWin = c.createGain(), gEd = c.createGain(), gE = c.createGain(), gS = c.createGain();
+      g1.connect(c.destination); g3.connect(gWin); gWin.connect(c.destination); g2.connect(gEd); gEd.connect(c.destination); gE.connect(gS); gS.connect(c.destination);
+      var h = { g1: g1, g2: g2, g3: g3, gS: gS, live: true, s: [], onended: null, stop: function () { h.live = false; h.s.forEach(function (x) { try { x.onended = null; x.stop(); } catch (e) {} }); } };
+      canli = h; h.h = h; S.cal = h; S.calP = null; oynatIk(1); $q('#sfOniz').textContent = 'Durdur'; seviyeGuncelle();
       function egri(g, t, sure, yon, tur) { var cur = new Float32Array(32), j; for (j = 0; j < 32; j++) { var u = j / 31; cur[j] = egriF(yon > 0 ? u : 1 - u, tur); } g.setValueCurveAtTime(cur, t, Math.max(0.005, sure)); }
       function tur() {
         if (!h.live) return; var t0 = c.currentTime + 0.03, kt = t0 + (pz - bas) / SR, uzS = uz / SR, fiS = Math.min(uzS, d.fi / 1000), foS = uz === m ? Math.min(uzS - fiS, d.fo / 1000) : 0;
-        gE.gain.cancelScheduledValues(0); gE.gain.setValueAtTime(fiS > 0 ? 0 : 1, t0);
-        if (fiS > 0) egri(gE.gain, kt, fiS, 1, d.efi); else gE.gain.setValueAtTime(1, kt);
-        if (foS > 0) egri(gE.gain, kt + uzS - foS, foS, -1, d.efo);
-        var s1 = c.createBufferSource(); s1.buffer = db; s1.connect(gD); s1.start(t0);
+        [gE].forEach(function (g) {
+          g.gain.cancelScheduledValues(0); g.gain.setValueAtTime(fiS > 0 ? 0 : 1, t0);
+          if (fiS > 0) egri(g.gain, kt, fiS, 1, d.efi); else g.gain.setValueAtTime(1, kt);
+          if (foS > 0) egri(g.gain, kt + uzS - foS, foS, -1, d.efo);
+          g.gain.setValueAtTime(0, kt + uzS + 0.001);
+        });
+        gWin.gain.cancelScheduledValues(0); gWin.gain.setValueAtTime(0, t0); gWin.gain.setValueAtTime(1, kt); gWin.gain.setValueAtTime(0, kt + uzS);
+        gEd.gain.cancelScheduledValues(0); gEd.gain.setValueAtTime(0, t0); gEd.gain.setValueAtTime(fiS > 0 ? 0 : 1, kt);
+        if (fiS > 0) egri(gEd.gain, kt, fiS, 1, d.efi);
+        if (foS > 0) egri(gEd.gain, kt + uzS - foS, foS, -1, d.efo);
+        gEd.gain.setValueAtTime(0, kt + uzS + 0.001);
+        var s1 = c.createBufferSource(); s1.buffer = db; s1.connect(g1); s1.connect(g2); s1.connect(g3); s1.start(t0);
         var s2 = c.createBufferSource(); s2.buffer = sb; s2.connect(gE); s2.start(kt);
         h.s = [s1, s2]; s1.onended = function () { if (S.cal === h && h.live) tur(); else if (S.cal === h) { S.cal = null; oynatIk(0); } };
       }
@@ -800,6 +879,7 @@
     var yenidenT = 0;
     function degisti(konumDegisti) {
       if (d.esitle) esitleHesapla();
+      if (konumDegisti) senkSec();
       ciz(document.activeElement);
       if (canli) { if (konumDegisti) { clearTimeout(yenidenT); yenidenT = setTimeout(function () { if (canli) onizBasla(); }, 200); } else seviyeGuncelle(); }
     }
@@ -836,10 +916,27 @@
     };
     /* ön ayarlar */
     var ONALAN = ['kDb', 'hDb', 'fi', 'fo', 'efi', 'efo', 'kT', 'hT', 'oran', 'mod', 'uzat', 'esitle', 'alt'];
-    $q('#sfOnAd').addEventListener('change', function () { var o = onOku(), a = this.value; if (o[a]) { ONALAN.forEach(function (k) { if (o[a][k] !== undefined) d[k] = o[a][k]; }); degisti(); } });
-    $q('#sfOnKay').onclick = function () { var a = $q('#sfOnAd').value.trim(); if (!a || a === '(Adsız)') return toast('Ön ayara bir ad yazın, sonra kaydedin'); var o = onOku(); o[a] = {}; ONALAN.forEach(function (k) { o[a][k] = d[k]; }); onYaz(o); onListe(); toast('Ön ayar kaydedildi: ' + a); };
-    $q('#sfOnSil').onclick = function () { var a = $q('#sfOnAd').value.trim(), o = onOku(); if (!o[a]) return toast('Bu adda kayıtlı bir ön ayar yok'); delete o[a]; onYaz(o); onListe(); $q('#sfOnAd').value = '(Adsız)'; toast('Ön ayar silindi: ' + a); };
-    onListe(); sinir(); ciz();
+    function onUygula(a) {
+      Object.keys(a).forEach(function (k) { if (k !== 'yuzde') d[k] = a[k]; });
+      if (a.yuzde) { var ms = uzunluk() / SR * 1000 * a.yuzde / 100; d.fi = ms; d.fo = ms; }
+      if (a.mod === undefined) d.mod = d.mod || 'karistir';
+      sinir(); senkSec(); degisti(true);
+    }
+    $q('#sfOnSec').addEventListener('change', function () {
+      var v = this.value; if (!v) return; var a = v.charAt(0) === 's' ? SISTEM[+v.slice(1)][1] : onOku()[v.slice(2)];
+      if (a) onUygula(a);
+    });
+    $q('#sfOnKay').onclick = function () { var ad = $q('#sfOnAd'); if (ad.hidden) { ad.hidden = false; $q('#sfOnSec').hidden = true; ad.value = ''; ad.focus(); } else ad.dispatchEvent(new Event('change')); };
+    function adiBitir() { var ad = $q('#sfOnAd'); ad.hidden = true; $q('#sfOnSec').hidden = false; }
+    $q('#sfOnAd').addEventListener('change', function () {
+      var a = this.value.trim(); if (!a) return adiBitir(); var o = onOku(); o[a] = {}; ONALAN.forEach(function (k) { o[a][k] = d[k]; }); onYaz(o); adiBitir(); onListe('u:' + a); toast('Ön ayar kaydedildi: ' + a);
+    });
+    $q('#sfOnAd').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.dispatchEvent(new Event('change')); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); adiBitir(); } });
+    $q('#sfOnSil').onclick = function () { var v = $q('#sfOnSec').value; if (!v) return toast('Silmek için önce kayıtlı bir ön ayar seçin'); if (v.charAt(0) === 's') return toast('Sistem ön ayarları silinemez'); var o = onOku(); delete o[v.slice(2)]; onYaz(o); onListe(''); toast('Ön ayar silindi'); };
+    /* hedef penceredeki seçimi (mavi blok) karışım bölgesine eşitle */
+    function senkSec() { p.sec = d.pz >= p.L.length - 1 ? null : [d.pz, Math.min(p.L.length, d.pz + uzunluk())]; p.imlec = Math.min(d.pz, p.L.length); ciz2(); }
+    function ciz2() { try { guncelle(); } catch (e) {} }
+    onListe(''); sinir(); senkSec(); ciz();
     var ilk = $q('[data-db="hDb"]'); if (ilk) ilk.focus();
     perde.__sf = { d: d, mikla: mikla, degisti: degisti, kapat: kapatPen };
     return perde;
@@ -1599,5 +1696,5 @@
   window.addEventListener('beforeunload', function (e) { if (S.pen.some(function (p) { return p.kirli; })) { e.preventDefault(); e.returnValue = ''; } });
 
   hedefUygula(); otoListeleri(); guncelle(); bankaYukle();
-  if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) sekme('oto'); /* telefonda önce otomatik kurgu */
+  sekme('oto'); /* açılışta Otomatik sayfa */
 })();

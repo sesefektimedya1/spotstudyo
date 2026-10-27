@@ -656,62 +656,193 @@
       tamam: function (d) { calis('Perde değiştiriliyor', function () { bolgeUygula(p, function (sL, sR) { return isle(sL, sR, d); }); }); }
     });
   }
-  /* Karıştırarak yapıştır */
+  /* Karıştır / Değiştir penceresi (Sound Forge "Mix/Replace" düzeni) */
   function lufsBolge(L, R, a, b) { var x = mono(L.subarray(a, b), R.subarray(a, b)); return Motor.lufs([x], SR); }
   function karistirDlg(p, pos) {
     if (!S.pano) return toast('Önce başka bir pencerede bir bölüm seçip kopyalayın (Ctrl+C)');
-    var kaynak = S.pano, sabitPos = pos != null, d0 = { konum: sabitPos ? 'verilen' : 'imlec', kDb: 0, hDb: 0, fi: 20, fo: 20, uzat: true, esitle: false, alt: 10 };
-    var konumSec = sabitPos ? [['verilen', 'Bırakılan yer (' + sn(pos / SR) + ')']] : [['imlec', 'İmleçten başlat (' + sn(p.imlec / SR) + ')'], ['bas', 'Başa'], ['son', 'Sona']];
-    function pozisyon(d) { return d.konum === 'verilen' ? pos : (d.konum === 'bas' ? 0 : (d.konum === 'son' ? p.L.length : (p.sec ? p.sec[0] : p.imlec))); }
-    function kaynakDb(d, pz) {
-      if (!d.esitle) return +d.kDb;
-      var e = Math.min(p.L.length, pz + kaynak.L.length), hl = e - pz > SR * 0.2 ? lufsBolge(p.L, p.R, pz, e) : Motor.lufs([mono(p.L, p.R)], SR);
+    var kaynak = S.pano, kR = kaynak.R || kaynak.L, kN = kaynak.L.length, sabitPos = pos != null;
+    var ON_ANAHTAR = 'sfMixOn';
+    function onOku() { try { return JSON.parse(localStorage.getItem(ON_ANAHTAR) || '{}') || {}; } catch (e) { return {}; } }
+    function onYaz(o) { try { localStorage.setItem(ON_ANAHTAR, JSON.stringify(o)); } catch (e) {} }
+    var d = {
+      pz: Math.max(0, Math.min(p.L.length, sabitPos ? pos : (p.sec ? p.sec[0] : (p.imlec || 0)))), sb: 0, ss: kN,
+      kDb: 0, hDb: -7.5, fi: 20, fo: 20, efi: 'dogrusal', efo: 'dogrusal', kT: false, hT: false, oran: false,
+      mod: 'karistir', uzat: true, esitle: false, alt: 10, bypass: false
+    };
+    var hedefMono = p.R === p.L, kaynakMono = kR === kaynak.L;
+    /* ---- yardımcılar ---- */
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    function zf(sec) { var cs = Math.max(0, Math.round((isFinite(sec) ? sec : 0) * 100)), h = Math.floor(cs / 360000), m = Math.floor(cs % 360000 / 6000), s = Math.floor(cs % 6000 / 100), c = cs % 100; return pad2(h) + ':' + pad2(m) + ':' + pad2(s) + '.' + pad2(c); }
+    function zo(t) { var a = String(t).replace(',', '.').trim().split(':'), s = 0, i; if (!a.length || a.some(function (x) { return x === '' || isNaN(+x); })) return null; for (i = 0; i < a.length; i++) s = s * 60 + (+a[i]); return s; }
+    function dbMetin(db) { return db <= -100 ? '-Sonsuz' : db.toFixed(2).replace('.', ','); }
+    function yuzde(db) { return db <= -100 ? '0,00' : (Math.pow(10, db / 20) * 100).toFixed(2).replace('.', ','); }
+    function dbOku(t) { var s = String(t).trim().toLowerCase(); if (/^-?\s*(sonsuz|inf)/.test(s)) return -120; var v = parseFloat(s.replace(',', '.')); return isNaN(v) ? null : Math.max(-100, Math.min(6, v)); }
+    var EGRILER = [['dogrusal', 'Doğrusal'], ['yumusak', 'Yumuşak (S eğrisi)'], ['hizli', 'Hızlı açılır'], ['yavas', 'Yavaş açılır']];
+    function egriF(t, tur) { t = Math.max(0, Math.min(1, t)); if (tur === 'yumusak') return 0.5 - 0.5 * Math.cos(Math.PI * t); if (tur === 'hizli') return Math.sqrt(t); if (tur === 'yavas') return t * t; return t; }
+    function uzunluk() { return Math.max(1, d.ss - d.sb); }
+    function kazancK() { return (d.kT ? -1 : 1) * A.dB(d.kDb); }
+    function kazancH() { return (d.hT ? -1 : 1) * A.dB(d.hDb); }
+    function toplamUz() { var son = d.pz + uzunluk(); return (d.uzat || d.mod === 'degistir' ? Math.max(p.L.length, son) : p.L.length); }
+    function esitleHesapla() {
+      var m = uzunluk(), e = Math.min(p.L.length, d.pz + m), hl = e - d.pz > SR * 0.2 ? lufsBolge(p.L, p.R, d.pz, e) : Motor.lufs([mono(p.L, p.R)], SR);
       if (hl < -60) hl = Motor.lufs([mono(p.L, p.R)], SR);
-      var kl = Motor.lufs([mono(kaynak.L, kaynak.R)], SR); if (kl < -60 || hl < -60) return +d.kDb;
-      return Math.max(-40, Math.min(20, hl - (+d.alt) - kl));
+      var kl = Motor.lufs([mono(kaynak.L.subarray(d.sb, d.ss), kR.subarray(d.sb, d.ss))], SR); if (kl < -60 || hl < -60) return;
+      d.kDb = Math.max(-40, Math.min(6, hl - (+d.alt) - kl));
     }
-    function karistirHesap(d, kes) {
-      var pz = pozisyon(d), kd = kaynakDb(d, pz), dd = +d.hDb, sL = kaynak.L, sR = kaynak.R || kaynak.L;
-      var dL = p.L, dR = p.R, bas = 0;
-      if (kes) { bas = Math.max(0, pz - SR); var son = Math.min(p.L.length, pz + Math.min(sL.length, SR * 10) + SR); dL = p.L.slice(bas, son); dR = p.R === p.L ? dL : p.R.slice(bas, son); sL = sL.slice(0, Math.min(sL.length, SR * 10)); sR = kaynak.R === kaynak.L ? sL : sR.slice(0, sL.length); }
-      return { sonuc: A.karistir(dL, dR, sL, sR, pz - bas, dd, kd, +d.fi, +d.fo, !!d.uzat, SR), kd: kd };
+    /* ---- hesap ---- */
+    function mikla() {
+      var m = uzunluk(), sL = kaynak.L.subarray(d.sb, d.ss), sR = kR.subarray(d.sb, d.ss), pz = d.pz, n = toplamUz(), i;
+      var oL = new Float32Array(n), oR = (hedefMono && kaynakMono) ? null : new Float32Array(n), gd = kazancH(), gs = kazancK();
+      for (i = 0; i < p.L.length; i++) oL[i] = p.L[i] * gd;
+      if (oR) for (i = 0; i < p.R.length; i++) oR[i] = p.R[i] * gd;
+      if (d.mod === 'degistir') { for (i = pz; i < Math.min(n, pz + m); i++) { oL[i] = 0; if (oR) oR[i] = 0; } }
+      var fi = Math.min(m, Math.round(d.fi * SR / 1000)), fo = Math.min(m - fi, Math.round(d.fo * SR / 1000));
+      for (i = 0; i < m && pz + i < n; i++) {
+        var g = gs;
+        if (fi > 0 && i < fi) g *= egriF(i / fi, d.efi);
+        if (fo > 0 && m - i <= fo) g *= egriF((m - i) / fo, d.efo);
+        oL[pz + i] += sL[i] * g;
+        if (oR) oR[pz + i] += sR[i] * g;
+      }
+      return { L: oL, R: oR || oL };
     }
+    /* ---- arayüz ---- */
+    function esc2(s) { return esc(s); }
+    function faderHtml(k) { return '<div class="sfFader" data-f="' + k + '" tabindex="0" role="slider" aria-label="Ses seviyesi"><div class="sfTrk"></div><div class="sfTh"></div><span class="sfT" style="top:0%">+6</span><span class="sfT" style="top:50%">0</span><span class="sfT" style="top:75%">-6</span><span class="sfT" style="top:100%"></span></div>'; }
+    function kolHtml(t, baslik, ad, mono_) {
+      var K = t === 'k' ? { db: 'kDb', t: 'kT', a: 'sb', b: 'ss' } : { db: 'hDb', t: 'hT', a: 'pz', b: 'hs' };
+      return '<div class="sfKol" data-t="' + t + '"><div class="sfKB">' + baslik + ': <b>' + esc2(ad) + '</b></div>' +
+        '<div class="sfDbSat"><input class="sfDbIn" data-db="' + K.db + '" inputmode="decimal" aria-label="dB"> dB <span class="sfYz" data-yz="' + K.db + '"></span></div>' +
+        '<div class="sfOrta">' + faderHtml(K.db) + '<div class="sfZm">' +
+        '<label>Başlangıç:<input class="sfZ" data-z="' + K.a + '"' + '></label><label>Bitiş:<input class="sfZ" data-z="' + K.b + '"' + (t === 'h' ? ' readonly' : '') + '></label>' +
+        '<div class="sfKn">Kanallar: <span>' + (mono_ ? '1' : '1-2') + '</span></div></div></div>' +
+        '<div class="sfAl"><span>Ses seviyesi<br>(-Sonsuz ile +6 dB)</span><label class="sfCk"><input type="checkbox" data-c="' + K.t + '"> Veriyi ters çevir</label></div></div>';
+    }
+    function fadeHtml(k, ad) {
+      return '<div class="sfFd"><label>' + ad + ':</label><span class="sfSp"><input class="sfZ" data-fz="' + k + '" aria-label="' + ad + '"><button type="button" class="sfOk" data-ok="' + k + '+" aria-label="artır">▲</button><button type="button" class="sfOk" data-ok="' + k + '-" aria-label="azalt">▼</button></span>' +
+        '<select class="sfEg" data-eg="' + (k === 'fi' ? 'efi' : 'efo') + '" aria-label="' + ad + ' eğrisi">' + EGRILER.map(function (e) { return '<option value="' + e[0] + '">' + e[1] + '</option>'; }).join('') + '</select></div>';
+    }
+    var perde = document.createElement('div'); perde.className = 'perde';
+    perde.innerHTML =
+      '<div class="pencere sfMix" role="dialog" aria-modal="true"><div class="sfBas"><span>Karıştır / Değiştir - ' + esc2(p.ad) + '</span><button type="button" class="sfKapat" aria-label="Kapat">✕</button></div>' +
+      '<div class="sfGovde"><div class="sfSol">' +
+      '<div class="sfOn"><label for="sfOnAd">Ön ayar:</label><input id="sfOnAd" list="sfOnL" value="(Adsız)" autocomplete="off"><datalist id="sfOnL"></datalist>' +
+      '<button type="button" id="sfOnKay" class="sfIk" title="Ön ayarı kaydet" aria-label="Ön ayarı kaydet">💾</button><button type="button" id="sfOnSil" class="sfIk sil" title="Ön ayarı sil" aria-label="Ön ayarı sil">✕</button></div>' +
+      '<div class="sfGrup">' + kolHtml('k', 'Kaynak', kaynak.ad || 'kopyalanan', kaynakMono) + kolHtml('h', 'Hedef', p.ad, hedefMono) + '</div>' +
+      '<div class="sfAlt">' + '<div class="sfFdlar">' + fadeHtml('fi', 'Giriş (Fade In)') + fadeHtml('fo', 'Çıkış (Fade Out)') + '</div>' +
+      '<div class="sfSag2"><label class="sfCk"><input type="checkbox" data-c="oran"> Orantılı fade süreleri</label><div class="sfTop">Toplam karışım süresi: <b id="sfTop"></b></div></div></div>' +
+      '</div><div class="sfBt"><button type="button" class="sfB ana" id="sfTamam">Tamam</button><button type="button" class="sfB" id="sfIptal">İptal</button><button type="button" class="sfB" id="sfOniz">Önizleme</button>' +
+      '<label class="sfCk"><input type="checkbox" data-c="bypass"> Atla <small>(önizlemede orijinal)</small></label><button type="button" class="sfB sfDaha" id="sfDaha" aria-expanded="false">Daha fazla…</button></div></div>' +
+      '<div class="sfEk" id="sfEk" hidden><div class="sfEkS"><span>Karışım türü:</span><label class="sfCk"><input type="radio" name="sfMod" value="karistir" data-r="mod"> Karıştır (hedef silinmez)</label><label class="sfCk"><input type="radio" name="sfMod" value="degistir" data-r="mod"> Değiştir (hedefteki bölüm silinir)</label></div>' +
+      '<label class="sfCk"><input type="checkbox" data-c="uzat"> Kaynak hedeften uzunsa pencereyi uzat</label>' +
+      '<div class="sfEkS"><label class="sfCk"><input type="checkbox" data-c="esitle"> Seviyeyi kendisi eşitlesin (kaynağı hedefin altına koyar)</label><span class="sfAlN">Fark: <input class="sfZ" data-alt="1" style="width:52px"> dB</span></div></div>' +
+      '</div>';
+    document.body.appendChild(perde);
+    function $q(s) { return perde.querySelector(s); }
+    function $qa(s) { return Array.prototype.slice.call(perde.querySelectorAll(s)); }
+    function onListe() { var o = onOku(); $q('#sfOnL').innerHTML = Object.keys(o).map(function (k) { return '<option value="' + esc2(k) + '">'; }).join(''); }
+    function ciz(odakEl) {
+      d.hs = d.pz + uzunluk();
+      $qa('[data-db]').forEach(function (el) { if (el !== odakEl) el.value = dbMetin(d[el.dataset.db]); });
+      $qa('[data-yz]').forEach(function (el) { el.textContent = '(' + yuzde(d[el.dataset.yz]) + '%)'; });
+      $qa('.sfFader').forEach(function (el) { var amp = d[el.dataset.f] <= -100 ? 0 : Math.pow(10, d[el.dataset.f] / 20); el.querySelector('.sfTh').style.top = ((1 - amp / A.dB(6)) * 100) + '%'; el.setAttribute('aria-valuetext', dbMetin(d[el.dataset.f]) + ' dB'); });
+      $qa('[data-z]').forEach(function (el) { if (el !== odakEl) el.value = zf(d[el.dataset.z] / SR); });
+      $qa('[data-fz]').forEach(function (el) { if (el !== odakEl) el.value = zf(d[el.dataset.fz] / 1000); });
+      $qa('[data-eg]').forEach(function (el) { el.value = d[el.dataset.eg]; });
+      $qa('[data-c]').forEach(function (el) { el.checked = !!d[el.dataset.c]; });
+      $qa('[data-r]').forEach(function (el) { el.checked = d.mod === el.value; });
+      var al = $q('[data-alt]'); if (al && al !== odakEl) al.value = String(d.alt).replace('.', ',');
+      $q('#sfTop').textContent = zf(toplamUz() / SR);
+      $qa('.sfFader[data-f="kDb"]').forEach(function (el) { el.classList.toggle('kilit', !!d.esitle); });
+    }
+    function sinir() { d.sb = Math.max(0, Math.min(kN - 1, d.sb)); d.ss = Math.max(d.sb + 1, Math.min(kN, d.ss)); d.pz = Math.max(0, Math.min(p.L.length, d.pz)); }
+    /* fader */
+    function faderBagla(el) {
+      var k = el.dataset.f, trk = el.querySelector('.sfTrk');
+      function ayarla(e) { var r = trk.getBoundingClientRect(), f = 1 - (e.clientY - r.top) / Math.max(1, r.height), amp = Math.max(0, Math.min(1, f)) * A.dB(6); d[k] = amp < 0.004 ? -120 : Math.round(20 * Math.log10(amp) * 20) / 20; if (k === 'kDb') d.esitle = false; degisti(); }
+      el.addEventListener('pointerdown', function (e) { e.preventDefault(); el.focus(); try { el.setPointerCapture(e.pointerId); } catch (x) {} el.dataset.s = '1'; ayarla(e); });
+      el.addEventListener('pointermove', function (e) { if (el.dataset.s === '1') ayarla(e); });
+      function birak() { el.dataset.s = '0'; }
+      el.addEventListener('pointerup', birak); el.addEventListener('pointercancel', birak);
+      el.addEventListener('keydown', function (e) { var adim = e.shiftKey ? 3 : 0.5, v = d[k] <= -100 ? -100 : d[k]; if (e.key === 'ArrowUp' || e.key === 'ArrowRight') v += adim; else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') v -= adim; else if (e.key === 'Home') v = 6; else if (e.key === 'End') v = -120; else return; e.preventDefault(); d[k] = Math.max(-120, Math.min(6, v)); if (k === 'kDb') d.esitle = false; degisti(); });
+      el.addEventListener('wheel', function (e) { e.preventDefault(); var v = d[k] <= -100 ? -100 : d[k]; d[k] = Math.max(-120, Math.min(6, v + (e.deltaY < 0 ? 0.5 : -0.5))); if (k === 'kDb') d.esitle = false; degisti(); }, { passive: false });
+    }
+    $qa('.sfFader').forEach(faderBagla);
+    /* canlı önizleme */
     var canli = null;
-    function canliAyar(d) { if (!canli || S.cal !== canli.h) return; var t = ac().currentTime; canli.gD.gain.setTargetAtTime(A.dB(+d.hDb), t, 0.03); canli.gS.gain.setTargetAtTime(A.dB(kaynakDb(d, canli.pz)), t, 0.03); }
-    function canliBasla(d) {
-      durdur(); var c = ac(), pz = pozisyon(d), uz = Math.min(kaynak.L.length, SR * 12), bas = Math.max(0, pz - SR * 2), son = Math.min(p.L.length, pz + uz + SR * 2), dn = Math.max(SR, Math.max(son - bas, pz - bas + uz));
-      var db = c.createBuffer(2, dn, SR), sb = c.createBuffer(2, uz, SR), i, kR = kaynak.R || kaynak.L;
-      var dl = db.getChannelData(0), dr = db.getChannelData(1); for (i = 0; i < dn && bas + i < p.L.length; i++) { dl[i] = p.L[bas + i]; dr[i] = p.R[bas + i]; }
-      sb.getChannelData(0).set(kaynak.L.subarray(0, uz)); sb.getChannelData(1).set(kR.subarray(0, uz));
-      var gD = c.createGain(), gS = c.createGain(); gD.connect(c.destination); gS.connect(c.destination); gD.gain.value = A.dB(+d.hDb);
-      var h = { gD: gD, gS: gS, pz: pz, live: true, s: [], onended: null, stop: function () { h.live = false; h.s.forEach(function (x) { try { x.onended = null; x.stop(); } catch (e) {} }); } };
-      canli = h; h.h = h; S.cal = h; S.calP = null; oynatIk(1);
+    function onizDur() { if (canli) { var h = canli; canli = null; h.stop(); if (S.cal === h) { S.cal = null; oynatIk(0); } } var b = $q('#sfOniz'); if (b) b.textContent = 'Önizleme'; }
+    function seviyeGuncelle() {
+      if (!canli) return; var t = ac().currentTime;
+      canli.gD.gain.setTargetAtTime(d.bypass ? 1 : kazancH(), t, 0.03); canli.gS.gain.setTargetAtTime(d.bypass ? 0 : kazancK(), t, 0.03);
+    }
+    function onizBasla() {
+      durdur(); var c = ac(), pz = d.pz, m = uzunluk(), uz = Math.min(m, SR * 30), bas = Math.max(0, pz - SR * 2), son = Math.min(p.L.length, pz + uz + SR * 2), dn = Math.max(SR, Math.max(son - bas, pz - bas + uz));
+      var db = c.createBuffer(2, dn, SR), sb = c.createBuffer(2, uz, SR), i;
+      var dl = db.getChannelData(0), dr = db.getChannelData(1);
+      for (i = 0; i < dn && bas + i < p.L.length; i++) { if (d.mod === 'degistir' && !d.bypass && bas + i >= pz && bas + i < pz + uz) continue; dl[i] = p.L[bas + i]; dr[i] = p.R[bas + i]; }
+      sb.getChannelData(0).set(kaynak.L.subarray(d.sb, d.sb + uz)); sb.getChannelData(1).set(kR.subarray(d.sb, d.sb + uz));
+      var gD = c.createGain(), gE = c.createGain(), gS = c.createGain(); gD.connect(c.destination); gE.connect(gS); gS.connect(c.destination);
+      gD.gain.value = d.bypass ? 1 : kazancH(); gS.gain.value = d.bypass ? 0 : kazancK();
+      var h = { gD: gD, gS: gS, live: true, s: [], onended: null, stop: function () { h.live = false; h.s.forEach(function (x) { try { x.onended = null; x.stop(); } catch (e) {} }); } };
+      canli = h; h.h = h; S.cal = h; S.calP = null; oynatIk(1); $q('#sfOniz').textContent = 'Durdur';
+      function egri(g, t, sure, yon, tur) { var cur = new Float32Array(32), j; for (j = 0; j < 32; j++) { var u = j / 31; cur[j] = egriF(yon > 0 ? u : 1 - u, tur); } g.setValueCurveAtTime(cur, t, Math.max(0.005, sure)); }
       function tur() {
-        if (!h.live) return; var t0 = c.currentTime + 0.03, kd = A.dB(kaynakDb(dAktif, pz)), fi = (+dAktif.fi || 0) / 1000;
-        gS.gain.cancelScheduledValues(t0); gS.gain.setValueAtTime(fi > 0 ? 0 : kd, t0); if (fi > 0) gS.gain.linearRampToValueAtTime(kd, t0 + fi);
+        if (!h.live) return; var t0 = c.currentTime + 0.03, kt = t0 + (pz - bas) / SR, uzS = uz / SR, fiS = Math.min(uzS, d.fi / 1000), foS = uz === m ? Math.min(uzS - fiS, d.fo / 1000) : 0;
+        gE.gain.cancelScheduledValues(0); gE.gain.setValueAtTime(fiS > 0 ? 0 : 1, t0);
+        if (fiS > 0) egri(gE.gain, kt, fiS, 1, d.efi); else gE.gain.setValueAtTime(1, kt);
+        if (foS > 0) egri(gE.gain, kt + uzS - foS, foS, -1, d.efo);
         var s1 = c.createBufferSource(); s1.buffer = db; s1.connect(gD); s1.start(t0);
-        var s2 = c.createBufferSource(); s2.buffer = sb; s2.connect(gS); s2.start(t0 + (pz - bas) / SR);
+        var s2 = c.createBufferSource(); s2.buffer = sb; s2.connect(gE); s2.start(kt);
         h.s = [s1, s2]; s1.onended = function () { if (S.cal === h && h.live) tur(); else if (S.cal === h) { S.cal = null; oynatIk(0); } };
       }
-      var dAktif = d; h.guncelle = function (x) { dAktif = x; }; tur();
+      tur();
     }
-    var q = diyalog('Karıştırarak yapıştır (Mix Paste)', [
-      { k: 'konum', ad: 'Nereye', tur: 'sec', sec: konumSec },
-      { k: 'kDb', ad: 'Kaynak (kopyalanan) seviyesi', tur: 'slider', min: -40, max: 20, step: 0.5, birim: ' dB' },
-      { k: 'hDb', ad: 'Hedef (bu pencere) seviyesi', tur: 'slider', min: -40, max: 20, step: 0.5, birim: ' dB' },
-      { k: 'fi', ad: 'Giriş yumuşatma (fade in)', tur: 'slider', min: 0, max: 3000, step: 10, birim: ' ms' },
-      { k: 'fo', ad: 'Çıkış yumuşatma (fade out)', tur: 'slider', min: 0, max: 3000, step: 10, birim: ' ms' },
-      { k: 'uzat', ad: 'Kaynak hedeften uzunsa pencereyi uzat', tur: 'onay' },
-      { k: 'esitle', ad: 'Seviyeyi kendisi eşitlesin (müziği sesin altına koy)', tur: 'onay' },
-      { k: 'alt', ad: 'Sesin altında kalacak fark', tur: 'slider', min: 0, max: 30, step: 0.5, birim: ' dB' }
-    ], d0, {
-      not: 'Kopyalanan bölüm (' + (kaynak.L.length / SR).toFixed(1) + ' sn) bu pencerenin üzerine karıştırılır; mevcut ses silinmez. “Seviyeyi kendisi eşitlesin” açıkken kaynak, ölçülen gürlüğe göre hedefin belirlediğiniz kadar altına yerleşir; müziği sese eşitlemek için bunu kullanın.',
-      onizleAd: '▶ Canlı dinle',
-      onizle: function (d) { canliBasla(d); return null; },
-      degisince: function (d) { if (canli) canli.guncelle(d); canliAyar(d); },
-      tamam: function (d) { calis('Karıştırılıyor', function () { var r = karistirHesap(d, false); degistir(p, r.sonuc.L, r.sonuc.R); toast('Karıştırıldı (kaynak ' + (r.kd > 0 ? '+' : '') + r.kd.toFixed(1) + ' dB)'); }); }
+    var yenidenT = 0;
+    function degisti(konumDegisti) {
+      if (d.esitle) esitleHesapla();
+      ciz(document.activeElement);
+      if (canli) { if (konumDegisti) { clearTimeout(yenidenT); yenidenT = setTimeout(function () { if (canli) onizBasla(); }, 200); } else seviyeGuncelle(); }
+    }
+    /* olaylar */
+    perde.addEventListener('change', function (e) {
+      var el = e.target, v;
+      if (el.dataset.db) { v = dbOku(el.value); if (v !== null) { d[el.dataset.db] = v; if (el.dataset.db === 'kDb') d.esitle = false; } degisti(); }
+      else if (el.dataset.z) {
+        v = zo(el.value); if (v !== null) { var z = el.dataset.z, ol = uzunluk(); d[z] = Math.round(v * SR); if (z === 'sb' && d.sb >= d.ss) d.ss = Math.min(kN, d.sb + ol); sinir(); if (d.oran) oranUygula(ol); }
+        degisti(true);
+      }
+      else if (el.dataset.fz) { v = zo(el.value); if (v !== null) d[el.dataset.fz] = Math.max(0, Math.min(uzunluk() / SR * 1000, v * 1000)); degisti(); }
+      else if (el.dataset.eg) { d[el.dataset.eg] = el.value; degisti(); }
+      else if (el.dataset.alt) { v = parseFloat(String(el.value).replace(',', '.')); if (!isNaN(v)) d.alt = Math.max(0, Math.min(40, v)); degisti(); }
+      else if (el.dataset.c) { d[el.dataset.c] = el.checked; if (el.dataset.c === 'bypass' && canli) onizBasla(); else degisti(el.dataset.c === 'uzat'); }
+      else if (el.dataset.r) { d.mod = el.value; degisti(true); }
     });
-    return q;
+    function oranUygula(eskiUz) { /* orantılı fade: kaynak uzunluğu değişince fade süreleri de aynı oranda değişir */
+      var yeni = uzunluk(); if (eskiUz > 0) { d.fi = d.fi * yeni / eskiUz; d.fo = d.fo * yeni / eskiUz; }
+    }
+    perde.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-ok]') : null;
+      if (b) { var k = b.dataset.ok.slice(0, -1), yon = b.dataset.ok.slice(-1) === '+' ? 1 : -1; d[k] = Math.max(0, Math.min(uzunluk() / SR * 1000, d[k] + yon * 10)); degisti(); }
+    });
+    $q('#sfDaha').onclick = function () { var ek = $q('#sfEk'), ac_ = ek.hidden; ek.hidden = !ac_; this.setAttribute('aria-expanded', ac_ ? 'true' : 'false'); this.textContent = ac_ ? 'Daha az' : 'Daha fazla…'; };
+    $q('#sfOniz').onclick = function () { if (canli) onizDur(); else onizBasla(); };
+    function kapatPen() { onizDur(); durdur(); document.removeEventListener('keydown', tus, true); perde.remove(); }
+    function tus(e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); kapatPen(); } else if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT' && !e.target.list) { e.target.blur(); } }
+    document.addEventListener('keydown', tus, true);
+    $q('#sfIptal').onclick = kapatPen; $q('.sfKapat').onclick = kapatPen;
+    $q('#sfTamam').onclick = function () {
+      kapatPen();
+      calis('Karıştırılıyor', function () { var r = mikla(); degistir(p, r.L, r.R); toast('Karıştırıldı (kaynak ' + (d.kDb > 0 ? '+' : '') + (d.kDb <= -100 ? '-Sonsuz' : d.kDb.toFixed(1)) + ' dB, hedef ' + (d.hDb > 0 ? '+' : '') + (d.hDb <= -100 ? '-Sonsuz' : d.hDb.toFixed(1)) + ' dB)'); });
+    };
+    /* ön ayarlar */
+    var ONALAN = ['kDb', 'hDb', 'fi', 'fo', 'efi', 'efo', 'kT', 'hT', 'oran', 'mod', 'uzat', 'esitle', 'alt'];
+    $q('#sfOnAd').addEventListener('change', function () { var o = onOku(), a = this.value; if (o[a]) { ONALAN.forEach(function (k) { if (o[a][k] !== undefined) d[k] = o[a][k]; }); degisti(); } });
+    $q('#sfOnKay').onclick = function () { var a = $q('#sfOnAd').value.trim(); if (!a || a === '(Adsız)') return toast('Ön ayara bir ad yazın, sonra kaydedin'); var o = onOku(); o[a] = {}; ONALAN.forEach(function (k) { o[a][k] = d[k]; }); onYaz(o); onListe(); toast('Ön ayar kaydedildi: ' + a); };
+    $q('#sfOnSil').onclick = function () { var a = $q('#sfOnAd').value.trim(), o = onOku(); if (!o[a]) return toast('Bu adda kayıtlı bir ön ayar yok'); delete o[a]; onYaz(o); onListe(); $q('#sfOnAd').value = '(Adsız)'; toast('Ön ayar silindi: ' + a); };
+    onListe(); sinir(); ciz();
+    var ilk = $q('[data-db="hDb"]'); if (ilk) ilk.focus();
+    perde.__sf = { d: d, mikla: mikla, degisti: degisti, kapat: kapatPen };
+    return perde;
   }
   /* ---------- Kaydet, çalışma alanı, kapatırken sorma ---------- */
   function uc(baslik, metin, cb) {

@@ -1,0 +1,87 @@
+/* Karıştır / Değiştir penceresi (Sound Forge düzeni) */
+.pencere.sfMix{width:min(720px,100%);background:#f0f0f0;color:#1a1a1a;border:1px solid #6b7686;border-radius:3px;font:13px 'Segoe UI','Open Sans',Arial,sans-serif;overflow:auto}
+.sfMix .sfBas{display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #c6c4be;padding:.3rem .3rem .3rem .8rem;font-size:13px;font-weight:600}
+.sfMix .sfBas span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sfMix .sfKapat{background:none;border:0;width:34px;height:28px;font-size:15px;cursor:pointer;color:#333}.sfMix .sfKapat:hover{background:#d83a2c;color:#fff}
+.sfMix .sfGovde{display:grid;grid-template-columns:1fr 150px;gap:.8rem;padding:.8rem}
+.sfMix .sfOn{display:flex;align-items:center;gap:.4rem;margin-bottom:.6rem}
+.sfMix .sfOn label{white-space:nowrap}
+.sfMix input,.sfMix select{font:inherit;color:#1a1a1a;background:#fff;border:1px solid #8a8f98;border-radius:2px;padding:.2rem .4rem;min-width:0;min-height:26px}
+.sfMix .sfOn input{flex:1}
+.sfMix .sfIk{width:30px;height:28px;background:#f7f7f7;border:1px solid #9aa0a8;border-radius:2px;cursor:pointer;padding:0;font-size:14px;line-height:1}
+.sfMix .sfIk.sil{color:#c0261b;font-weight:700}
+.sfMix .sfIk:hover{background:#e6eefb;border-color:#2f6fd0}
+.sfMix .sfGrup{display:grid;grid-template-columns:1fr 1fr;border:1px solid #b6b9bf;background:#f6f6f6}
+.sfMix .sfKol{padding:.6rem .6rem .5rem;display:grid;gap:.35rem;align-content:start;min-width:0}
+.sfMix .sfKol+.sfKol{border-left:1px solid #b6b9bf}
+.sfMix .sfKB{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sfMix .sfDbSat{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
+.sfMix .sfDbIn{width:72px;text-align:right}
+.sfMix .sfYz{color:#444}
+.sfMix .sfOrta{display:grid;grid-template-columns:54px 1fr;gap:.5rem;align-items:start}
+.sfMix .sfFader{position:relative;height:150px;touch-action:none;cursor:pointer;outline:none;margin:6px 0}
+.sfMix .sfFader:focus-visible{outline:2px solid #2f6fd0;outline-offset:2px}
+.sfMix .sfTrk{position:absolute;left:8px;top:0;bottom:0;width:6px;background:#fff;border:1px solid #8a8f98;border-radius:3px}
+.sfMix .sfTh{position:absolute;left:0;width:22px;height:14px;margin-top:-7px;background:linear-gradient(#fdfdfd,#cfd2d8);border:1px solid #6b7480;border-radius:2px;box-shadow:0 1px 1px rgba(0,0,0,.25);pointer-events:none}
+.sfMix .sfFader.kilit .sfTh{background:linear-gradient(#e9f1fb,#b9cfee);border-color:#2f6fd0}
+.sfMix .sfT{position:absolute;left:30px;font-size:10px;color:#555;transform:translateY(-50%);pointer-events:none}
+.sfMix .sfZm{display:grid;gap:.3rem;font-size:12.5px;min-width:0}
+.sfMix .sfZm label{display:grid;grid-template-columns:auto 1fr;gap:.3rem;align-items:center}
+.sfMix .sfZm label:nth-of-type(n){justify-content:space-between}
+.sfMix .sfZ{width:100%;max-width:104px;text-align:right;font-variant-numeric:tabular-nums}
+.sfMix .sfKn{color:#444}
+.sfMix .sfAl{display:flex;justify-content:space-between;align-items:center;gap:.4rem;font-size:12px;color:#333;flex-wrap:wrap}
+.sfMix .sfCk{display:inline-flex;align-items:center;gap:.35rem;cursor:pointer;color:#1a1a1a}
+.sfMix .sfCk input{width:16px;height:16px;min-height:0;padding:0}
+.sfMix .sfAlt{display:grid;grid-template-columns:1fr auto;gap:.6rem;margin-top:.7rem;align-items:end}
+.sfMix .sfFdlar{display:grid;gap:.4rem}
+.sfMix .sfFd{display:grid;grid-template-columns:118px auto 1fr;gap:.4rem;align-items:center}
+.sfMix .sfSp{display:inline-flex;align-items:stretch}
+.sfMix .sfSp .sfZ{max-width:112px;border-radius:2px 0 0 2px}
+.sfMix .sfOk{width:20px;font-size:8px;line-height:1;padding:0;background:#f3f3f3;border:1px solid #8a8f98;border-left:0;cursor:pointer}
+.sfMix .sfOk+.sfOk{border-top:0}
+.sfMix .sfSp{position:relative}
+.sfMix .sfEg{width:100%;min-width:96px;max-width:170px;justify-self:start}
+.sfMix .sfSag2{display:grid;gap:.5rem;justify-items:start;font-size:12.5px}
+.sfMix .sfTop b{font-variant-numeric:tabular-nums;margin-left:.3rem}
+.sfMix .sfBt{display:flex;flex-direction:column;gap:.45rem;align-content:start}
+.sfMix .sfB{font:inherit;padding:.35rem .6rem;min-height:30px;background:#e9e9e9;border:1px solid #8a8f98;border-radius:2px;color:#1a1a1a;cursor:pointer}
+.sfMix .sfB:hover{background:#dde8f8;border-color:#2f6fd0}
+.sfMix .sfB.ana{border:2px solid #2f6fd0;background:#fff;font-weight:600}
+.sfMix .sfBt small{color:#666;display:block;font-size:11px}
+.sfMix .sfBt .sfCk{align-items:flex-start;font-size:12.5px;margin:.2rem 0}
+.sfMix .sfDaha{margin-top:auto}
+.sfMix .sfEk{padding:.2rem .8rem .8rem;display:grid;gap:.5rem;border-top:1px solid #d0d0d0;margin:0 .8rem;padding-top:.6rem}
+.sfMix .sfEk[hidden]{display:none}
+.sfMix .sfEkS{display:flex;gap:.9rem;flex-wrap:wrap;align-items:center}
+.sfMix .sfAlN{display:inline-flex;align-items:center;gap:.3rem}
+.sfMix button:focus-visible,.sfMix input:focus-visible,.sfMix select:focus-visible{outline:2px solid #2f6fd0;outline-offset:1px}
+@media(max-width:620px){
+  .pencere.sfMix{max-height:96vh}
+  .sfMix .sfGovde{grid-template-columns:1fr}
+  .sfMix .sfBt{flex-direction:row;flex-wrap:wrap;align-items:center}
+  .sfMix .sfBt .sfB{flex:1 1 30%;min-height:44px}
+  .sfMix .sfDaha{margin-top:0}
+  .sfMix .sfGrup{grid-template-columns:1fr}
+  .sfMix .sfKol+.sfKol{border-left:0;border-top:1px solid #b6b9bf}
+  .sfMix .sfAlt{grid-template-columns:1fr}
+  .sfMix .sfFd{grid-template-columns:104px auto 1fr}
+  .sfMix input,.sfMix select{font-size:16px;min-height:36px}
+  .sfMix .sfFader{height:120px}
+}
+.pencere.sfMix{box-sizing:border-box;max-width:100%}
+.sfMix *{box-sizing:border-box}
+.sfMix .sfSol,.sfMix .sfGrup,.sfMix .sfKol,.sfMix .sfAlt,.sfMix .sfFdlar,.sfMix .sfFd,.sfMix .sfZm{min-width:0}
+@media(max-width:620px){
+  .sfMix .sfGovde{padding:.6rem}
+  .sfMix .sfOrta{grid-template-columns:48px 1fr}
+  .sfMix .sfZ{max-width:100%}
+  .sfMix .sfSp .sfZ{max-width:none;width:calc(100% - 20px)}
+  .sfMix .sfSp{width:100%}
+  .sfMix .sfFd{grid-template-columns:1fr 1fr;grid-template-areas:"a a" "b c"}
+  .sfMix .sfFd label{grid-area:a}.sfMix .sfFd .sfSp{grid-area:b}.sfMix .sfFd .sfEg{grid-area:c;max-width:none;justify-self:stretch}
+  .sfMix .sfDbIn{width:64px}
+  .sfMix .sfZm label{grid-template-columns:1fr;gap:.1rem}
+  .sfMix .sfAl{font-size:11.5px}
+}
+@media(max-width:620px){.sfMix .sfBt{position:sticky;bottom:0;background:#f0f0f0;padding:.5rem 0;border-top:1px solid #c9c9c9;z-index:2}}

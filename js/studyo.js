@@ -365,7 +365,7 @@
         p.kayitta = false; kayit = null;
         if (Math.round(c.sampleRate) !== SR) { buf = yenidenOrnekle(buf.subarray(0, n), c.sampleRate); n = buf.length; }
         if (n < SR * 0.1) { toast('Kayıt çok kısa, alınmadı'); if (p.el.isConnected) { p.L = p.R = new Float32Array(SR * 2); p.bos = true; p.ovC = null; tumuGoster(p); } guncelle(); return; }
-        p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (otodan) { $('#otoSes').value = 'p' + p.id; otoOzet(); toast('Kayıt sesiniz olarak eklendi (' + sn(p.L.length / SR) + ' sn). “Otomatik hazırla”ya basabilirsiniz'); } guncelle();
+        p.L = p.R = buf.slice(0, n); p.kirli = true; p.ovC = null; p.imlec = 0; tumuGoster(p); odak(p); otoListeleri(); if (otodan) { $('#otoSes').value = 'p' + p.id; otoOzet(); toast('Sesiniz yüklendi. Müziği seçebilirsiniz.'); } guncelle();
       };
       kayit = K; $('#kayitBtn').classList.add('kayitta'); $('#kayitBtn').title = 'Kaydı bitir'; $('#otoKayit').textContent = '■ Kaydı bitir'; oynatIk(1);
       if (S.tab !== 'manuel' && S.tab !== 'oto') sekme('manuel');
@@ -1184,7 +1184,7 @@
   function otoOzet() {
     var a = $('#otoSes'), m = $('#otoMuzik'), t1 = $('#otoSesSecili'), t2 = $('#otoMuzikSecili'); if (!a || !m || !t1 || !t2) return;
     var o1 = a.selectedOptions && a.selectedOptions[0], o2 = m.selectedOptions && m.selectedOptions[0];
-    var s1 = a.value && o1 ? o1.textContent.replace(/^Yüklü dosya: /, '') : '', s2 = m.value && o2 ? o2.textContent.replace(/^(Banka|Yüklü dosya): /, '') : '';
+    var s1 = a.value && o1 ? o1.textContent.replace(/^Yüklü dosya: /, '') : '', s2 = m.value && o2 ? o2.textContent.replace(/^(Banka|Yüklü dosya): /, '') : ''; if (/^Kayıt \d+$/.test(s1)) s1 = 'Sesiniz yüklendi';
     if (t1.textContent !== (s1 || 'Henüz ses yok')) { t1.textContent = s1 || 'Henüz ses yok'; t1.classList.toggle('dolu', !!s1); }
     if (t2.textContent !== (s2 || 'Müziksiz')) { t2.textContent = s2 || 'Müziksiz'; t2.classList.toggle('dolu', !!s2); bankaCiz(); }
     var tm = $('#mTemiz'); if (tm) tm.style.display = s2 ? '' : 'none';

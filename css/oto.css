@@ -44,7 +44,11 @@ body.st:not(.tManuel) .sekmeler .hizli{display:none}
 #p-oto .spListe{display:grid;gap:.1rem;max-height:250px;overflow:auto;margin-top:.5rem}
 #p-oto .spRow{display:flex;align-items:center;gap:.7rem;padding:.45rem .4rem;border-radius:10px}
 #p-oto .spRow:hover{background:#f7f8fa}
-#p-oto .spRow.sec{background:#f3f4f6}
+#p-oto .spRow.sec{background:#eef2ff;box-shadow:inset 3px 0 0 #2b3cff}
+#p-oto .spRow.cal{background:#fff7ed;box-shadow:inset 3px 0 0 #ff6a1f}
+#p-oto .spRow.sec.cal{background:#fff7ed}
+#p-oto .spRow.sec .spSec{background:#2b3cff;border-color:#2b3cff;color:#fff}
+#p-oto .spRow.cal .spPlay{background:#ff6a1f}
 #p-oto .spPlay{width:32px;height:32px;border-radius:50%;border:0;background:#0b0b0f;color:#fff;cursor:pointer;font-size:12px;flex:none}
 #p-oto .spPlay:hover{background:#374151}
 #p-oto .spAd{flex:1;min-width:0}
@@ -101,3 +105,6 @@ body.st:not(.tManuel) .sekmeler .hizli{display:none}
 #p-oto .kMetre{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden}
 #p-oto .kMetre i{display:block;height:100%;width:0;background:#16a34a;border-radius:99px;transition:width .06s}
 #p-oto .kayitPanel .btnler{display:flex;gap:.5rem;justify-content:center;margin:0}
+
+#p-oto #mCalSec{margin-left:auto;margin-right:.5rem}
+#p-oto #mCalSec.cal{background:#ff6a1f}

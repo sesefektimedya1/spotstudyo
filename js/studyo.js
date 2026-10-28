@@ -1455,9 +1455,10 @@
     var l = $('#muzikListe'); if (!l) return;
     var ara = (($('#mAra') || {}).value || '').toLowerCase(), fl = BZ.filtre, turler = [], sec = $('#otoMuzik').value;
     S.kut.muzikler.forEach(function (m) { var t = m.etiket || m.tur || 'Diğer'; if (turler.indexOf(t) < 0) turler.push(t); });
+    var KS = ['Duygusal', 'Şiir', 'Fon müziği', 'Kampanya / İndirim', 'Haber', 'Eğlenceli', 'Kurumsal', 'Dini / Ramazan', 'Yavaş', 'Hareketli']; turler.sort(function (a, b) { var x = KS.indexOf(a), y = KS.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b, 'tr'); });
     $('#mFiltre').innerHTML = turler.length > 1 ? ['Tümü'].concat(turler).map(function (t) { return '<button type="button" class="chip' + ((fl || 'Tümü') === t ? ' acik' : '') + '" data-b="mflt" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') : '';
     var ml = S.kut.muzikler.map(function (m, i) { return { m: m, i: i }; }).filter(function (z) { var t = z.m.etiket || z.m.tur || 'Diğer'; return (!fl || fl === 'Tümü' || t === fl) && (!ara || z.m.ad.toLowerCase().indexOf(ara) > -1); });
-    l.innerHTML = ml.length ? ml.map(function (z) { var sc = sec === 'k' + z.i; return '<div class="spRow' + (sc ? ' sec' : '') + '"><button type="button" class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="Dinle" aria-label="Dinle">▶</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(z.m.etiket || z.m.tur || '') + '</small></div><button type="button" class="btn kucuk spSec" data-b="mekle" data-i="' + z.i + '">' + (sc ? 'Seçildi' : 'Seç') + '</button></div>'; }).join('') : '<div class="bosListe">' + (S.kut.muzikler.length ? 'Aramanıza uyan müzik yok.' : 'Müzik kütüphanesi henüz boş.') + '</div>';
+    l.innerHTML = ml.length ? ml.map(function (z) { var sc = sec === 'k' + z.i, cl = BZ.son === 'muzikler' + z.i; return '<div class="spRow' + (sc ? ' sec' : '') + (cl ? ' cal' : '') + '"><button type="button" class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="' + (cl ? 'Durdur' : 'Dinle') + '" aria-label="' + (cl ? 'Durdur' : 'Dinle') + '" aria-pressed="' + (cl ? 'true' : 'false') + '">' + (cl ? '■' : '▶') + '</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(z.m.etiket || z.m.tur || '') + '</small></div><button type="button" class="btn kucuk spSec" data-b="mekle" data-i="' + z.i + '">' + (sc ? '✓ Seçildi' : 'Seç') + '</button></div>'; }).join('') : '<div class="bosListe">' + (S.kut.muzikler.length ? 'Aramanıza uyan müzik yok.' : 'Müzik kütüphanesi henüz boş.') + '</div>';
   }
   function otoOzet() {
     var a = $('#otoSes'), m = $('#otoMuzik'), t1 = $('#otoSesSecili'), t2 = $('#otoMuzikSecili'); if (!a || !m || !t1 || !t2) return;
@@ -1466,9 +1467,13 @@
     if (t1.textContent !== (s1 || 'Henüz ses yok')) { t1.textContent = s1 || 'Henüz ses yok'; t1.classList.toggle('dolu', !!s1); }
     if (t2.textContent !== (s2 || 'Müziksiz')) { t2.textContent = s2 || 'Müziksiz'; t2.classList.toggle('dolu', !!s2); bankaCiz(); }
     var tm = $('#mTemiz'); if (tm) tm.style.display = s2 ? '' : 'none';
+    /* müzik seçilince liste ve yükleme kutusu kapanır; yalnızca seçilen müzik (dinle / değiştir) kalır */
+    var mk = $('#p-oto .muzikKutu'), dzm = $('#dzMuzik'), cs = $('#mCalSec'), mi = /^k(\d+)$/.exec(m.value || '');
+    if (mk) { mk.style.display = s2 ? 'none' : ''; if (!s2 && BZ.secVardi) mk.open = true; } if (dzm) dzm.style.display = s2 ? 'none' : ''; BZ.secVardi = !!s2;
+    if (cs) { cs.style.display = mi ? '' : 'none'; if (mi) { var cl2 = BZ.son === 'muzikler' + mi[1]; cs.dataset.i = mi[1]; cs.textContent = cl2 ? '■' : '▶'; cs.title = cs.ariaLabel = cl2 ? 'Durdur' : 'Dinle'; cs.classList.toggle('cal', cl2); } }
     a.style.display = a.options.length > 1 ? '' : 'none';
   }
-  setInterval(otoOzet, 500);
+  setInterval(function () { otoOzet(); var cur = (S.mzCal && S.cal && S.cal === S.mzKaynak) ? S.mzCal : null; if (cur !== (BZ.son || null)) { BZ.son = cur; if (!cur) S.mzCal = null; try { bankaCiz(); } catch (e) {} } }, 500);
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-b="mekle"],[data-b="mflt"],[data-b="mtemiz"]') : null; if (!b) return; var v = b.dataset.b, sl = $('#otoMuzik');
     if (v === 'mekle') { var k = 'k' + b.dataset.i; sl.value = sl.value === k ? '' : k; bankaCiz(); otoOzet(); }
@@ -1479,7 +1484,13 @@
   document.addEventListener('click', async function (e) {
     var b = e.target.closest ? e.target.closest('[data-b]') : null; if (!b) return; var i = +b.dataset.i, v = b.dataset.b;
     try {
-      if (v === 'cal') { var s = await bankaDizi(b.dataset.t, i); calDizi(s.L, s.R === s.L ? null : s.R, null, 0); }
+      if (v === 'cal') {
+        var key = b.dataset.t + i;
+        if (S.mzCal === key && S.cal && S.cal === S.mzKaynak) { durdur(); S.mzCal = null; BZ.son = null; bankaCiz(); return; }
+        if (BZ.yuk) return; BZ.yuk = true;
+        try { var s = await bankaDizi(b.dataset.t, i); calDizi(s.L, s.R === s.L ? null : s.R, null, 0, function () { if (S.mzCal === key) { S.mzCal = null; BZ.son = null; bankaCiz(); } }); } finally { BZ.yuk = false; }
+        if (b.dataset.t === 'muzikler') { S.mzCal = key; S.mzKaynak = S.cal; BZ.son = key; bankaCiz(); }
+      }
       else if (v === 'ac') { var s2 = await bankaDizi('muzikler', i); pencereAc(S.kut.muzikler[i].ad, s2.L.slice(), s2.R === s2.L ? null : s2.R.slice(), 'ses'); otoListeleri(); sekme('manuel'); }
     } catch (er) { hata(er); }
   });

@@ -37,9 +37,9 @@ body.st:not(.tManuel) .sekmeler .hizli{display:none}
 #p-oto .muzikKutu[open] summary::after{content:'▴'}
 #p-oto .muzikIc{padding:0 1rem 1rem}
 #p-oto #mAra{width:100%;box-sizing:border-box}
-#p-oto .chipler{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0 .3rem}
+#p-oto .chipler{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin:.6rem 0 .3rem}@media(max-width:640px){#p-oto .chipler{grid-template-columns:repeat(2,1fr)}#p-oto .chipler .chip{font-size:12.5px;padding:.25rem .4rem;border-radius:16px}}
 #p-oto .chipler:empty{display:none}
-#p-oto .chip{border:1px solid #e0e3e8;background:#fff;border-radius:999px;padding:.25rem .8rem;font-size:13px;cursor:pointer;color:#0b0b0f;font-family:inherit}
+#p-oto .chip{text-align:center;line-height:1.15;display:flex;align-items:center;justify-content:center;min-height:2.1rem;border:1px solid #e0e3e8;background:#fff;border-radius:999px;padding:.25rem .8rem;font-size:13px;cursor:pointer;color:#0b0b0f;font-family:inherit}
 #p-oto .chip.acik{background:#0b0b0f;color:#fff;border-color:#0b0b0f}
 #p-oto .spListe{display:grid;gap:.1rem;max-height:250px;overflow:auto;margin-top:.5rem}
 #p-oto .spRow{display:flex;align-items:center;gap:.7rem;padding:.45rem .4rem;border-radius:10px}

@@ -109,7 +109,7 @@
     ic.insertAdjacentHTML('afterbegin', '<div style="display:flex;gap:.6rem;margin-bottom:1rem"><button class="btn kucuk' + (t === 'sesler' ? ' ana' : '') + '" data-kt="sesler">Seslendirmen örnekleri</button><button class="btn kucuk' + (t === 'muzikler' ? ' ana' : '') + '" data-kt="muzikler">Müzikler</button></div>');
     $$('[data-kt]', ic).forEach(function (b) { b.onclick = function () { kutupSayfa(b.dataset.kt); }; });
   }
-  var KATEGORILER = ['Duygusal', 'Şiir', 'Fon müziği', 'Dini / Ramazan', 'Kampanya / İndirim', 'Santral müziği', 'Reklam müziği', 'Reklam filmi müziği', 'Radyo spotu', 'Haber', 'Eğlenceli', 'Kurumsal', 'Modern', 'Klasik', 'Türkü / Halk', 'Pop', 'Elektronik', 'Dramatik', 'Yavaş', 'Hareketli'];
+  var KATEGORILER = ['Duygusal', 'Şiir', 'Fon müziği', 'Dini / Ramazan', 'Kampanya / İndirim', 'Santral müziği', 'Reklam müziği', 'Reklam filmi müziği', 'Radyo spotu', 'Tanıtım filmi', 'Jingle', 'Anons', 'Haber', 'Özel gün', 'Eğlenceli', 'Kurumsal', 'Modern', 'Klasik', 'Türkü / Halk', 'Pop', 'Elektronik', 'Dramatik', 'Yavaş', 'Hareketli'];
   /* Çoklu kategori: birden çok kutu işaretlenir, "Duygusal, Fon müziği" gibi tek satır olarak saklanır */
   function katCok(id, deger) {
     var cur = String(deger || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean), all = KATEGORILER.slice(); cur.forEach(function (c) { if (all.indexOf(c) < 0) all.push(c); });

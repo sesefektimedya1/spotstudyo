@@ -1449,17 +1449,17 @@
     try { S.kut.muzikler = await Veri.liste('muzikler'); } catch (e) { S.kut.muzikler = []; }
     otoListeleri();
   }
-  var BZ = { filtre: '', ay: {} };
+  var BZ = { filtre: 'Radyo spotu', ay: {} };
   Veri.ayarlar().then(function (a) { BZ.ay = a || {}; try { bankaCiz(); } catch (e) {} try { yzCiz(); } catch (e) {} }).catch(function () {});
   function bankaCiz() {
     var l = $('#muzikListe'); if (!l) return;
     var ara = (($('#mAra') || {}).value || '').toLowerCase(), fl = BZ.filtre, turler = [], sec = $('#otoMuzik').value;
-    function etk(m) { var l = String(m.etiket || m.tur || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); return l.length ? l : ['Diğer']; }
+    function etk(m) { var l = String(m.etiket || m.tur || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); return l; }
     S.kut.muzikler.forEach(function (m) { etk(m).forEach(function (t) { if (turler.indexOf(t) < 0) turler.push(t); }); });
-    var KS = ['Duygusal', 'Şiir', 'Fon müziği', 'Dini / Ramazan', 'Kampanya / İndirim', 'Santral müziği', 'Reklam müziği', 'Reklam filmi müziği', 'Radyo spotu', 'Haber', 'Eğlenceli', 'Kurumsal', 'Modern', 'Klasik', 'Türkü / Halk', 'Pop', 'Elektronik', 'Dramatik', 'Yavaş', 'Hareketli']; turler.sort(function (a, b) { var x = KS.indexOf(a), y = KS.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b, 'tr'); });
-    $('#mFiltre').innerHTML = turler.length > 1 ? ['Tümü'].concat(turler).map(function (t) { return '<button type="button" class="chip' + ((fl || 'Tümü') === t ? ' acik' : '') + '" data-b="mflt" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') : '';
-    var ml = S.kut.muzikler.map(function (m, i) { return { m: m, i: i }; }).filter(function (z) { return (!fl || fl === 'Tümü' || etk(z.m).indexOf(fl) > -1) && (!ara || z.m.ad.toLowerCase().indexOf(ara) > -1); });
-    l.innerHTML = ml.length ? ml.map(function (z) { var sc = sec === 'k' + z.i, cl = BZ.son === 'muzikler' + z.i; return '<div class="spRow' + (sc ? ' sec' : '') + (cl ? ' cal' : '') + '"><button type="button" class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="' + (cl ? 'Durdur' : 'Dinle') + '" aria-label="' + (cl ? 'Durdur' : 'Dinle') + '" aria-pressed="' + (cl ? 'true' : 'false') + '">' + (cl ? '■' : '▶') + '</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(String(z.m.etiket || z.m.tur || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean).join(' · ')) + '</small></div><button type="button" class="btn kucuk spSec" data-b="mekle" data-i="' + z.i + '">' + (sc ? '✓ Seçildi' : 'Seç') + '</button></div>'; }).join('') : '<div class="bosListe">' + (S.kut.muzikler.length ? 'Aramanıza uyan müzik yok.' : 'Müzik kütüphanesi henüz boş.') + '</div>';
+    var KS = ['Duygusal', 'Şiir', 'Fon müziği', 'Dini / Ramazan', 'Kampanya / İndirim', 'Santral müziği', 'Reklam müziği', 'Reklam filmi müziği', 'Radyo spotu', 'Tanıtım filmi', 'Jingle', 'Anons', 'Haber', 'Özel gün', 'Eğlenceli', 'Kurumsal', 'Modern', 'Klasik', 'Türkü / Halk', 'Pop', 'Elektronik', 'Dramatik', 'Yavaş', 'Hareketli']; turler.sort(function (a, b) { var x = KS.indexOf(a), y = KS.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || a.localeCompare(b, 'tr'); });
+    var tum = KS.concat(turler.filter(function (t) { return KS.indexOf(t) < 0; })); $('#mFiltre').innerHTML = tum.map(function (t) { return '<button type="button" class="chip' + (fl === t ? ' acik' : '') + '" data-b="mflt" data-v="' + esc(t) + '" aria-pressed="' + (fl === t ? 'true' : 'false') + '">' + esc(t) + '</button>'; }).join('');
+    var ml = S.kut.muzikler.map(function (m, i) { return { m: m, i: i }; }).filter(function (z) { return (!fl || etk(z.m).indexOf(fl) > -1) && (!ara || z.m.ad.toLowerCase().indexOf(ara) > -1); });
+    l.innerHTML = ml.length ? ml.map(function (z) { var sc = sec === 'k' + z.i, cl = BZ.son === 'muzikler' + z.i; return '<div class="spRow' + (sc ? ' sec' : '') + (cl ? ' cal' : '') + '"><button type="button" class="spPlay" data-b="cal" data-t="muzikler" data-i="' + z.i + '" title="' + (cl ? 'Durdur' : 'Dinle') + '" aria-label="' + (cl ? 'Durdur' : 'Dinle') + '" aria-pressed="' + (cl ? 'true' : 'false') + '">' + (cl ? '■' : '▶') + '</button><div class="spAd"><b>' + esc(z.m.ad) + '</b><small>' + esc(String(z.m.etiket || z.m.tur || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean).join(' · ')) + '</small></div><button type="button" class="btn kucuk spSec" data-b="mekle" data-i="' + z.i + '">' + (sc ? '✓ Seçildi' : 'Seç') + '</button></div>'; }).join('') : '<div class="bosListe">' + (S.kut.muzikler.length ? ((fl && !ara) ? 'Bu kategoride henüz müzik yok. Başka bir kategori seçin ya da seçili kategoriye tekrar basıp hepsini görün.' : 'Aramanıza uyan müzik yok.') : 'Müzik kütüphanesi henüz boş.') + '</div>';
   }
   function otoOzet() {
     var a = $('#otoSes'), m = $('#otoMuzik'), t1 = $('#otoSesSecili'), t2 = $('#otoMuzikSecili'); if (!a || !m || !t1 || !t2) return;
@@ -1478,7 +1478,7 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-b="mekle"],[data-b="mflt"],[data-b="mtemiz"]') : null; if (!b) return; var v = b.dataset.b, sl = $('#otoMuzik');
     if (v === 'mekle') { var k = 'k' + b.dataset.i; sl.value = sl.value === k ? '' : k; bankaCiz(); otoOzet(); }
-    else if (v === 'mflt') { BZ.filtre = b.dataset.v; bankaCiz(); }
+    else if (v === 'mflt') { BZ.filtre = BZ.filtre === b.dataset.v ? '' : b.dataset.v; bankaCiz(); }
     else { sl.value = ''; bankaCiz(); otoOzet(); }
   });
   $('#mAra').addEventListener('input', bankaCiz);

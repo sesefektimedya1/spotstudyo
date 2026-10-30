@@ -1,6 +1,37 @@
 /* Ortak: üst çubuk, uyarı, oturum koruması */
 (function () {
   'use strict';
+  /* Anonim ziyaret ölçümü: çerez yok, kimlik bilgisi yok. Kendi cihazınızı saymamak için bir kez sesefekti.com/?takipyok=1 açın (geri almak için ?takipyok=0). */
+  (function () {
+    try {
+      var C = window.SPOT_CONFIG || {};
+      if (location.protocol === 'file:' || !C.SUPABASE_URL) return;
+      var host = location.hostname; if (host !== 'sesefekti.com' && host !== 'www.sesefekti.com') return;
+      var q = new URLSearchParams(location.search);
+      try { if (q.get('takipyok') === '1') localStorage.setItem('takip_yok', '1'); if (q.get('takipyok') === '0') localStorage.removeItem('takip_yok'); } catch (e) {}
+      try { if (localStorage.getItem('takip_yok') === '1') return; } catch (e) {}
+      var sayfa = (location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/').slice(0, 100);
+      if (sayfa.indexOf('yonetim') > -1) return;
+      var oturum = '', kaynak = '', ortam = '', kampanya = '';
+      try { oturum = sessionStorage.getItem('t_o') || ''; kaynak = sessionStorage.getItem('t_k') || ''; ortam = sessionStorage.getItem('t_m') || ''; kampanya = sessionStorage.getItem('t_c') || ''; } catch (e) {}
+      if (!oturum) oturum = Math.random().toString(36).slice(2, 12) + Date.now().toString(36).slice(-4);
+      if (!kaynak) {
+        var rh = ''; try { rh = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : ''; } catch (e) {}
+        if (rh === 'sesefekti.com') rh = '';
+        kaynak = String(q.get('utm_source') || rh || 'dogrudan').toLowerCase().slice(0, 60);
+        ortam = String(q.get('utm_medium') || '').toLowerCase().slice(0, 40);
+        kampanya = String(q.get('utm_campaign') || '').toLowerCase().slice(0, 60);
+        try { sessionStorage.setItem('t_k', kaynak); sessionStorage.setItem('t_m', ortam); sessionStorage.setItem('t_c', kampanya); } catch (e) {}
+      }
+      try { sessionStorage.setItem('t_o', oturum); } catch (e) {}
+      var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+      fetch(C.SUPABASE_URL + '/rest/v1/ziyaretler', {
+        method: 'POST', keepalive: true,
+        headers: { apikey: C.SUPABASE_ANON_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ oturum: oturum, sayfa: sayfa, kaynak: kaynak, ortam: ortam || null, kampanya: kampanya || null, dil: window.DIL || null, tarayici_dil: String(navigator.language || '').slice(0, 12) || null, saat_dilimi: tz.slice(0, 60) || null, cihaz: (window.innerWidth || 1000) < 820 ? 'mobil' : 'masaustu' })
+      }).catch(function () {});
+    } catch (e) {}
+  })();
   window.$ = function (s, k) { return (k || document).querySelector(s); };
   window.$$ = function (s, k) { return Array.prototype.slice.call((k || document).querySelectorAll(s)); };
   window.esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -31,7 +62,7 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 88, gosterildi = false, ilkKontrol = true;
+      var SURUM = 89, gosterildi = false, ilkKontrol = true;
       async function yenile() {
         try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) {}
         try { if (navigator.serviceWorker) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.update(); })); } } catch (e) {}

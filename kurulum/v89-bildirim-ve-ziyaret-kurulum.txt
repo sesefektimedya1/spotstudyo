@@ -1,0 +1,137 @@
+-- Ses Efekti: v89 - telefona bildirim (ntfy) + anonim ziyaret ölçümü
+-- Supabase proje kimliği: ojkbdqukjdblvhnyznuf  (adres çubuğundaki proje kimliğiyle karşılaştırın)
+-- Supabase > SQL Editor > New query > tamamını yapıştırın > RUN.
+-- Ne yapar:
+--   1) Yeni üye, yeni paket başvurusu ve yeni geri bildirimde telefonunuza anında bildirim gönderir.
+--   2) Siteye gelen ziyaretleri (sayfa, kaynak, dil, cihaz) anonim olarak kaydeder.
+--   3) Günde 4 kez (TR saatiyle 09:00, 13:00, 18:00, 22:00) ziyaret özeti bildirimi gönderir.
+-- Bildirim mesajlarında e-posta, ad ya da telefon YOKTUR; yalnızca sayılar yazar.
+
+create extension if not exists pg_net with schema extensions;
+create extension if not exists pg_cron with schema pg_catalog;
+
+-- 1) Bildirim konusu (ntfy uygulamasında bu adı abone olun)
+insert into public.ayarlar (anahtar, deger) values ('ntfy_konu', 'sesefekti-qw8nyr6ojn3r')
+on conflict (anahtar) do update set deger = excluded.deger;
+
+-- 2) Bildirim gönderen fonksiyon (hata verirse üyeliği/başvuruyu engellemez)
+create or replace function public.ntfy_gonder(p_baslik text, p_mesaj text, p_etiket text default 'bell')
+returns void language plpgsql security definer set search_path = public, extensions, net as
+$$
+declare konu text;
+begin
+  select deger into konu from public.ayarlar where anahtar = 'ntfy_konu';
+  if konu is null or konu = '' then return; end if;
+  perform net.http_post(
+    url := 'https://ntfy.sh/',
+    body := jsonb_build_object('topic', konu, 'title', p_baslik, 'message', p_mesaj, 'tags', jsonb_build_array(p_etiket)),
+    headers := '{"Content-Type":"application/json"}'::jsonb
+  );
+exception when others then
+  null;
+end
+$$;
+
+-- 3) Ziyaret tablosu (yalnızca anonim sayaç bilgileri)
+create table if not exists public.ziyaretler (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  oturum text not null check (char_length(oturum) <= 40),
+  sayfa text not null check (char_length(sayfa) <= 100),
+  kaynak text not null check (char_length(kaynak) <= 60),
+  ortam text check (ortam is null or char_length(ortam) <= 40),
+  kampanya text check (kampanya is null or char_length(kampanya) <= 60),
+  dil text check (dil is null or char_length(dil) <= 8),
+  tarayici_dil text check (tarayici_dil is null or char_length(tarayici_dil) <= 12),
+  saat_dilimi text check (saat_dilimi is null or char_length(saat_dilimi) <= 60),
+  cihaz text check (cihaz is null or char_length(cihaz) <= 12)
+);
+create index if not exists ziyaretler_zaman on public.ziyaretler (created_at);
+
+alter table public.ziyaretler enable row level security;
+drop policy if exists ziyaret_ekle on public.ziyaretler;
+create policy ziyaret_ekle on public.ziyaretler for insert to anon, authenticated with check (true);
+drop policy if exists ziyaret_oku on public.ziyaretler;
+create policy ziyaret_oku on public.ziyaretler for select to authenticated using (public.is_admin());
+
+-- 4) Anında bildirimler
+create or replace function public.bildir_yeni_uye() returns trigger language plpgsql security definer set search_path = public as
+$$
+declare n int;
+begin
+  select count(*) into n from public.profiles;
+  perform public.ntfy_gonder('Yeni üye geldi', 'Toplam üye sayısı: ' || n, 'tada');
+  return new;
+end
+$$;
+drop trigger if exists bildir_yeni_uye_t on public.profiles;
+create trigger bildir_yeni_uye_t after insert on public.profiles for each row execute function public.bildir_yeni_uye();
+
+create or replace function public.bildir_yeni_basvuru() returns trigger language plpgsql security definer set search_path = public as
+$$
+begin
+  perform public.ntfy_gonder('Yeni paket başvurusu', 'Paket: ' || coalesce(new.paket::text, '-') || ' | Panelden onaylayın', 'moneybag');
+  return new;
+end
+$$;
+drop trigger if exists bildir_yeni_basvuru_t on public.paket_basvurulari;
+create trigger bildir_yeni_basvuru_t after insert on public.paket_basvurulari for each row execute function public.bildir_yeni_basvuru();
+
+create or replace function public.bildir_yeni_geri_bildirim() returns trigger language plpgsql security definer set search_path = public as
+$$
+begin
+  perform public.ntfy_gonder('Yeni geri bildirim', 'Tür: ' || coalesce(new.tur::text, '-'), 'speech_balloon');
+  return new;
+end
+$$;
+drop trigger if exists bildir_yeni_gb_t on public.geri_bildirimler;
+create trigger bildir_yeni_gb_t after insert on public.geri_bildirimler for each row execute function public.bildir_yeni_geri_bildirim();
+
+-- 5) Ziyaret özeti (son özetten bu yana)
+create or replace function public.ntfy_ozet() returns void language plpgsql security definer set search_path = public as
+$$
+declare
+  son timestamptz; zi int; ben int; uye int; kay text; say text; ulk text; mob int; msg text;
+begin
+  select coalesce((select deger::timestamptz from public.ayarlar where anahtar = 'ozet_son'), now() - interval '6 hours') into son;
+
+  select count(*), count(distinct oturum) into zi, ben from public.ziyaretler where created_at > son;
+  select count(*) into uye from public.profiles where created_at > son;
+  select count(distinct oturum) into mob from public.ziyaretler where created_at > son and cihaz = 'mobil';
+
+  select string_agg(kaynak || ' ' || n, ', ' order by n desc) into kay from (
+    select kaynak, count(distinct oturum) n from public.ziyaretler where created_at > son group by kaynak order by n desc limit 5) x;
+  select string_agg(sayfa || ' ' || n, ', ' order by n desc) into say from (
+    select sayfa, count(*) n from public.ziyaretler where created_at > son group by sayfa order by n desc limit 5) x;
+  select string_agg(ul || ' ' || n, ', ' order by n desc) into ulk from (
+    select case when saat_dilimi like 'Europe/Istanbul' or saat_dilimi like 'Asia/Istanbul' then 'Turkiye' else coalesce(nullif(saat_dilimi, ''), 'bilinmiyor') end ul, count(distinct oturum) n
+    from public.ziyaretler where created_at > son group by 1 order by n desc limit 5) x;
+
+  msg := to_char(son at time zone 'Europe/Istanbul', 'DD.MM HH24:MI') || ' ile simdi arasi' || E'\n'
+      || 'Ziyaretci: ' || ben || ' (mobil ' || mob || ') | Sayfa gosterimi: ' || zi || E'\n'
+      || 'Yeni uye: ' || uye || E'\n'
+      || 'Nereden: ' || coalesce(kay, '-') || E'\n'
+      || 'Sayfalar: ' || coalesce(say, '-') || E'\n'
+      || 'Ulke/saat dilimi: ' || coalesce(ulk, '-');
+
+  perform public.ntfy_gonder('Ses Efekti ozet', msg, 'bar_chart');
+  insert into public.ayarlar (anahtar, deger) values ('ozet_son', now()::text)
+  on conflict (anahtar) do update set deger = excluded.deger;
+end
+$$;
+
+-- 6) Zamanlama (UTC saatleri: 06, 10, 15, 19 = TR saatiyle 09, 13, 18, 22)
+do $$
+declare j record;
+begin
+  for j in select jobid from cron.job where jobname like 'sesefekti-ozet%' loop
+    perform cron.unschedule(j.jobid);
+  end loop;
+end $$;
+select cron.schedule('sesefekti-ozet-1', '0 6 * * *',  $$select public.ntfy_ozet()$$);
+select cron.schedule('sesefekti-ozet-2', '0 10 * * *', $$select public.ntfy_ozet()$$);
+select cron.schedule('sesefekti-ozet-3', '0 15 * * *', $$select public.ntfy_ozet()$$);
+select cron.schedule('sesefekti-ozet-4', '0 19 * * *', $$select public.ntfy_ozet()$$);
+
+-- 7) Deneme: RUN'dan sonra telefonunuza "Deneme" bildirimi gelmelidir
+select public.ntfy_gonder('Deneme', 'Ses Efekti bildirimi calisiyor', 'white_check_mark');

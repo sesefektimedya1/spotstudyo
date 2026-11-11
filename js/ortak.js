@@ -62,7 +62,7 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 89, gosterildi = false, ilkKontrol = true;
+      var SURUM = 90, gosterildi = false, ilkKontrol = true;
       async function yenile() {
         try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) {}
         try { if (navigator.serviceWorker) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.update(); })); } } catch (e) {}
@@ -137,9 +137,13 @@
     h += '</header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
     $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });
-    if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; var tn = (aktif === '' || aktif === 'hakkimizda' || aktif === 'kvkk' || aktif === 'sozlesme' || aktif === 'iade' || aktif === 'paketler'); ab.innerHTML = (tn ? '<a href="hakkimizda">Hakkımızda</a> · <a href="kvkk">Gizlilik ve KVKK</a> · <a href="sozlesme">Mesafeli satış sözleşmesi</a> · <a href="iade">İptal ve iade</a> · <a href="mailto:sesefektimedya@gmail.com">İletişim</a><br>' : '') + '© 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
+    if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; var tn = (aktif === '' || aktif === 'hakkimizda' || aktif === 'kvkk' || aktif === 'sozlesme' || aktif === 'iade' || aktif === 'paketler'); ab.innerHTML = window.odemeSeridi() + (tn ? '<a href="hakkimizda">Hakkımızda</a> · <a href="kvkk">Gizlilik ve KVKK</a> · <a href="sozlesme">Mesafeli satış sözleşmesi</a> · <a href="iade">Teslimat ve iade şartları</a> · <a href="mailto:sesefektimedya@gmail.com">İletişim</a><br>' : '') + '© 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
     var gb = $('#gbBtn'); if (gb) gb.onclick = function () { geriBildirimAc(aktif); };
     var c = $('#cikisBtn'); if (c) c.onclick = async function () { await Veri.cikis(); location.href = './'; };
+  };
+  /* Ödeme şeridi: iyzico ile Öde + Mastercard, Visa, American Express, Troy (iyzico'nun resmî logo bandı). Koyu zeminde okunsun diye beyaz kutu içinde. */
+  window.odemeSeridi = function (kucuk) {
+    return '<div class="odS' + (kucuk ? ' ic' : '') + '"><img src="img/odeme-bandi.svg?v=90" width="429" height="32" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy ile güvenli ödeme" loading="lazy"></div>';
   };
   window.korumali = async function (aktif, yonetici) {
     var o = await Veri.oturum();

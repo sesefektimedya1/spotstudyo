@@ -73,3 +73,7 @@ th{color:var(--sol);font-weight:500}
 .hkSayfa h2{font-size:1.15rem;margin:1.4rem 0 .4rem}#altBilgi a{color:inherit;text-decoration:underline}
 .ust .logo{display:inline-flex;align-items:center}.ust .logo b{line-height:1;display:block}.ust .logo span{line-height:1}
 .ust .logo b{position:relative;top:.1em}
+
+#altBilgi .odS,.odS{display:block;width:fit-content;max-width:calc(100% - 2rem);margin:0 auto 1rem;background:#fff;border-radius:10px;padding:.55rem .9rem;line-height:0}
+.odS img{display:block;width:380px;max-width:100%;height:auto}
+.odS.ic{margin:.7rem 0;margin-left:0}.odS.ic img{width:330px}

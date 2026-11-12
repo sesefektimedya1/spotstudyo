@@ -62,7 +62,7 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 92, gosterildi = false, ilkKontrol = true;
+      var SURUM = 93, gosterildi = false, ilkKontrol = true;
       async function yenile() {
         try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) {}
         try { if (navigator.serviceWorker) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.update(); })); } } catch (e) {}
@@ -147,7 +147,7 @@
   };
   /* Ödeme şeridi: iyzico ile Öde + Mastercard, Visa, American Express, Troy (iyzico'nun resmî logo bandı). Koyu zeminde okunsun diye beyaz kutu içinde. */
   window.odemeSeridi = function (kucuk) {
-    return '<div class="odS' + (kucuk ? ' ic' : '') + '"><img src="img/odeme-bandi.svg?v=92" width="429" height="32" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy ile güvenli ödeme" loading="lazy"></div>';
+    return '<div class="odS' + (kucuk ? ' ic' : '') + '"><img src="img/odeme-bandi.svg?v=93" width="429" height="32" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy ile güvenli ödeme" loading="lazy"></div>';
   };
   window.korumali = async function (aktif, yonetici) {
     var o = await Veri.oturum();

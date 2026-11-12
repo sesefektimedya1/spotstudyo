@@ -8,7 +8,7 @@
 
   var A = {}; try { A = await Veri.ayarlar(); } catch (e) {}
   var pay = (A.pay_yuzde === '' || A.pay_yuzde == null || isNaN(+A.pay_yuzde)) ? 80 : +A.pay_yuzde, kom = Math.round((100 - pay) * 100) / 100;
-  var KUL = ['Radyo', 'TV', 'Santral', 'Reklam', 'Jingle', 'Videolu anlatım', 'Sesli kitap', 'Dublaj', 'Diğer'];
+  var KUL = ['Radyo spotu', 'TV spotu', 'Santral anonsu', 'Reklam', 'Jingle', 'Videolu anlatım', 'Sesli kitap', 'Dublaj', 'Diğer'];
   var TES = [[1, '1 saat içinde (acil)'], [24, '24 saat içinde'], [72, '3 gün içinde'], [168, '7 gün içinde']];
   function tl(n) { return (+n || 0).toLocaleString('tr-TR') + ' TL'; }
   function opt(L, sec) { return L.map(function (x) { return '<option value="' + x[0] + '"' + (String(sec == null ? '' : sec) === String(x[0]) ? ' selected' : '') + '>' + x[1] + '</option>'; }).join(''); }

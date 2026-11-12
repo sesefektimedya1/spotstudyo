@@ -10,6 +10,8 @@
   function ilk(ad) { var p = String(ad || '?').trim().split(/\s+/); return ((p[0] || '?').charAt(0) + (p[1] ? p[1].charAt(0) : '')).toLocaleUpperCase('tr-TR'); }
   function teslimYaz(s) { s = +s; if (!s) return ''; if (TESLIM[s]) return TESLIM[s]; if (s < 24) return s + ' saat içinde'; return Math.round(s / 24) + ' gün içinde'; }
   function liste(x) { return String(x || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); }
+  var KUL = ['Radyo spotu', 'TV spotu', 'Santral anonsu', 'Reklam', 'Jingle', 'Videolu anlatım', 'Sesli kitap', 'Dublaj', 'Diğer'], KALIAS = { 'Radyo': 'Radyo spotu', 'TV': 'TV spotu', 'Santral': 'Santral anonsu' };
+  function kulListe(k) { return liste(k.kullanim).map(function (x) { return KALIAS[x] || x; }); }
   function renk(i) { return RENK[i % RENK.length]; }
 
   /* Tek ses çalar: aynı anda tek kart çalar. Bağlantı tıklanınca alınır (120 sn geçerli). */
@@ -34,7 +36,7 @@
   var IC_OYNAT = '<svg class="oy" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><svg class="dur" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>';
 
   function kartHtml(k, i) {
-    var r = renk(i), kul = liste(k.kullanim), alt = k.aciklama || '';
+    var r = renk(i), kul = kulListe(k), alt = k.aciklama || '';
     var cins = CINS[k.cinsiyet] || '', yas = YAS[k.yas] || '';
     var kim = [cins, yas].filter(Boolean).join(' · ');
     return '<article class="bc" data-id="' + esc(k.id) + '">' +
@@ -104,8 +106,16 @@
   async function ozet(kap, adet) {
     var L = await sesleriGetir();
     if (!L.length) { kap.innerHTML = '<div class="vBos">Seslendirmen örnekleri çok yakında burada olacak.</div>'; return; }
-    var G = L.slice(0, adet || 6);
+    var G = L.slice(0, adet || 12);
     kap.innerHTML = G.map(kartHtml).join(''); kartlariBagla(kap, G);
+    var w = kap.parentNode; if (w && w.classList.contains('vSlW')) {
+      var adim = function () { var c = kap.querySelector('.bc'); return c ? c.getBoundingClientRect().width + 16 : 300; };
+      var sol = w.querySelector('.vOk.sol'), sag = w.querySelector('.vOk.sag');
+      var gun = function () { sol.disabled = kap.scrollLeft < 4; sag.disabled = kap.scrollLeft + kap.clientWidth >= kap.scrollWidth - 4; w.classList.toggle('tek', kap.scrollWidth <= kap.clientWidth + 4); };
+      sol.onclick = function () { kap.scrollBy({ left: -adim(), behavior: 'smooth' }); };
+      sag.onclick = function () { kap.scrollBy({ left: adim(), behavior: 'smooth' }); };
+      kap.addEventListener('scroll', gun, { passive: true }); window.addEventListener('resize', gun); gun(); setTimeout(gun, 400);
+    }
   }
 
   /* Seslendirmenler sayfası: filtreli liste */
@@ -113,20 +123,28 @@
     var L = await sesleriGetir();
     var F = { cins: {}, dil: {}, kul: {}, yas: {}, teslim: 0, min: 0, max: 0 };
     function sayim(alan, coklu) { var s = {}; L.forEach(function (k) { (coklu ? liste(k[alan]) : (k[alan] ? [k[alan]] : [])).forEach(function (v) { s[v] = (s[v] || 0) + 1; }); }); return s; }
-    var C = { cins: sayim('cinsiyet'), dil: sayim('dil', true), kul: sayim('kullanim', true), yas: sayim('yas') };
+    function sayimKul() { var s = {}; KUL.forEach(function (x) { s[x] = 0; }); L.forEach(function (k) { kulListe(k).forEach(function (v) { s[v] = (s[v] || 0) + 1; }); }); return s; }
+    var C = { cins: sayim('cinsiyet'), dil: sayim('dil', true), kul: sayimKul(), yas: sayim('yas') };
     function secili(o) { return Object.keys(o).filter(function (x) { return o[x]; }); }
     function uyar(k) {
       var s;
       s = secili(F.cins); if (s.length && s.indexOf(k.cinsiyet) < 0) return false;
       s = secili(F.yas); if (s.length && s.indexOf(k.yas) < 0) return false;
       s = secili(F.dil); if (s.length && !liste(k.dil).some(function (d) { return s.indexOf(d) > -1; })) return false;
-      s = secili(F.kul); if (s.length && !liste(k.kullanim).some(function (d) { return s.indexOf(d) > -1; })) return false;
+      s = secili(F.kul); if (s.length && !kulListe(k).some(function (d) { return s.indexOf(d) > -1; })) return false;
       if (F.teslim && !(+k.teslim_saat && +k.teslim_saat <= F.teslim)) return false;
       if (F.min && !(+k.fiyat_tl >= F.min)) return false;
       if (F.max && !(+k.fiyat_tl > 0 && +k.fiyat_tl <= F.max)) return false;
       return true;
     }
+    function hizliCiz() {
+      var hk = $('#sHizli'); if (!hk) return;
+      var H = [['cins', 'kadin', 'Kadın seslendirmenler'], ['cins', 'erkek', 'Erkek seslendirmenler'], ['kul', 'Radyo spotu', 'Radyo spotu'], ['kul', 'TV spotu', 'TV spotu'], ['kul', 'Santral anonsu', 'Santral anonsu'], ['kul', 'Jingle', 'Jingle'], ['kul', 'Sesli kitap', 'Sesli kitap']];
+      hk.innerHTML = H.map(function (h) { return '<button type="button" class="hz' + (F[h[0]][h[1]] ? ' on' : '') + '" data-g="' + h[0] + '" data-v="' + esc(h[1]) + '">' + h[2] + '</button>'; }).join('');
+      $$('button.hz', hk).forEach(function (b) { b.onclick = function () { F[b.dataset.g][b.dataset.v] = !F[b.dataset.g][b.dataset.v]; filtreCiz(); ciz(); }; });
+    }
     function ciz() {
+      hizliCiz();
       var G = L.filter(uyar), n = secili(F.cins).length + secili(F.dil).length + secili(F.kul).length + secili(F.yas).length + (F.teslim ? 1 : 0) + ((F.min || F.max) ? 1 : 0);
       if (!L.length) kap.innerHTML = '<div class="vBos">Seslendirmen örnekleri çok yakında burada olacak.</div>';
       else if (!G.length) kap.innerHTML = '<div class="vBos">Bu filtrelere uyan ses yok. Filtreleri temizleyip tekrar deneyin.</div>';

@@ -10,7 +10,7 @@
   try { A = await Veri.ayarlar(); } catch (e) {}
   L = await Vitrin.sesleriGetir();
   try { M = await Veri.liste('muzikler'); } catch (e) {}
-  var hizmet = +A.hizmet_ucreti || 0, payY = (A.pay_yuzde === '' || A.pay_yuzde == null || isNaN(+A.pay_yuzde)) ? 100 : +A.pay_yuzde;
+  var hizmet = +A.hizmet_ucreti || 0, payY = (A.pay_yuzde === '' || A.pay_yuzde == null || isNaN(+A.pay_yuzde)) ? 80 : +A.pay_yuzde;
   var secId = new URLSearchParams(location.search).get('ses') || '';
   var ses = L.filter(function (k) { return String(k.id) === secId; })[0] || null, muz = null;
   var TUR = ['Radyo spotu', 'TV spotu', 'Santral anonsu', 'Jingle', 'Diğer'];
@@ -65,7 +65,7 @@
     if (hizmet) kal.push({ tur: 'hizmet', ad: 'Prodüksiyon bedeli', fiyat: hizmet });
     var top = sf + hizmet, b = $('#sVer'); b.disabled = true;
     try {
-      var s = await Veri.siparisVer({ ad: ad, telefon: tel || null, eposta: ep, metin: metin, ses_adi: ses.ad, muzik_adi: muz ? muz.ad : null, tur: $('#sTur').value, notu: $('#sNot').value.trim() || null, kalemler: kal, toplam_tl: top, odeme_durum: 'bekliyor' });
+      var s = await Veri.siparisVer({ ses_id: ses.id, ad: ad, telefon: tel || null, eposta: ep, metin: metin, ses_adi: ses.ad, muzik_adi: muz ? muz.ad : null, tur: $('#sTur').value, notu: $('#sNot').value.trim() || null, kalemler: kal, toplam_tl: top, odeme_durum: 'bekliyor' });
       bitti(s, top);
     } catch (e) { toast(e.message || 'Sipariş verilemedi'); b.disabled = false; }
   }

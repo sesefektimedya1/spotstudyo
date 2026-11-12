@@ -80,3 +80,4 @@ th{color:var(--sol);font-weight:500}
 
 .ust .logo,.ust nav a{white-space:nowrap}.ust .logo{flex-shrink:0}
 @media(min-width:821px){.ust{flex-wrap:wrap}.ust nav{flex-wrap:wrap;min-width:0}}
+@media(min-width:821px){.ust nav:has(a:nth-child(7)){order:3;flex:1 1 100%;gap:1.4rem;padding-top:.5rem;margin-top:.2rem;border-top:1px solid var(--cizgi)}}

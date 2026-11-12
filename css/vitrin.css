@@ -30,7 +30,7 @@
 .vAk h4{font-size:1.5rem;font-weight:700;margin:1.8rem 0 .3rem;color:#fff}.vAk p{font-size:14px;opacity:.94;line-height:1.5}
 .vA1{background:#c8821f}.vA2{background:#c23b6e}.vA3{background:#2f7d86}.vA4{background:#3f8f64}
 /* paketler */
-.vPk{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.vPk{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
 .vPk .kart h3{font-size:1.5rem;margin-bottom:.2rem}.vPk .fy{font:700 1.9rem 'Barlow Condensed',sans-serif;margin:.4rem 0}.vPk .fy small{font:400 13px Inter,sans-serif;color:var(--sol)}
 .vPk .kart.on{border-color:var(--pirinc)}.vPk li{list-style:none;color:var(--sol);font-size:14px;padding:.15rem 0}.vPk ul{padding:0;margin:.6rem 0 0}
 .vSon{text-align:center;padding:3.5rem 1.2rem;background:var(--y1);border-top:1px solid var(--cizgi)}

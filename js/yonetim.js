@@ -2,7 +2,7 @@
   var o = await korumali('yonetim', true); if (!o) return;
   var ic = $('#icerik'), SAYFA = 25, durum = { sayfa: 0, ara: '', plan: '' };
   $$('#sekme button').forEach(function (b) { b.onclick = function () { $$('#sekme button').forEach(function (x) { x.classList.remove('acik'); }); b.classList.add('acik'); ac(b.dataset.s); }; });
-  function ac(s) { try { var p = ({ ozet: ozet, basvuru: basvuru, siparis: siparis, geri: geri, uyeler: uyeler, kutup: kutupSayfa, ayar: ayar })[s](); if (p && p.catch) p.catch(hataGoster); } catch (e) { hataGoster(e); } }
+  function ac(s) { try { var p = ({ ozet: ozet, basvuru: basvuru, siparis: siparis, sv: svSayfa, hakedis: hakedisSayfa, geri: geri, uyeler: uyeler, kutup: kutupSayfa, ayar: ayar })[s](); if (p && p.catch) p.catch(hataGoster); } catch (e) { hataGoster(e); } }
   function hataGoster(e) { var m = (e && e.message) || String(e); ic.innerHTML = '<div class="kart"><b>Bu sayfa açılamadı.</b><div class="sol" style="margin:.4rem 0">' + esc(/relation|does not exist|schema cache|42P01/i.test(m) ? 'Supabase’de bu bölümün tablosu kurulmamış. İlgili kurulum SQL dosyasını SQL Editor’de çalıştırın.' : m) + '</div><div class="sol" style="font-size:12px">' + esc(m) + '</div></div>'; }
 
   function tl(n) { return Number(n || 0).toLocaleString('tr-TR') + ' TL'; }
@@ -41,19 +41,70 @@
       tr.querySelector('.ok').onclick = function () { karar(true); }; tr.querySelector('.red').onclick = function () { karar(false); };
     });
   }
+  /* V92: Seslendirmen başvuruları */
+  async function svSayfa() {
+    var L = await Veri.svTum();
+    var DUR = { beklemede: 'Onay bekliyor', onayli: 'Onaylı', reddedildi: 'Reddedildi' };
+    ic.innerHTML = '<div class="kart"><h3 style="font-size:1.3rem;margin-bottom:.6rem">Seslendirmen başvuruları</h3>' + (L.length ? L.map(function (x) {
+      var u = x.dosya_yolu ? '' : '';
+      return '<div class="svS" data-id="' + x.id + '" style="padding:.8rem 0;border-bottom:1px solid var(--cizgi)"><div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:baseline"><b>' + esc(x.ad) + '</b><span class="etiket' + (x.durum === 'onayli' ? ' p' : '') + '">' + DUR[x.durum] + '</span><span class="sol">' + esc(x.telefon || '') + '</span><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span></div>' +
+        '<div class="sol" style="font-size:13px;margin:.3rem 0">' + esc(x.aciklama || '') + ' · ' + tl(x.fiyat_tl) + ' · Teslim: ' + esc(x.teslim_saat ? (x.teslim_saat < 24 ? x.teslim_saat + ' saat' : (x.teslim_saat / 24) + ' gün') : '-') + ' · ' + esc(x.cinsiyet || '') + ' · ' + esc(x.kullanim || '') + '</div>' +
+        '<div class="sol" style="font-size:13px">IBAN: ' + esc(x.iban || '-') + ' (' + esc(x.hesap_sahibi || '-') + ') · Komisyon onayı: %' + (x.komisyon_yuzde == null ? '?' : x.komisyon_yuzde) + ' · ' + (x.kabul_tarihi ? new Date(x.kabul_tarihi).toLocaleString('tr-TR') : '') + '</div>' +
+        '<div style="display:flex;gap:.6rem;align-items:center;margin-top:.5rem;flex-wrap:wrap"><audio controls preload="none" data-yol="' + esc(x.dosya_yolu || '') + '" style="height:36px"></audio>' + (x.durum === 'beklemede' ? '<button class="btn kucuk ana svOn">Onayla</button><button class="btn kucuk svRed">Reddet</button>' : '') + '</div></div>';
+    }).join('') : '<span class="sol">Henüz başvuru yok.</span>') + '</div>';
+    for (var a of $$('audio[data-yol]', ic)) { if (a.dataset.yol) { try { a.src = await Veri.url({ dosya_yolu: a.dataset.yol }, 'sesler'); } catch (e) {} } }
+    $$('.svS', ic).forEach(function (s) {
+      var on = s.querySelector('.svOn'), rd = s.querySelector('.svRed');
+      if (on) on.onclick = async function () { try { await Veri.svKarar(s.dataset.id, true); toast('Onaylandı, kart yayında'); svSayfa(); } catch (e) { toast(e.message); } };
+      if (rd) rd.onclick = async function () { try { await Veri.svKarar(s.dataset.id, false); toast('Reddedildi'); svSayfa(); } catch (e) { toast(e.message); } };
+    });
+  }
+
+  /* V92: Haftalık (Cuma) hakediş listesi ve muhasebe raporu */
+  function csvIndir(ad, satirlar) {
+    var csv = '﻿' + satirlar.map(function (r) { return r.map(function (v) { v = String(v == null ? '' : v).replace(/"/g, '""'); return /[;"\n]/.test(v) ? '"' + v + '"' : v; }).join(';'); }).join('\r\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = ad; document.body.appendChild(a); a.click(); a.remove();
+  }
+  async function hakedisSayfa() {
+    var H = await Veri.hakedisListesi(), S = await Veri.siparisTum();
+    var top = 0; H.forEach(function (x) { top += +x.odenebilir || 0; });
+    ic.innerHTML = '<div class="kart" style="margin-bottom:1rem"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Bu hafta ödenecek (Cuma listesi)</h3><div class="sol" style="margin-bottom:.8rem">Ödemesi alınmış, teslim edilmiş ve onay sonrası bekleme süresini (müşteri onayı ya da 3 gün otomatik onay + 2 gün) geçmiş işler. Havaleyi yaptıktan sonra “Ödendi” düğmesine basın.</div>' +
+      (H.length ? '<table style="width:100%"><tr><th>Seslendirmen</th><th>IBAN</th><th style="text-align:right">Ödenecek</th><th style="text-align:right">Bekleyen</th><th></th></tr>' + H.map(function (x) {
+        return '<tr><td><b>' + esc(x.ad || '') + '</b></td><td style="font-size:13px">' + esc(x.iban || '-') + '<div class="sol">' + esc(x.hesap_sahibi || '') + '</div></td><td style="text-align:right"><b>' + tl(x.odenebilir) + '</b> <span class="sol">(' + x.odenebilir_adet + ' iş)</span></td><td style="text-align:right" class="sol">' + tl(x.bekleyen) + '</td><td>' + (+x.odenebilir > 0 ? '<button class="btn kucuk ana hkO" data-u="' + x.user_id + '" data-t="' + x.odenebilir + '">Ödendi</button>' : '') + '</td></tr>';
+      }).join('') + '<tr><td colspan="2"><b>Toplam</b></td><td style="text-align:right"><b>' + tl(top) + '</b></td><td></td><td></td></tr></table>' : '<span class="sol">Şu an ödenecek hakediş yok.</span>') + '</div>' +
+      '<div class="kart"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Muhasebe raporu</h3><div class="sol" style="margin-bottom:.8rem">Tüm ödemesi alınmış siparişleri tutar, komisyon ve seslendirmen hakedişi ile Excel’de açılan CSV dosyası olarak indirir. Mali müşavirinize verebilirsiniz. Resmî muhasebe değildir, takip raporudur.</div><button class="btn ana" id="hkCsv">CSV indir</button></div>';
+    $$('.hkO', ic).forEach(function (b) { b.onclick = async function () { if (!confirm(tl(b.dataset.t) + ' ödendi olarak işaretlensin mi?')) return; try { var r = await Veri.hakedisOde(b.dataset.u); toast(r.adet + ' iş ödendi olarak işaretlendi (' + tl(r.tutar) + ')'); hakedisSayfa(); } catch (e) { toast(e.message); } }; });
+    $('#hkCsv').onclick = function () {
+      var R = [['Sipariş kodu', 'Ödeme tarihi', 'Müşteri', 'Tür', 'Seslendirmen', 'Toplam (TL)', 'Seslendirmen hakedişi (TL)', 'Komisyon / prodüksiyon payı (TL)', 'Ödeme durumu', 'Teslim durumu', 'Hakediş durumu', 'Hakediş ödeme tarihi']];
+      S.filter(function (x) { return x.odeme_durum === 'odendi' || x.odeme_durum === 'iade'; }).forEach(function (x) {
+        var kod = 'SP-' + String(x.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase(), hk = +x.hakedis_tutar || 0, tp = +x.toplam_tl || 0;
+        R.push([kod, x.odeme_tarihi ? new Date(x.odeme_tarihi).toLocaleDateString('tr-TR') : '', x.ad, x.tur, x.ses_adi || '', tp, hk, tp - hk, x.odeme_durum, x.teslim_durum || '', x.hakedis_durum || '', x.hakedis_odeme || '']);
+      });
+      csvIndir('muhasebe-raporu-' + new Date().toISOString().slice(0, 10) + '.csv', R);
+    };
+  }
+
+  function tesBilgi(x) {
+    if (!x.seslendirmen_id && !x.teslim_dosya) return '';
+    var DU = { bekliyor: 'Teslim bekleniyor', yuklendi: 'Teslim edildi (müşteri onayı bekleniyor)', onaylandi: 'Onaylandı', iptal: 'İptal' }, gec = x.odeme_durum === 'odendi' && x.teslim_durum === 'bekliyor' && x.teslim_son && new Date(x.teslim_son) < new Date();
+    return '<div style="margin:.4rem 0;font-size:13px">' + (x.seslendirmen_id ? '<span class="etiket">Platform seslendirmeni</span> ' : '') + '<span class="etiket' + (x.teslim_durum === 'onaylandi' ? ' p' : '') + '"' + (gec ? ' style="background:#7a2530;color:#fff"' : '') + '>' + (gec ? 'GECİKTİ' : esc(DU[x.teslim_durum] || x.teslim_durum || '')) + '</span> ' + (x.teslim_son ? '<span class="sol">Teslim süresi: ' + new Date(x.teslim_son).toLocaleString('tr-TR') + ' öncesi</span> ' : '') + (x.hakedis_tutar > 0 ? '<span class="sol">Hakediş: ' + tl(x.hakedis_tutar) + ' (' + esc(x.hakedis_durum) + ')</span> ' : '') + (x.teslim_dosya ? '<button class="btn kucuk tdA" data-yol="' + esc(x.teslim_dosya) + '">Teslim dosyasını indir</button> ' : '') + (x.odeme_durum === 'odendi' && x.teslim_durum !== 'onaylandi' ? '<button class="btn kucuk iptalB">İptal et ve iade yap</button>' : '') + '</div>';
+  }
+
   async function siparis() {
     var L = await Veri.siparisTum(), hk = {};
-    L.forEach(function (x) { if (x.odeme_durum !== 'odendi') return; (x.kalemler || []).forEach(function (k) { if (k.tur === 'ses' && !k.odendi) hk[k.ses] = (hk[k.ses] || 0) + (+k.pay || 0); }); });
+    L.forEach(function (x) { if (x.odeme_durum !== 'odendi' || x.seslendirmen_id) return; (x.kalemler || []).forEach(function (k) { if (k.tur === 'ses' && !k.odendi) hk[k.ses] = (hk[k.ses] || 0) + (+k.pay || 0); }); });
     var hkSat = Object.keys(hk).map(function (n) { return '<tr><td>' + esc(n) + '</td><td style="text-align:right"><b>' + tl(hk[n]) + '</b></td></tr>'; }).join('');
-    var ust = '<div class="kart" style="margin-bottom:1rem"><h3 style="font-size:1.2rem;margin-bottom:.3rem">Seslendirmenlere ödenecek (ödemesi alınmış siparişlerden)</h3>' + (hkSat ? '<table style="max-width:420px;width:100%">' + hkSat + '</table>' : '<span class="sol">Şu an ödenecek hakediş yok.</span>') + '</div>';
+    var ust = '<div class="kart" style="margin-bottom:1rem"><h3 style="font-size:1.2rem;margin-bottom:.3rem">Elle takip edilen hakediş (platform dışı seslendirmenler)</h3>' + (hkSat ? '<table style="max-width:420px;width:100%">' + hkSat + '</table>' : '<span class="sol">Şu an ödenecek hakediş yok.</span>') + '</div>';
     ic.innerHTML = ust + '<div class="kart">' + (L.length ? L.map(function (x) {
       var kod = 'SP-' + String(x.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase(), kl = x.kalemler || [];
       var kSat = kl.length ? '<table style="margin:.4rem 0;width:100%;max-width:640px">' + kl.map(function (k, j) { return '<tr data-j="' + j + '"><td>' + esc(k.ad) + '</td><td style="text-align:right;white-space:nowrap">' + tl(k.fiyat) + '</td>' + (k.tur === 'ses' ? '<td style="white-space:nowrap">Seslendirmen payı <input type="number" class="py" value="' + (+k.pay || 0) + '" style="width:80px"> TL</td><td><label><input type="checkbox" class="od"' + (k.odendi ? ' checked' : '') + '> ödendi</label></td>' : '<td></td><td></td>') + '</tr>'; }).join('') + '<tr><td><b>Toplam</b></td><td style="text-align:right"><b>' + tl(x.toplam_tl) + '</b></td><td></td><td></td></tr></table>' : '';
       return '<div class="sipSatir" data-id="' + x.id + '" style="padding:.9rem 0;border-bottom:1px solid var(--cizgi)"><div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:baseline"><b>' + esc(x.ad || '') + '</b><span class="etiket">' + kod + '</span><span class="sol">' + esc(x.telefon || '') + ' · ' + esc(x.eposta || '') + '</span><span class="sol">' + new Date(x.created_at).toLocaleString('tr-TR') + '</span><span class="etiket">' + esc(x.tur || '') + '</span></div>' +
-        '<div style="margin:.4rem 0;white-space:pre-wrap">' + esc(x.metin || '') + '</div><div class="sol" style="font-size:13px">Seslendirmen: ' + esc(x.ses_adi || '-') + ' · Müzik: ' + esc(x.muzik_adi || '-') + (x.notu ? ' · Not: ' + esc(x.notu) : '') + '</div>' + kSat +
-        '<div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap"><select class="dr" style="max-width:170px"><option value="yeni">Yeni</option><option value="hazirlaniyor">Hazırlanıyor</option><option value="tamamlandi">Tamamlandı</option></select><select class="op" style="max-width:190px"><option value="bekliyor">Ödeme bekleniyor</option><option value="odendi">Ödeme alındı</option></select><input type="text" class="su" placeholder="Hazır dosyanın indirme bağlantısı" value="' + esc(x.sonuc_url || '') + '" style="flex:1;min-width:240px"><button class="btn kucuk ana kyd">Kaydet</button></div></div>';
+        '<div style="margin:.4rem 0;white-space:pre-wrap">' + esc(x.metin || '') + '</div><div class="sol" style="font-size:13px">Seslendirmen: ' + esc(x.ses_adi || '-') + ' · Müzik: ' + esc(x.muzik_adi || '-') + (x.notu ? ' · Not: ' + esc(x.notu) : '') + '</div>' + kSat + tesBilgi(x) +
+        '<div style="display:flex;gap:.6rem;margin-top:.6rem;flex-wrap:wrap"><select class="dr" style="max-width:170px"><option value="yeni">Yeni</option><option value="hazirlaniyor">Hazırlanıyor</option><option value="tamamlandi">Tamamlandı</option></select><select class="op" style="max-width:190px"><option value="bekliyor">Ödeme bekleniyor</option><option value="odendi">Ödeme alındı</option><option value="iade">İade edildi</option></select><input type="text" class="su" placeholder="Hazır dosyanın indirme bağlantısı" value="' + esc(x.sonuc_url || '') + '" style="flex:1;min-width:240px"><button class="btn kucuk ana kyd">Kaydet</button></div></div>';
     }).join('') : '<span class="sol">Henüz sipariş yok.</span>') + '</div>';
     $$('.sipSatir', ic).forEach(function (tr, i) {
+      var td = tr.querySelector('.tdA'); if (td) td.onclick = async function () { try { window.open(await Veri.teslimUrl(td.dataset.yol), '_blank'); } catch (e) { toast(e.message); } };
+      var ib = tr.querySelector('.iptalB'); if (ib) ib.onclick = async function () { if (!confirm('Sipariş iptal edilip ödeme iade olarak işaretlensin mi? (Parayı müşteriye sizin iade etmeniz gerekir.)')) return; try { await Veri.siparisGuncelle(L[i].id, { teslim_durum: 'iptal', odeme_durum: 'iade', hakedis_durum: 'yok' }); toast('İptal edildi'); siparis(); } catch (e) { toast(e.message); } };
       tr.querySelector('.dr').value = L[i].durum; tr.querySelector('.op').value = L[i].odeme_durum || 'bekliyor';
       tr.querySelector('.kyd').onclick = async function () {
         try {
@@ -74,7 +125,7 @@
   }
 
   async function uyeler() {
-    ic.innerHTML = '<div class="kart"><div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap"><input type="search" id="ara" placeholder="Ad, e-posta ya da telefon ara" style="max-width:300px" value="' + esc(durum.ara) + '"><select id="pf" style="max-width:180px"><option value="">Tüm paketler</option><option value="ucretsiz">Ücretsiz</option><option value="pro_aylik">Pro Aylık</option><option value="pro_yillik">Pro Yıllık</option></select></div><div id="tab"></div></div>';
+    ic.innerHTML = '<div class="kart"><div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap"><input type="search" id="ara" placeholder="Ad, e-posta ya da telefon ara" style="max-width:300px" value="' + esc(durum.ara) + '"><select id="pf" style="max-width:180px"><option value="">Tüm paketler</option><option value="ucretsiz">Ücretsiz</option><option value="baslangic">Başlangıç</option><option value="standart">Standart</option><option value="sinirsiz">Premium</option><option value="pro_aylik">Pro Aylık (eski)</option><option value="pro_yillik">Pro Yıllık (eski)</option></select></div><div id="tab"></div></div>';
     $('#pf').value = durum.plan;
     var zm; $('#ara').oninput = function () { clearTimeout(zm); zm = setTimeout(function () { durum.ara = $('#ara').value.trim(); durum.sayfa = 0; yukle(); }, 300); };
     $('#pf').onchange = function () { durum.plan = $('#pf').value; durum.sayfa = 0; yukle(); };
@@ -85,7 +136,7 @@
     var r = await Veri.uyeler({ ara: durum.ara, plan: durum.plan, sayfa: durum.sayfa, adet: SAYFA }), top = Math.max(1, Math.ceil(r.toplam / SAYFA));
     $('#tab').innerHTML = '<div style="overflow-x:auto"><table><tr><th>Ad Soyad</th><th>Telefon</th><th>E-posta</th><th>Üyelik tarihi</th><th>Paket</th><th>Ödeme</th><th>Bitiş tarihi</th><th>Kalan</th><th>Bu ay</th><th>Toplam indirme</th><th>Tür</th><th>Rol</th></tr>' + r.satirlar.map(function (u) {
       return '<tr data-id="' + u.id + '"><td>' + esc(u.ad) + '</td><td>' + esc(u.telefon || '—') + '</td><td>' + esc(u.email) + '</td><td>' + new Date(u.created_at).toLocaleDateString('tr-TR') + '</td>' +
-        '<td><select class="pl"><option value="ucretsiz">Ücretsiz</option><option value="pro_aylik">Pro Aylık</option><option value="pro_yillik">Pro Yıllık</option></select></td>' +
+        '<td><select class="pl"><option value="ucretsiz">Ücretsiz</option><option value="baslangic">Başlangıç</option><option value="standart">Standart</option><option value="sinirsiz">Premium</option><option value="pro_aylik">Pro Aylık (eski)</option><option value="pro_yillik">Pro Yıllık (eski)</option></select></td>' +
         '<td class="odc"><label style="display:flex;gap:.35rem;align-items:center;margin:0;white-space:nowrap"><input type="checkbox" class="od" ' + (u.odendi ? 'checked' : '') + ' style="width:auto"><span class="odm">' + (u.odendi ? 'Ödendi' : 'Bekliyor') + '</span></label></td>' +
         '<td><input type="date" class="bt" value="' + (u.plan_bitis || '') + '" style="width:140px"></td><td class="kl">' + kalan(u.plan === 'ucretsiz' ? '' : u.plan_bitis) + '</td><td>' + u.bu_ay_indirme + '</td><td>' + (u.toplam_indirme || 0) + '</td><td>' + (u.role === 'seslendirmen' ? 'Seslendirmen' : u.fatura_tur === 'ticari' ? 'Ticari' : u.fatura_tur === 'bireysel' ? 'Bireysel' : '—') + '</td>' +
         '<td><select class="rol"><option value="uye">Üye</option><option value="seslendirmen">Seslendirmen</option><option value="admin">Yönetici</option></select></td></tr>';
@@ -187,20 +238,21 @@
     function inp(id, et, d, tip) { return '<div style="margin-bottom:.7rem"><label>' + et + '</label><input type="' + (tip || 'text') + '" id="' + id + '"' + (tip === 'number' ? ' min="0"' : '') + ' value="' + esc(d) + '"></div>'; }
     function ta(id, et, d, ek) { return '<div style="margin-bottom:.7rem"><label>' + et + '</label><textarea id="' + id + '" rows="4" placeholder="' + esc(ek || '') + '" style="width:100%">' + esc(d) + '</textarea></div>'; }
     ic.innerHTML = '<div class="kart"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Paketler ve fiyatlar</h3><div class="sol" style="margin-bottom:1rem">Burada yazdıklarınız üyelerin Panelim sayfasındaki paket kartlarında görünür. İndirme limitinde 0 yazarsanız “sınırsız” olur. Madde kutusunu boş bırakırsanız maddeler rakamlardan otomatik yazılır; doldurursanız sizin yazdığınız çıkar (her satır bir madde).</div>' +
-      '<div class="izgara g3" style="gap:1.2rem;align-items:start">' +
+      '<div class="izgara g4" style="gap:1.2rem;align-items:start">' +
       '<div class="kart"><h4 style="margin-bottom:.7rem">1. Ücretsiz paket</h4>' + inp('a_u_ad', 'Paket adı', a.paket_ucretsiz_ad) + inp('a1', 'Ayda indirme', a.ucretsiz_indirme_limiti, 'number') + ta('a_u_md', 'Maddeler (isteğe bağlı)', a.paket_ucretsiz_md, 'Ayda 5 MP3 indirme\nOtomatik ve manuel stüdyo') + '</div>' +
-      '<div class="kart"><h4 style="margin-bottom:.7rem">2. Aylık paket</h4>' + inp('a_a_ad', 'Paket adı', a.paket_aylik_ad) + inp('a2', 'Fiyat (TL / ay)', a.pro_aylik_fiyat, 'number') + inp('a3', 'Ayda indirme', a.pro_aylik_limit, 'number') + ta('a_a_md', 'Maddeler (isteğe bağlı)', a.paket_aylik_md, 'Ayda 30 MP3 indirme\nYapay zeka modu') + '</div>' +
-      '<div class="kart"><h4 style="margin-bottom:.7rem">3. Yıllık paket</h4>' + inp('a_y_ad', 'Paket adı', a.paket_yillik_ad) + inp('a4', 'Fiyat (TL / yıl)', a.pro_yillik_fiyat, 'number') + inp('a5', 'Ayda indirme', a.pro_yillik_limit, 'number') + ta('a_y_md', 'Maddeler (isteğe bağlı)', a.paket_yillik_md, 'Ayda 100 MP3 indirme\nYapay zeka modu') + '</div></div>' +
+      '<div class="kart"><h4 style="margin-bottom:.7rem">2. Başlangıç (yıllık)</h4>' + inp('b_ad', 'Paket adı', a.paket_baslangic_ad) + inp('b_fy', 'Fiyat (TL / yıl)', a.baslangic_fiyat, 'number') + inp('b_lm', 'Ayda indirme', a.baslangic_limit, 'number') + ta('b_md', 'Maddeler (isteğe bağlı)', a.paket_baslangic_md, 'Ayda 15 MP3 indirme') + '</div>' +
+      '<div class="kart"><h4 style="margin-bottom:.7rem">3. Standart (yıllık)</h4>' + inp('s_ad', 'Paket adı', a.paket_standart_ad) + inp('s_fy', 'Fiyat (TL / yıl)', a.standart_fiyat, 'number') + inp('s_lm', 'Ayda indirme', a.standart_limit, 'number') + ta('s_md', 'Maddeler (isteğe bağlı)', a.paket_standart_md, 'Ayda 45 MP3 indirme') + '</div>' +
+      '<div class="kart"><h4 style="margin-bottom:.7rem">4. Premium (yıllık)</h4>' + inp('p_ad', 'Paket adı', a.paket_sinirsiz_ad) + inp('p_fy', 'Fiyat (TL / yıl)', a.sinirsiz_fiyat, 'number') + inp('p_lm', 'Ayda indirme (0 = sınırsız)', a.sinirsiz_limit, 'number') + ta('p_md', 'Maddeler (isteğe bağlı)', a.paket_sinirsiz_md, 'Sınırsız MP3 indirme') + '</div></div>' +
       '<div style="max-width:300px;margin-top:1rem">' + inp('a6', 'Yapay zeka: Pro üyeye ayda mesaj', a.yz_mesaj_limiti, 'number') + '</div></div>' +
       '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Ödeme bilgileri (IBAN)</h3><div class="sol" style="margin-bottom:1rem">Müşteri Pro pakete başvurunca bu bilgileri görür ve başvuru koduyla birlikte havale yapar. Boş bırakırsanız “WhatsApp’tan yazın” çıkar.</div>' +
       '<div class="izgara g3" style="gap:1rem">' + inp('o_banka', 'Banka adı', a.banka_adi) + inp('o_sahip', 'Hesap sahibi (ad / unvan)', a.hesap_sahibi) + inp('o_iban', 'IBAN', a.iban) + '</div>' +
       ta('o_not', 'Müşteriye ek not (isteğe bağlı)', a.odeme_notu, 'Örn: Havale açıklamasına başvuru kodunu yazmayı unutmayın.') + inp('o_wa', 'WhatsApp numarası (90 ile, boşluksuz)', a.whatsapp) + '</div>' +
-      '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Sipariş sepeti</h3><div class="sol" style="margin-bottom:1rem">Bize gönder sayfasındaki sepet. Seslendirmen fiyatı Kütüphane’de her sesin yanındaki fiyattan gelir.</div><div class="izgara g3" style="gap:1rem">' + inp('s_hz', 'Prodüksiyon hizmet bedeli (TL, 0 = yok)', a.hizmet_ucreti, 'number') + inp('s_py', 'Seslendirmenin payı (% — varsayılan, siparişte değiştirilebilir)', a.pay_yuzde, 'number') + inp('s_kdv', 'Fiyat notu', a.kdv_notu) + '</div></div>' +
+      '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Sipariş sepeti</h3><div class="sol" style="margin-bottom:1rem">Bize gönder sayfasındaki sepet. Seslendirmen fiyatı Kütüphane’de her sesin yanındaki fiyattan gelir.</div><div class="izgara g3" style="gap:1rem">' + inp('s_hz', 'Prodüksiyon hizmet bedeli (TL, 0 = yok)', a.hizmet_ucreti, 'number') + inp('s_py', 'Seslendirmenin payı (%). 80 yazarsanız komisyonunuz %20 olur', a.pay_yuzde, 'number') + inp('s_kdv', 'Fiyat notu', a.kdv_notu) + '</div></div>' +
       '<div class="kart" style="margin-top:1rem"><h3 style="font-size:1.3rem;margin-bottom:.3rem">Kartla ödeme (iyzico) ve şirket bilgileri</h3><div class="sol" style="margin-bottom:1rem">iyzico anahtarları Supabase’e girildikten sonra buraya 1 yazın; müşteriler sepette “Kartla öde” düğmesini görür. 0 = kapalı. Şirket bilgileri Mesafeli satış sözleşmesi ve İptal-iade sayfalarında görünür.</div><div class="izgara g3" style="gap:1rem">' + inp('k_od', 'Kartla ödeme (1 = açık, 0 = kapalı)', a.kart_odeme, 'number') + inp('j_oto', 'Yapay zeka otomatik jingle (1 = açık, 0 = kapalı)', a.jingle_oto, 'number') + inp('k_adr', 'Şirket adresi', a.sirket_adres) + inp('k_vd', 'Vergi dairesi', a.sirket_vd) + inp('k_vkn', 'Vergi numarası', a.sirket_vkn) + '</div></div>' +
       '<button class="btn ana" id="a-k" style="margin-top:1.2rem">Hepsini kaydet</button>';
     $('#a-k').onclick = async function () {
-      var M = { a1: 'ucretsiz_indirme_limiti', a2: 'pro_aylik_fiyat', a3: 'pro_aylik_limit', a4: 'pro_yillik_fiyat', a5: 'pro_yillik_limit', a6: 'yz_mesaj_limiti', a_u_ad: 'paket_ucretsiz_ad', a_a_ad: 'paket_aylik_ad', a_y_ad: 'paket_yillik_ad', a_u_md: 'paket_ucretsiz_md', a_a_md: 'paket_aylik_md', a_y_md: 'paket_yillik_md', o_banka: 'banka_adi', o_sahip: 'hesap_sahibi', o_iban: 'iban', o_not: 'odeme_notu', o_wa: 'whatsapp', s_hz: 'hizmet_ucreti', s_py: 'pay_yuzde', s_kdv: 'kdv_notu', k_od: 'kart_odeme', j_oto: 'jingle_oto', k_adr: 'sirket_adres', k_vd: 'sirket_vd', k_vkn: 'sirket_vkn' };
-      var sayi = { j_oto: 1, k_od: 1, s_hz: 1, s_py: 1, a1: 1, a2: 1, a3: 1, a4: 1, a5: 1, a6: 1 };
+      var M = { a1: 'ucretsiz_indirme_limiti', b_fy: 'baslangic_fiyat', b_lm: 'baslangic_limit', s_fy: 'standart_fiyat', s_lm: 'standart_limit', p_fy: 'sinirsiz_fiyat', p_lm: 'sinirsiz_limit', b_ad: 'paket_baslangic_ad', s_ad: 'paket_standart_ad', p_ad: 'paket_sinirsiz_ad', b_md: 'paket_baslangic_md', s_md: 'paket_standart_md', p_md: 'paket_sinirsiz_md', a6: 'yz_mesaj_limiti', a_u_ad: 'paket_ucretsiz_ad', a_u_md: 'paket_ucretsiz_md', o_banka: 'banka_adi', o_sahip: 'hesap_sahibi', o_iban: 'iban', o_not: 'odeme_notu', o_wa: 'whatsapp', s_hz: 'hizmet_ucreti', s_py: 'pay_yuzde', s_kdv: 'kdv_notu', k_od: 'kart_odeme', j_oto: 'jingle_oto', k_adr: 'sirket_adres', k_vd: 'sirket_vd', k_vkn: 'sirket_vkn' };
+      var sayi = { j_oto: 1, k_od: 1, s_hz: 1, s_py: 1, a1: 1, b_fy: 1, b_lm: 1, s_fy: 1, s_lm: 1, p_fy: 1, p_lm: 1, a6: 1 };
       try { for (var k in M) { var d = $('#' + k).value; await Veri.ayarKaydet(M[k], sayi[k] ? (d || 0) : d.trim()); } toast('Kaydedildi'); } catch (e) { toast(e.message); }
     };
   }

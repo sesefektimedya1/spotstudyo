@@ -107,3 +107,18 @@
 
 /* V91: yeni menü uzun, dar ekranda yana kayar */
 @media(max-width:760px){.ust nav{overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}.ust nav::-webkit-scrollbar{display:none}.ust nav a{flex:none}}
+
+/* V93.1 telefonda üç çizgili menü (stüdyo hariç) */
+.ust .hamb{display:none}
+@media (max-width:760px){
+  body:not(.st) .ust{position:relative}
+  body:not(.st) .ust .hamb{display:inline-flex;flex-direction:column;justify-content:center;gap:5px;width:42px;height:38px;padding:0 10px;border:1px solid var(--cizgi,#323840);border-radius:8px;background:transparent;cursor:pointer;order:2;flex:none}
+  body:not(.st) .ust .hamb span{display:block;height:2px;border-radius:2px;background:var(--yazi,#e9e4d8);transition:transform .15s,opacity .15s}
+  body:not(.st) .ust.ac .hamb span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  body:not(.st) .ust.ac .hamb span:nth-child(2){opacity:0}
+  body:not(.st) .ust.ac .hamb span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  body:not(.st) .ust nav{display:none}
+  body:not(.st) .ust.ac nav{display:flex;flex-direction:column;gap:0;overflow:visible;white-space:normal;flex:0 0 100%;order:4;border-top:1px solid var(--cizgi,#323840);margin-top:.35rem}
+  body:not(.st) .ust.ac nav a{display:block;padding:.85rem .2rem;font-size:16px;border-bottom:1px solid var(--cizgi,#323840)}
+  body:not(.st) .ust.ac nav a:last-child{border-bottom:0}
+}

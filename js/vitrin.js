@@ -105,7 +105,7 @@
   /* Ana sayfa: ilk 6 kart */
   async function ozet(kap, adet) {
     var L = await sesleriGetir();
-    if (!L.length) { kap.innerHTML = '<div class="vBos">Seslendirmen örnekleri çok yakında burada olacak.</div>'; return; }
+    if (!L.length) { kap.innerHTML = '<div class="vBos">Seslendirmen örnekleri çok yakında burada olacak.</div>'; if (kap.parentNode && kap.parentNode.classList) kap.parentNode.classList.add('tek'); return; }
     var G = L.slice(0, adet || 12);
     kap.innerHTML = G.map(kartHtml).join(''); kartlariBagla(kap, G);
     var w = kap.parentNode; if (w && w.classList.contains('vSlW')) {

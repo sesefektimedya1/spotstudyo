@@ -62,7 +62,7 @@
   (function () {
     /* Yeni sürüm kontrolü: sunucudaki surum.json bu sayfanın sürümünden yeniyse "Yenile" şeridi çıkar */
     (function () {
-      var SURUM = 93, gosterildi = false, ilkKontrol = true;
+      var SURUM = 94, gosterildi = false, ilkKontrol = true;
       async function yenile() {
         try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) {}
         try { if (navigator.serviceWorker) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.update(); })); } } catch (e) {}
@@ -138,16 +138,18 @@
       h += '<span>' + esc(oturum.ad || oturum.email) + '</span><button class="btn kucuk" id="cikisBtn">Çıkış</button>';
     } else h += '<a class="btn kucuk" href="./#giris">Giriş yap</a><a class="btn kucuk ana" href="./#kayit">Ücretsiz üye ol</a>';
     h += '</div>';
+    if (aktif !== 'studyo') h += '<button type="button" class="hamb" id="hamb" aria-label="Menü" aria-expanded="false"><span></span><span></span><span></span></button>';
     h += '</header>';
     var kab = document.createElement('div'); kab.innerHTML = h; document.body.insertBefore(kab, document.body.firstChild);
     $$('[data-dil]', kab).forEach(function (b) { b.onclick = function () { if (b.dataset.dil !== window.DIL) dilSec(b.dataset.dil); }; });
     if (aktif !== 'studyo' && !$('#altBilgi')) { var ab = document.createElement('footer'); ab.id = 'altBilgi'; var tn = (aktif === '' || aktif === 'hakkimizda' || aktif === 'kvkk' || aktif === 'sozlesme' || aktif === 'iade' || aktif === 'paketler' || aktif === 'paket-programlar' || aktif === 'seslendirmen' || aktif === 'seslendirmenler' || aktif === 'spot-yaptir'); ab.innerHTML = window.odemeSeridi() + (tn ? '<a href="hakkimizda">Hakkımızda</a> · <a href="kvkk">Gizlilik ve KVKK</a> · <a href="sozlesme">Mesafeli satış sözleşmesi</a> · <a href="iade">Teslimat ve iade şartları</a> · <a href="mailto:sesefektimedya@gmail.com">İletişim</a><br>' : '') + '© 2026 sesefekti.com · Tüm hakları saklıdır.'; document.body.appendChild(ab); }
+    var hb = $('#hamb'); if (hb) { var us = $('.ust', kab); hb.onclick = function () { var a = us.classList.toggle('ac'); hb.setAttribute('aria-expanded', a ? 'true' : 'false'); }; $$('.ust nav a', kab).forEach(function (a) { a.addEventListener('click', function () { us.classList.remove('ac'); }); }); }
     var gb = $('#gbBtn'); if (gb) gb.onclick = function () { geriBildirimAc(aktif); };
     var c = $('#cikisBtn'); if (c) c.onclick = async function () { await Veri.cikis(); location.href = './'; };
   };
   /* Ödeme şeridi: iyzico ile Öde + Mastercard, Visa, American Express, Troy (iyzico'nun resmî logo bandı). Koyu zeminde okunsun diye beyaz kutu içinde. */
   window.odemeSeridi = function (kucuk) {
-    return '<div class="odS' + (kucuk ? ' ic' : '') + '"><img src="img/odeme-bandi.svg?v=93" width="429" height="32" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy ile güvenli ödeme" loading="lazy"></div>';
+    return '<div class="odS' + (kucuk ? ' ic' : '') + '"><img src="img/odeme-bandi.svg?v=94" width="429" height="32" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy ile güvenli ödeme" loading="lazy"></div>';
   };
   window.korumali = async function (aktif, yonetici) {
     var o = await Veri.oturum();

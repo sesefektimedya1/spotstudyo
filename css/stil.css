@@ -77,3 +77,6 @@ th{color:var(--sol);font-weight:500}
 #altBilgi .odS,.odS{display:block;width:fit-content;max-width:calc(100% - 2rem);margin:0 auto 1rem;background:#fff;border-radius:10px;padding:.55rem .9rem;line-height:0}
 .odS img{display:block;width:380px;max-width:100%;height:auto}
 .odS.ic{margin:.7rem 0;margin-left:0}.odS.ic img{width:330px}
+
+.ust .logo,.ust nav a{white-space:nowrap}.ust .logo{flex-shrink:0}
+@media(min-width:821px){.ust{flex-wrap:wrap}.ust nav{flex-wrap:wrap;min-width:0}}
